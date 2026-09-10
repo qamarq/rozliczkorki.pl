@@ -3,8 +3,7 @@ import { pl } from "date-fns/locale";
 import { Link, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, ScreenBackground } from "@/components/ui";
 import { formatPLN } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
 import { colors, gradients, radius } from "@/lib/theme";
@@ -41,7 +40,7 @@ export default function CalendarScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <ScreenBackground>
       <Text style={styles.header}>Kalendarz</Text>
       <SectionList
         sections={sections}
@@ -101,12 +100,11 @@ export default function CalendarScreen() {
           </LinearGradient>
         </Pressable>
       </Link>
-    </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     fontSize: 24,
     fontWeight: "800",

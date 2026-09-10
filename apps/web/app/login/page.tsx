@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    authClient.signIn.passkey({ autoFill: true }).then(({ data }) => {
+      if (data) {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    });
+  }, [router]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -35,21 +44,51 @@ export default function LoginPage() {
     router.refresh();
   }
 
+  async function onGoogle() {
+    await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
+  }
+
+  async function onPasskey() {
+    const { error } = await authClient.signIn.passkey();
+    if (error) {
+      toast.error(error.message ?? "Nie udało się zalogować kluczem dostępu");
+      return;
+    }
+    router.push("/dashboard");
+    router.refresh();
+  }
+
   return (
-    <div className="relative flex min-h-svh items-center justify-center overflow-hidden px-6">
-      <div className="bg-brand-gradient pointer-events-none absolute left-1/2 top-1/4 h-72 w-72 -translate-x-1/2 rounded-full opacity-20 blur-[100px]" />
+    <div className="relative isolate flex min-h-svh items-center justify-center overflow-hidden px-6">
+      <div className="bg-brand-gradient pointer-events-none absolute left-1/2 top-1/4 -z-10 h-72 w-72 -translate-x-1/2 rounded-full opacity-20 blur-[100px]" />
       <Card className="border-border/60 bg-card/80 relative w-full max-w-sm backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-brand-gradient text-xl">Zaloguj się</CardTitle>
           <CardDescription>Wpisz dane, żeby wejść do panelu.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" onClick={onGoogle} type="button">
+              Kontynuuj przez Google
+            </Button>
+            <Button variant="outline" onClick={onPasskey} type="button">
+              Zaloguj kluczem dostępu
+            </Button>
+          </div>
+
+          <div className="text-muted-foreground my-4 flex items-center gap-3 text-xs">
+            <span className="bg-border-solid h-px flex-1" />
+            lub e-mailem
+            <span className="bg-border-solid h-px flex-1" />
+          </div>
+
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
+                autoComplete="username webauthn"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -60,6 +99,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

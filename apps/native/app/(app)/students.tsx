@@ -1,8 +1,15 @@
 import { format } from "date-fns";
 import { useState } from "react";
 import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Badge, Card, Chip, GradientButton, Input, OutlineButton } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  Chip,
+  GradientButton,
+  Input,
+  OutlineButton,
+  ScreenBackground,
+} from "@/components/ui";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
@@ -14,6 +21,7 @@ export default function StudentsScreen() {
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [type, setType] = useState<"private" | "school">("private");
   const [hourlyRate, setHourlyRate] = useState("80");
 
@@ -23,6 +31,7 @@ export default function StudentsScreen() {
       setFormOpen(false);
       setName("");
       setAddress("");
+      setPhone("");
       setHourlyRate("80");
       setType("private");
     },
@@ -34,6 +43,7 @@ export default function StudentsScreen() {
     createStudent.mutate({
       name,
       address: address || undefined,
+      phone: phone || undefined,
       type,
       hourlyRate: Number(hourlyRate),
       effectiveFrom: format(new Date(), "yyyy-MM-dd"),
@@ -41,7 +51,7 @@ export default function StudentsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <ScreenBackground>
       <FlatList
         data={students}
         keyExtractor={(item) => item.id}
@@ -58,6 +68,7 @@ export default function StudentsScreen() {
               />
             </View>
             {item.address && <Text style={styles.cardSubtitle}>{item.address}</Text>}
+            {item.phone && <Text style={styles.cardSubtitle}>{item.phone}</Text>}
             <RateSummary studentId={item.id} />
           </Card>
         )}
@@ -74,6 +85,12 @@ export default function StudentsScreen() {
                   label="Adres (opcjonalnie)"
                   value={address}
                   onChangeText={setAddress}
+                />
+                <Input
+                  label="Telefon (opcjonalnie)"
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={setPhone}
                 />
                 <View style={styles.typeRow}>
                   <Chip
@@ -113,7 +130,7 @@ export default function StudentsScreen() {
           !isLoading ? <Text style={styles.empty}>Brak uczniów</Text> : null
         }
       />
-    </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
@@ -130,7 +147,6 @@ function RateSummary({ studentId }: { studentId: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
   header: { fontSize: 24, fontWeight: "800", color: colors.text },
   list: { padding: 20, gap: 10 },
   card: { marginBottom: 8, gap: 4 },

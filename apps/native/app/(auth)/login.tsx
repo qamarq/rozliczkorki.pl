@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { GradientButton, Input } from "@/components/ui";
+import { GradientButton, Input, OutlineButton } from "@/components/ui";
 import { ScreenBackground } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
 import { colors } from "@/lib/theme";
@@ -17,11 +17,24 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function onSubmit() {
     setLoading(true);
     const { error } = await authClient.signIn.email({ email, password });
     setLoading(false);
+    if (error) {
+      Alert.alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+    }
+  }
+
+  async function onGoogle() {
+    setGoogleLoading(true);
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "rozliczkorki://",
+    });
+    setGoogleLoading(false);
     if (error) {
       Alert.alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
     }
@@ -33,7 +46,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
       >
-        <Text style={styles.logo}>Korkomat</Text>
+        <Text style={styles.logo}>RozliczKorki</Text>
         <Text style={styles.subtitle}>Zaloguj się do panelu</Text>
 
         <View style={styles.form}>
@@ -51,6 +64,11 @@ export default function LoginScreen() {
             onChangeText={setPassword}
           />
           <GradientButton label="Zaloguj się" onPress={onSubmit} loading={loading} />
+          <OutlineButton
+            label="Kontynuuj przez Google"
+            onPress={onGoogle}
+            disabled={googleLoading}
+          />
         </View>
 
         <Link href="/register" style={styles.link}>

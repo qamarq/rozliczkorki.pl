@@ -9,9 +9,16 @@ import {
   TextInputProps,
   View,
 } from "react-native";
+import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { colors, gradients, radius } from "@/lib/theme";
 
-export function ScreenBackground({ children }: { children: ReactNode }) {
+export function ScreenBackground({
+  children,
+  edges = ["top", "bottom"],
+}: {
+  children: ReactNode;
+  edges?: Edge[];
+}) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <LinearGradient
@@ -20,7 +27,9 @@ export function ScreenBackground({ children }: { children: ReactNode }) {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {children}
+      <SafeAreaView style={{ flex: 1 }} edges={edges}>
+        {children}
+      </SafeAreaView>
     </View>
   );
 }

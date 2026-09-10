@@ -26,6 +26,7 @@ export const students = pgTable("students", {
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   address: text("address"),
+  phone: text("phone"),
   type: studentTypeEnum("type").notNull().default("private"),
   archived: boolean("archived").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Korkomat",
+  title: "RozliczKorki",
   description: "Prosty tracker korepetycji — kalendarz, płatności, zarobki.",
 };
 

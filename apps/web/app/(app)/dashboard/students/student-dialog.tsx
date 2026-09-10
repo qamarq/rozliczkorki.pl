@@ -44,6 +44,7 @@ export function StudentDialog({
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [type, setType] = useState<StudentType>("private");
   const [archived, setArchived] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(80);
@@ -56,11 +57,13 @@ export function StudentDialog({
     if (student) {
       setName(student.name);
       setAddress(student.address ?? "");
+      setPhone(student.phone ?? "");
       setType(student.type);
       setArchived(student.archived);
     } else {
       setName("");
       setAddress("");
+      setPhone("");
       setType("private");
       setArchived(false);
       setHourlyRate(80);
@@ -113,13 +116,14 @@ export function StudentDialog({
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (studentId) {
-      updateStudent.mutate({ id: studentId, name, address, type, archived });
+      updateStudent.mutate({ id: studentId, name, address, phone, type, archived });
       onOpenChange(false);
       return;
     }
     createStudent.mutate({
       name,
       address,
+      phone,
       type,
       hourlyRate,
       effectiveFrom,
@@ -153,14 +157,26 @@ export function StudentDialog({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="address">Adres</Label>
-            <Input
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="np. ul. Kwiatowa 5, Warszawa"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="address">Adres</Label>
+              <Input
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="np. ul. Kwiatowa 5, Warszawa"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="phone">Telefon (opcjonalnie)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="np. 601 234 567"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">

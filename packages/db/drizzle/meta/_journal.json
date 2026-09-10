@@ -8,6 +8,20 @@
       "when": 1789047870700,
       "tag": "0000_peaceful_beyonder",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789066277909,
+      "tag": "0001_bouncy_shadowcat",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789067208368,
+      "tag": "0002_motionless_gunslinger",
+      "breakpoints": true
     }
   ]
 }

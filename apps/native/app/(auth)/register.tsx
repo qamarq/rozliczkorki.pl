@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { GradientButton, Input, ScreenBackground } from "@/components/ui";
+import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
 import { colors } from "@/lib/theme";
 
@@ -17,6 +17,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function onSubmit() {
     setLoading(true);
@@ -24,6 +25,18 @@ export default function RegisterScreen() {
     setLoading(false);
     if (error) {
       Alert.alert("Błąd rejestracji", error.message ?? "Spróbuj ponownie");
+    }
+  }
+
+  async function onGoogle() {
+    setGoogleLoading(true);
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "rozliczkorki://",
+    });
+    setGoogleLoading(false);
+    if (error) {
+      Alert.alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
     }
   }
 
@@ -52,6 +65,11 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
           />
           <GradientButton label="Załóż konto" onPress={onSubmit} loading={loading} />
+          <OutlineButton
+            label="Kontynuuj przez Google"
+            onPress={onGoogle}
+            disabled={googleLoading}
+          />
         </View>
 
         <Link href="/login" style={styles.link}>

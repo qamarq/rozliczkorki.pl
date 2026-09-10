@@ -3,8 +3,7 @@ import { pl } from "date-fns/locale";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Card } from "@/components/ui";
+import { Card, ScreenBackground } from "@/components/ui";
 import { formatPLN } from "@/lib/format";
 import { colors, gradients, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
@@ -20,7 +19,7 @@ export default function StatsScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <ScreenBackground>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.header}>Statystyki</Text>
 
@@ -71,7 +70,7 @@ export default function StatsScreen() {
           ))}
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
@@ -93,7 +92,6 @@ function StatCard({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, gap: 14, paddingBottom: 40 },
   header: { fontSize: 24, fontWeight: "800", color: colors.text },
   monthRow: {

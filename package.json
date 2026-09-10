@@ -17,7 +17,7 @@
   "engines": {
     "node": ">=18"
   },
-  "name": "korkomat",
+  "name": "rozliczkorki",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
