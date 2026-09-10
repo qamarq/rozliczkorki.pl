@@ -89,6 +89,19 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        <SectionLabel>Powiadomienia</SectionLabel>
+        <Card style={{ gap: 4 }}>
+          <Pressable onPress={() => Linking.openSettings()} style={styles.legalRow}>
+            <View>
+              <Text style={styles.legalText}>Nadchodzące zajęcia i zaległe płatności</Text>
+              <Text style={styles.sessionDate}>
+                Zarządzaj kategoriami powiadomień w ustawieniach systemowych
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+          </Pressable>
+        </Card>
+
         <SectionLabel>Zmiana hasła</SectionLabel>
         <Card style={{ gap: 12 }}>
           <Input

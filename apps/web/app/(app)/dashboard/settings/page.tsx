@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient, useSession } from "@/lib/auth-client";
+import { trpc } from "@/lib/trpc/client";
 
 type SessionRow = {
   id: string;
@@ -28,12 +29,33 @@ type PasskeyRow = {
 
 export default function SettingsPage() {
   const { data: session } = useSession();
+  const utils = trpc.useUtils();
+  const { data: passwordInfo } = trpc.auth.hasPassword.useQuery();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [passkeys, setPasskeys] = useState<PasskeyRow[]>([]);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
   const [addingPasskey, setAddingPasskey] = useState(false);
+  const [newAccountPassword, setNewAccountPassword] = useState("");
+
+  const setPassword = trpc.auth.setPassword.useMutation({
+    onSuccess: () => {
+      utils.auth.hasPassword.invalidate();
+      setNewAccountPassword("");
+      toast.success("Hasło zostało ustawione");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  function onSetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newAccountPassword.length < 8) {
+      toast.error("Hasło musi mieć min. 8 znaków");
+      return;
+    }
+    setPassword.mutate({ newPassword: newAccountPassword });
+  }
 
   async function loadSessions() {
     const { data } = await authClient.$fetch<SessionRow[]>("/list-sessions");
@@ -152,38 +174,70 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Zmiana hasła</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={onChangePassword} className="flex flex-col gap-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="currentPassword">Obecne hasło</Label>
+      {passwordInfo && !passwordInfo.hasPassword ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Ustaw hasło</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-muted-foreground text-sm">
+              Założyłeś(-aś) konto przez Google, więc nie masz jeszcze hasła. Ustaw je,
+              jeśli chcesz móc logować się też e-mailem i hasłem.
+            </p>
+            <form onSubmit={onSetPassword} className="flex flex-col gap-4">
+              <div className="flex max-w-xs flex-col gap-2">
+                <Label htmlFor="newAccountPassword">Nowe hasło</Label>
                 <Input
-                  id="currentPassword"
+                  id="newAccountPassword"
                   type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  value={newAccountPassword}
+                  onChange={(e) => setNewAccountPassword(e.target.value)}
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="newPassword">Nowe hasło</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
+              <Button
+                type="submit"
+                disabled={setPassword.isPending}
+                className="self-start"
+              >
+                {setPassword.isPending ? "Zapisywanie…" : "Ustaw hasło"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Zmiana hasła</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={onChangePassword} className="flex flex-col gap-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="currentPassword">Obecne hasło</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="newPassword">Nowe hasło</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
-            <Button type="submit" disabled={savingPassword} className="self-start">
-              {savingPassword ? "Zapisywanie…" : "Zmień hasło"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button type="submit" disabled={savingPassword} className="self-start">
+                {savingPassword ? "Zapisywanie…" : "Zmień hasło"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

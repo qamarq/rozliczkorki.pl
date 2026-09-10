@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import { useSession } from "@/lib/auth-client";
+import { useLocalNotificationsSync } from "@/lib/use-local-notifications";
 import { usePushRegistration } from "@/lib/use-push-registration";
 import { colors } from "@/lib/theme";
 
 export default function AppLayout() {
   const { data: session, isPending } = useSession();
   usePushRegistration(!!session?.user);
+  useLocalNotificationsSync(!!session?.user);
 
   if (isPending) return null;
   if (!session?.user) return <Redirect href="/login" />;
