@@ -39,7 +39,8 @@
       "expo-router",
       "expo-secure-store",
       "expo-notifications",
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/withAndroidReleaseSigning"
     ]
   }
 }

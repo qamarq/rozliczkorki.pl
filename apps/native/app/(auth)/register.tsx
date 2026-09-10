@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -10,6 +11,7 @@ import {
 } from "react-native";
 import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
+import { PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { colors } from "@/lib/theme";
 
 export default function RegisterScreen() {
@@ -75,6 +77,17 @@ export default function RegisterScreen() {
         <Link href="/login" style={styles.link}>
           Masz już konto? Zaloguj się
         </Link>
+        <Text style={styles.legal}>
+          Zakładając konto, akceptujesz{" "}
+          <Text style={styles.legalLink} onPress={() => Linking.openURL(TERMS_URL)}>
+            Regulamin
+          </Text>{" "}
+          i{" "}
+          <Text style={styles.legalLink} onPress={() => Linking.openURL(PRIVACY_URL)}>
+            Politykę prywatności
+          </Text>
+          .
+        </Text>
       </KeyboardAvoidingView>
     </ScreenBackground>
   );
@@ -91,4 +104,11 @@ const styles = StyleSheet.create({
   },
   form: { gap: 14 },
   link: { marginTop: 20, textAlign: "center", color: colors.textMuted },
+  legal: {
+    marginTop: 16,
+    textAlign: "center",
+    fontSize: 12,
+    color: colors.textFaint,
+  },
+  legalLink: { textDecorationLine: "underline" },
 });

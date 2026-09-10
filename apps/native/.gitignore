@@ -7,9 +7,17 @@ npm-debug.*
 *.p8
 *.p12
 *.key
+*.keystore
 *.mobileprovision
 *.orig.*
 web-build/
+
+# native projects are generated via `expo prebuild` (CNG) — don't commit them
+/android/
+/ios/
+
+# release signing key — never commit, back it up somewhere safe instead
+/android-signing/
 
 # macOS
 .DS_Store

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 
-// Fill in the SHA-256 signing certificate fingerprint(s) for the Android app.
-// Get it from Google Play Console > Setup > App integrity > App signing key
-// certificate, or via `eas credentials` if using EAS Build.
-const ANDROID_SHA256_FINGERPRINTS = ["REPLACE_WITH_SHA256_FINGERPRINT"];
+// Upload-key fingerprint (apps/native/android/app/release.keystore, alias
+// "rozliczkorki"). Once the app is first uploaded to Play Console, Google
+// re-signs it with its own key for distribution (Play App Signing) — swap
+// this for the "App signing key certificate" SHA-256 from Play Console >
+// Setup > App integrity, or credential sharing won't work for real users.
+const ANDROID_SHA256_FINGERPRINTS = [
+  "D3:B4:57:DB:4B:B4:99:A3:54:7E:6F:78:C9:5A:CA:C1:79:96:9B:1C:7F:A8:CD:BE:6A:81:55:43:56:05:3B:5F",
+];
 
 export function GET() {
   return NextResponse.json([

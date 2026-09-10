@@ -104,6 +104,17 @@ export default function RegisterPage() {
               Zaloguj się
             </Link>
           </p>
+          <p className="text-muted-foreground mt-3 text-center text-xs text-balance">
+            Zakładając konto, akceptujesz{" "}
+            <Link href="/terms" className="underline">
+              Regulamin
+            </Link>{" "}
+            i{" "}
+            <Link href="/privacy" className="underline">
+              Politykę prywatności
+            </Link>
+            .
+          </p>
         </CardContent>
       </Card>
     </div>
