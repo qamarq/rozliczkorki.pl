@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,6 +46,7 @@ export default function RegisterPage() {
       <div className="bg-brand-gradient pointer-events-none absolute left-1/2 top-1/4 -z-10 h-72 w-72 -translate-x-1/2 rounded-full opacity-20 blur-[100px]" />
       <Card className="border-border/60 bg-card/80 relative w-full max-w-sm backdrop-blur-sm">
         <CardHeader>
+          <Logo className="mb-1 size-9" />
           <CardTitle className="text-brand-gradient text-xl">Załóż konto</CardTitle>
           <CardDescription>Za darmo, zajmie minutę.</CardDescription>
         </CardHeader>

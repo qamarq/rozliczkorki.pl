@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { CalendarDays, LineChart, LogOut, Settings, Users } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -30,9 +31,7 @@ export function DashboardSidebar({ userName }: { userName: string }) {
   return (
     <aside className="bg-sidebar border-sidebar-border sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r lg:flex">
       <div className="flex items-center gap-2 px-5 py-6">
-        <span className="bg-primary flex size-8 items-center justify-center rounded-lg text-sm font-bold text-white">
-          R
-        </span>
+        <Logo />
         <div className="flex flex-col leading-none">
           <span className="text-sm font-semibold text-white">RozliczKorki</span>
           <span className="text-muted-foreground text-[11px] tracking-wide uppercase">
@@ -84,7 +83,10 @@ export function DashboardTopbar({ userName }: { userName: string }) {
 
   return (
     <header className="bg-background/80 border-border sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur-sm lg:hidden">
-      <span className="text-brand-gradient text-base font-bold">RozliczKorki</span>
+      <span className="flex items-center gap-2">
+        <Logo className="size-6" />
+        <span className="text-brand-gradient text-base font-bold">RozliczKorki</span>
+      </span>
       <nav className="flex items-center gap-1 overflow-x-auto">
         {LINKS.map((link) => (
           <Link
