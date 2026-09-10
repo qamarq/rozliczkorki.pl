@@ -5,6 +5,8 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 
 const WEEKS_TO_GENERATE = 8;
+// Safety cap for open-ended rules (no endDate) so a bad input can't spin forever.
+const MAX_OCCURRENCES = 400;
 
 function nextOccurrences(
   rule: {
@@ -14,7 +16,7 @@ function nextOccurrences(
     endDate: string | null;
   },
   after: Date,
-  count: number,
+  fallbackCount: number,
 ): Date[] {
   const [hours, minutes] = rule.startTime.split(":").map(Number);
   const results: Date[] = [];
@@ -23,8 +25,11 @@ function nextOccurrences(
   cursor.setDate(cursor.getDate() + 1);
 
   const end = rule.endDate ? new Date(rule.endDate) : null;
+  // With an end date, generate every occurrence up to it (bounded by the
+  // date itself). Without one, fall back to a fixed rolling window.
+  const limit = end ? MAX_OCCURRENCES : fallbackCount;
 
-  while (results.length < count) {
+  while (results.length < limit) {
     if (cursor.getDay() === rule.dayOfWeek) {
       const occurrence = new Date(cursor);
       occurrence.setHours(hours, minutes, 0, 0);
