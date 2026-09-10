@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: korkomat
+      POSTGRES_PASSWORD: korkomat
+      POSTGRES_DB: korkomat
+    ports:
+      - "5434:5432"
+    volumes:
+      - korkomat_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  korkomat_postgres_data:

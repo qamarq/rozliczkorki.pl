@@ -1,0 +1,341 @@
+"use client";
+
+import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { trpc } from "@/lib/trpc/client";
+
+type LessonStatus = "scheduled" | "completed" | "cancelled";
+type PaymentMethod = "cash" | "transfer";
+
+type LessonRow = {
+  id: string;
+  studentId: string;
+  startsAt: Date | string;
+  durationMinutes: number;
+  status: LessonStatus;
+  paid: boolean;
+  paymentMethod: PaymentMethod | null;
+  notes: string | null;
+};
+
+export function LessonDialog({
+  open,
+  onOpenChange,
+  date,
+  lessonId,
+  allLessons,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  date: Date | null;
+  lessonId: string | null;
+  allLessons: LessonRow[];
+}) {
+  const utils = trpc.useUtils();
+  const { data: students = [] } = trpc.students.list.useQuery();
+
+  const editing = lessonId ? allLessons.find((l) => l.id === lessonId) : null;
+
+  const [studentId, setStudentId] = useState("");
+  const [dateStr, setDateStr] = useState("");
+  const [timeStr, setTimeStr] = useState("16:00");
+  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [status, setStatus] = useState<LessonStatus>("scheduled");
+  const [paid, setPaid] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transfer");
+  const [notes, setNotes] = useState("");
+  const [recurring, setRecurring] = useState(false);
+  const [recurringEndDate, setRecurringEndDate] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      const d = new Date(editing.startsAt);
+      setStudentId(editing.studentId);
+      setDateStr(format(d, "yyyy-MM-dd"));
+      setTimeStr(format(d, "HH:mm"));
+      setDurationMinutes(editing.durationMinutes);
+      setStatus(editing.status);
+      setPaid(editing.paid);
+      setPaymentMethod(editing.paymentMethod ?? "transfer");
+      setNotes(editing.notes ?? "");
+      setRecurring(false);
+    } else {
+      setStudentId(students[0]?.id ?? "");
+      setDateStr(format(date ?? new Date(), "yyyy-MM-dd"));
+      setTimeStr("16:00");
+      setDurationMinutes(60);
+      setStatus("scheduled");
+      setPaid(false);
+      setPaymentMethod("transfer");
+      setNotes("");
+      setRecurring(false);
+      setRecurringEndDate("");
+    }
+  }, [open, editing, date, students]);
+
+  const invalidate = () => utils.lessons.range.invalidate();
+
+  const createLesson = trpc.lessons.create.useMutation({
+    onSuccess: () => {
+      invalidate();
+      toast.success("Dodano zajęcia");
+      onOpenChange(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const createRecurring = trpc.recurring.create.useMutation({
+    onSuccess: () => {
+      invalidate();
+      toast.success("Dodano zajęcia cykliczne");
+      onOpenChange(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateLesson = trpc.lessons.update.useMutation({
+    onSuccess: () => {
+      invalidate();
+      toast.success("Zapisano");
+      onOpenChange(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteLesson = trpc.lessons.delete.useMutation({
+    onSuccess: () => {
+      invalidate();
+      toast.success("Usunięto zajęcia");
+      onOpenChange(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const pending =
+    createLesson.isPending ||
+    createRecurring.isPending ||
+    updateLesson.isPending ||
+    deleteLesson.isPending;
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!studentId) {
+      toast.error("Wybierz ucznia");
+      return;
+    }
+    const startsAt = new Date(`${dateStr}T${timeStr}`).toISOString();
+
+    if (editing) {
+      updateLesson.mutate({
+        id: editing.id,
+        startsAt,
+        durationMinutes,
+        status,
+        paid,
+        paymentMethod: paid ? paymentMethod : null,
+        notes,
+      });
+      return;
+    }
+
+    if (recurring) {
+      createRecurring.mutate({
+        studentId,
+        dayOfWeek: new Date(`${dateStr}T00:00`).getDay(),
+        startTime: timeStr,
+        durationMinutes,
+        startDate: dateStr,
+        endDate: recurringEndDate || null,
+      });
+      return;
+    }
+
+    createLesson.mutate({
+      studentId,
+      startsAt,
+      durationMinutes,
+      status,
+      paid,
+      paymentMethod: paid ? paymentMethod : null,
+      notes,
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{editing ? "Edytuj zajęcia" : "Nowe zajęcia"}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label>Uczeń</Label>
+            <Select value={studentId} onValueChange={setStudentId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Wybierz ucznia" />
+              </SelectTrigger>
+              <SelectContent>
+                {students.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2 flex flex-col gap-2">
+              <Label htmlFor="date">Data</Label>
+              <Input
+                id="date"
+                type="date"
+                value={dateStr}
+                onChange={(e) => setDateStr(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="time">Godzina</Label>
+              <Input
+                id="time"
+                type="time"
+                value={timeStr}
+                onChange={(e) => setTimeStr(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="duration">Czas trwania (minuty)</Label>
+            <Input
+              id="duration"
+              type="number"
+              min={15}
+              step={15}
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(Number(e.target.value))}
+              required
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as LessonStatus)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="scheduled">Zaplanowane</SelectItem>
+                <SelectItem value="completed">Odbyły się</SelectItem>
+                <SelectItem value="cancelled">Odwołane</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <Label htmlFor="paid">Opłacone</Label>
+            <Switch id="paid" checked={paid} onCheckedChange={setPaid} />
+          </div>
+
+          {paid && (
+            <div className="flex flex-col gap-2">
+              <Label>Sposób płatności</Label>
+              <Select
+                value={paymentMethod}
+                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Gotówka</SelectItem>
+                  <SelectItem value="transfer">Przelew</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="notes">Notatki</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+
+          {!editing && (
+            <div className="flex flex-col gap-3 rounded-md border p-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="recurring"
+                  checked={recurring}
+                  onCheckedChange={(v) => setRecurring(v === true)}
+                />
+                <Label htmlFor="recurring">Zajęcia cykliczne (co tydzień)</Label>
+              </div>
+              {recurring && (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="recurringEnd">Do kiedy (opcjonalnie)</Label>
+                  <Input
+                    id="recurringEnd"
+                    type="date"
+                    value={recurringEndDate}
+                    onChange={(e) => setRecurringEndDate(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:justify-between">
+            {editing ? (
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={pending}
+                onClick={() => deleteLesson.mutate({ id: editing.id })}
+              >
+                Usuń
+              </Button>
+            ) : (
+              <span />
+            )}
+            <Button
+              type="submit"
+              disabled={pending}
+              className="bg-brand-gradient text-white hover:opacity-90"
+            >
+              {editing ? "Zapisz" : "Dodaj"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
