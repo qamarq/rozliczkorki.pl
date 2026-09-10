@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Bell, CheckCircle2, Clock3, TrendingUp } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +45,10 @@ export default async function MarketingPage() {
 
       <div className="relative mx-auto flex max-w-5xl flex-col gap-24 px-6 py-16">
         <header className="flex items-center justify-between">
-          <span className="text-brand-gradient text-lg font-bold">RozliczKorki</span>
+          <span className="flex items-center gap-2">
+            <Logo />
+            <span className="text-brand-gradient text-lg font-bold">RozliczKorki</span>
+          </span>
           <nav className="flex items-center gap-3">
             {session ? (
               <Button asChild>
