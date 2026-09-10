@@ -6,8 +6,8 @@ export const authClient = createAuthClient({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
   plugins: [
     expoClient({
-      scheme: "korkomat",
-      storagePrefix: "korkomat",
+      scheme: "rozliczkorki",
+      storagePrefix: "rozliczkorki",
       storage: SecureStore,
     }),
   ],

@@ -1,4 +1,4 @@
-# Korkomat
+# RozliczKorki
 
 Tracker korepetycji: kalendarz zajęć, status odbycia/płatności, zarobki, uczniowie ze
 stawkami w czasie, zajęcia cykliczne i przypomnienia push.

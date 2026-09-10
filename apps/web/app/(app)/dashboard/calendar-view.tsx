@@ -14,15 +14,38 @@ import {
   subMonths,
 } from "date-fns";
 import { pl } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import {
+  Banknote,
+  CalendarClock,
+  CalendarX2,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Landmark,
+  ListChecks,
+  Plus,
+  Sparkles,
+  Wallet,
+} from "lucide-react";
+import type { AppRouter } from "@repo/api";
+import type { inferRouterOutputs } from "@trpc/server";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc/client";
 import { cn, formatPLN } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
 
 const WEEKDAYS = ["pon", "wt", "śr", "czw", "pt", "sob", "niedz"];
+
+type LessonRow = inferRouterOutputs<AppRouter>["lessons"]["range"][number];
 
 export function CalendarView() {
   const [month, setMonth] = useState(() => new Date());
@@ -42,6 +65,11 @@ export function CalendarView() {
     to: gridEnd.toISOString(),
   });
 
+  const { data: summary } = trpc.stats.summary.useQuery({
+    from: startOfMonth(month).toISOString(),
+    to: endOfMonth(month).toISOString(),
+  });
+
   const lessonsByDay = useMemo(() => {
     const map = new Map<string, typeof lessons>();
     for (const lesson of lessons) {
@@ -52,6 +80,24 @@ export function CalendarView() {
     }
     return map;
   }, [lessons]);
+
+  const today = new Date();
+  const todayLessons = useMemo(
+    () =>
+      lessons
+        .filter((l) => isSameDay(new Date(l.startsAt), today) && l.status !== "cancelled")
+        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
+    [lessons],
+  );
+
+  const dueLessons = useMemo(
+    () =>
+      lessons
+        .filter((l) => l.status === "completed" && !l.paid)
+        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+        .slice(0, 6),
+    [lessons],
+  );
 
   function openCreateDialog(day: Date) {
     setSelectedDate(day);
@@ -66,106 +112,149 @@ export function CalendarView() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setMonth((m) => subMonths(m, 1))}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <h1 className="w-40 text-center text-lg font-semibold capitalize">
-            {format(month, "LLLL yyyy", { locale: pl })}
-          </h1>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setMonth((m) => addMonths(m, 1))}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
-        <Button
-          onClick={() => openCreateDialog(new Date())}
-          className="bg-brand-gradient text-white hover:opacity-90"
-        >
-          <Plus className="size-4" />
-          Dodaj zajęcia
-        </Button>
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard
+          icon={Sparkles}
+          label="Potencjał miesiąca"
+          value={formatPLN(summary?.theoretical ?? 0)}
+          tone="primary"
+        />
+        <StatCard
+          icon={Wallet}
+          label="Otrzymane środki"
+          value={formatPLN(summary?.paid ?? 0)}
+          tone="success"
+        />
+        <StatCard
+          icon={CalendarClock}
+          label="Do rozliczenia"
+          value={formatPLN(summary?.unpaid ?? 0)}
+          tone="warning"
+        />
+        <StatCard
+          icon={CalendarX2}
+          label="Odwołane zajęcia"
+          value={String(summary?.cancelledCount ?? 0)}
+          tone="destructive"
+        />
       </div>
 
-      <div className="bg-border text-muted-foreground grid grid-cols-7 gap-px overflow-hidden rounded-lg border text-xs font-medium">
-        {WEEKDAYS.map((day) => (
-          <div key={day} className="bg-background px-2 py-1 text-center capitalize">
-            {day}
-          </div>
-        ))}
-      </div>
+      <div className="grid items-start gap-5 lg:grid-cols-12">
+        <div className="flex flex-col gap-5 lg:col-span-8">
+          <Card className="flex-row flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setMonth((m) => subMonths(m, 1))}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <h1 className="w-40 text-center text-lg font-semibold capitalize">
+                {format(month, "LLLL yyyy", { locale: pl })}
+              </h1>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setMonth((m) => addMonths(m, 1))}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+            <Button onClick={() => openCreateDialog(new Date())}>
+              <Plus className="size-4" />
+              Dodaj zajęcia
+            </Button>
+          </Card>
 
-      <div className="bg-border grid grid-cols-7 gap-px overflow-hidden rounded-lg border">
-        {days.map((day) => {
-          const key = format(day, "yyyy-MM-dd");
-          const dayLessons = lessonsByDay.get(key) ?? [];
-          return (
-            <div
-              key={key}
-              className={cn(
-                "bg-background flex min-h-28 flex-col gap-1 p-1.5",
-                !isSameMonth(day, month) && "bg-muted/40 text-muted-foreground",
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <span
-                  className={cn(
-                    "flex size-6 items-center justify-center rounded-full text-xs",
-                    isToday(day) && "bg-primary text-primary-foreground",
-                  )}
-                >
-                  {format(day, "d")}
-                </span>
-                <button
-                  onClick={() => openCreateDialog(day)}
-                  className="text-muted-foreground hover:text-foreground opacity-0 focus:opacity-100 group-hover:opacity-100"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-1">
-                {dayLessons.map((lesson) => (
-                  <button
-                    key={lesson.id}
-                    onClick={() => openEditDialog(day, lesson.id)}
+          <div className="border-border-solid overflow-hidden rounded-xl border">
+            <div className="bg-secondary text-muted-foreground grid grid-cols-7 text-xs font-semibold">
+              {WEEKDAYS.map((day) => (
+                <div key={day} className="px-2 py-2 text-center capitalize">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-border-solid grid grid-cols-7 gap-px">
+              {days.map((day) => {
+                const key = format(day, "yyyy-MM-dd");
+                const dayLessons = lessonsByDay.get(key) ?? [];
+                const isCurrentDay = isToday(day);
+                return (
+                  <div
+                    key={key}
                     className={cn(
-                      "flex flex-col rounded px-1.5 py-1 text-left text-[11px] leading-tight",
-                      lesson.status === "cancelled"
-                        ? "bg-muted text-muted-foreground line-through"
-                        : lesson.paid
-                          ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-                          : "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+                      "group bg-card relative flex min-h-28 flex-col gap-1 p-1.5",
+                      !isSameMonth(day, month) &&
+                        "bg-background/60 text-muted-foreground",
+                      isCurrentDay && "bg-primary/[0.06]",
                     )}
                   >
-                    <span className="font-medium">
-                      {format(new Date(lesson.startsAt), "HH:mm")} {lesson.student?.name}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      {formatPLN(lesson.price)}
-                      {lesson.status === "completed" && (
-                        <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-                          odbyte
-                        </Badge>
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
+                    {isCurrentDay && (
+                      <div className="bg-primary absolute inset-x-0 top-0 h-0.5" />
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          "flex size-6 items-center justify-center rounded-full text-xs font-medium",
+                          isCurrentDay && "bg-primary text-primary-foreground",
+                        )}
+                      >
+                        {format(day, "d")}
+                      </span>
+                      <button
+                        onClick={() => openCreateDialog(day)}
+                        className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-0.5 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {dayLessons.map((lesson) => (
+                        <button
+                          key={lesson.id}
+                          onClick={() => openEditDialog(day, lesson.id)}
+                          className={cn(
+                            "flex flex-col rounded-md border-l-2 px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
+                            lesson.status === "cancelled"
+                              ? "bg-destructive/10 border-destructive/50 text-muted-foreground line-through"
+                              : lesson.paid
+                                ? "bg-success/10 border-success text-foreground"
+                                : "bg-warning/10 border-warning text-foreground",
+                          )}
+                        >
+                          <span className="font-medium">
+                            {format(new Date(lesson.startsAt), "HH:mm")}{" "}
+                            {lesson.student?.name}
+                          </span>
+                          <span className="flex items-center gap-1 tabular-nums">
+                            {formatPLN(lesson.price)}
+                            {lesson.status === "completed" && (
+                              <Banknote className="text-muted-foreground size-2.5" />
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {isLoading && <p className="text-muted-foreground text-sm">Ładowanie…</p>}
+          {isLoading && <p className="text-muted-foreground text-sm">Ładowanie…</p>}
+        </div>
+
+        <div className="flex flex-col gap-5 lg:col-span-4">
+          <TodayPanel
+            lessons={todayLessons}
+            onOpen={(id) => openEditDialog(today, id)}
+          />
+          <DuePanel lessons={dueLessons} onOpen={(day, id) => openEditDialog(day, id)} />
+        </div>
+      </div>
 
       <LessonDialog
         open={dialogOpen}
@@ -175,5 +264,225 @@ export function CalendarView() {
         allLessons={lessons}
       />
     </div>
+  );
+}
+
+function TodayPanel({
+  lessons,
+  onOpen,
+}: {
+  lessons: LessonRow[];
+  onOpen: (id: string) => void;
+}) {
+  const utils = trpc.useUtils();
+  const markCompleted = trpc.lessons.update.useMutation({
+    onSuccess: () => {
+      utils.lessons.range.invalidate();
+      utils.stats.summary.invalidate();
+    },
+  });
+  const markPaid = trpc.lessons.update.useMutation({
+    onSuccess: () => {
+      utils.lessons.range.invalidate();
+      utils.stats.summary.invalidate();
+    },
+  });
+
+  return (
+    <Card className="gap-3 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Dzisiejsze zajęcia</h2>
+        <Badge variant="secondary">{lessons.length}</Badge>
+      </div>
+      {lessons.length === 0 && (
+        <p className="text-muted-foreground text-sm">Brak zajęć zaplanowanych na dziś.</p>
+      )}
+      <div className="flex flex-col gap-2">
+        {lessons.map((lesson) => (
+          <div
+            key={lesson.id}
+            className="border-border-solid flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
+          >
+            <button
+              onClick={() => onOpen(lesson.id)}
+              className="flex flex-1 flex-col items-start text-left"
+            >
+              <span className="text-sm font-medium">
+                {format(new Date(lesson.startsAt), "HH:mm")} {lesson.student?.name}
+              </span>
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {formatPLN(lesson.price)}
+              </span>
+            </button>
+            {lesson.status === "scheduled" && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={markCompleted.isPending}
+                onClick={() => markCompleted.mutate({ id: lesson.id, status: "completed" })}
+              >
+                <Check className="size-3.5" />
+                Odbyta
+              </Button>
+            )}
+            {lesson.status === "completed" && !lesson.paid && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" disabled={markPaid.isPending}>
+                    Rozlicz
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() =>
+                      markPaid.mutate({
+                        id: lesson.id,
+                        paid: true,
+                        paymentMethod: "cash",
+                      })
+                    }
+                  >
+                    <Banknote className="size-4" />
+                    Gotówka
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      markPaid.mutate({
+                        id: lesson.id,
+                        paid: true,
+                        paymentMethod: "transfer",
+                      })
+                    }
+                  >
+                    <Landmark className="size-4" />
+                    Przelew
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {lesson.status === "completed" && lesson.paid && (
+              <Badge className="bg-success/10 text-success border-success/20">
+                Opłacone
+              </Badge>
+            )}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function DuePanel({
+  lessons,
+  onOpen,
+}: {
+  lessons: LessonRow[];
+  onOpen: (day: Date, id: string) => void;
+}) {
+  const utils = trpc.useUtils();
+  const markPaid = trpc.lessons.update.useMutation({
+    onSuccess: () => {
+      utils.lessons.range.invalidate();
+      utils.stats.summary.invalidate();
+    },
+  });
+
+  return (
+    <Card className="gap-3 p-4">
+      <div className="flex items-center gap-2">
+        <ListChecks className="text-warning size-4" />
+        <h2 className="text-sm font-semibold">Oczekują na rozliczenie</h2>
+      </div>
+      {lessons.length === 0 && (
+        <p className="text-muted-foreground text-sm">
+          Wszystkie odbyte zajęcia są rozliczone. 🎉
+        </p>
+      )}
+      <div className="flex flex-col gap-2">
+        {lessons.map((lesson) => (
+          <div
+            key={lesson.id}
+            className="border-warning/30 bg-warning/5 flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
+          >
+            <button
+              onClick={() => onOpen(new Date(lesson.startsAt), lesson.id)}
+              className="flex flex-1 flex-col items-start text-left"
+            >
+              <span className="text-sm font-medium">{lesson.student?.name}</span>
+              <span className="text-muted-foreground text-xs">
+                {format(new Date(lesson.startsAt), "d MMM, HH:mm", { locale: pl })} ·{" "}
+                {formatPLN(lesson.price)}
+              </span>
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" disabled={markPaid.isPending}>
+                  Rozlicz
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() =>
+                    markPaid.mutate({
+                      id: lesson.id,
+                      paid: true,
+                      paymentMethod: "cash",
+                    })
+                  }
+                >
+                  <Banknote className="size-4" />
+                  Gotówka
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    markPaid.mutate({
+                      id: lesson.id,
+                      paid: true,
+                      paymentMethod: "transfer",
+                    })
+                  }
+                >
+                  <Landmark className="size-4" />
+                  Przelew
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  tone: "primary" | "success" | "warning" | "destructive";
+}) {
+  const toneClasses = {
+    primary: "bg-primary/10 text-primary",
+    success: "bg-success/10 text-success",
+    warning: "bg-warning/10 text-warning",
+    destructive: "bg-destructive/10 text-destructive",
+  }[tone];
+
+  return (
+    <Card className="gap-2 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          {label}
+        </span>
+        <span className={cn("flex size-7 items-center justify-center rounded-md", toneClasses)}>
+          <Icon className="size-3.5" />
+        </span>
+      </div>
+      <span className="text-2xl font-semibold tabular-nums">{value}</span>
+    </Card>
   );
 }

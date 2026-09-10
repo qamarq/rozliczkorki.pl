@@ -36,15 +36,29 @@ export default function RegisterPage() {
     router.refresh();
   }
 
+  async function onGoogle() {
+    await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
+  }
+
   return (
-    <div className="relative flex min-h-svh items-center justify-center overflow-hidden px-6">
-      <div className="bg-brand-gradient pointer-events-none absolute left-1/2 top-1/4 h-72 w-72 -translate-x-1/2 rounded-full opacity-20 blur-[100px]" />
+    <div className="relative isolate flex min-h-svh items-center justify-center overflow-hidden px-6">
+      <div className="bg-brand-gradient pointer-events-none absolute left-1/2 top-1/4 -z-10 h-72 w-72 -translate-x-1/2 rounded-full opacity-20 blur-[100px]" />
       <Card className="border-border/60 bg-card/80 relative w-full max-w-sm backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-brand-gradient text-xl">Załóż konto</CardTitle>
           <CardDescription>Za darmo, zajmie minutę.</CardDescription>
         </CardHeader>
         <CardContent>
+          <Button variant="outline" onClick={onGoogle} type="button" className="w-full">
+            Kontynuuj przez Google
+          </Button>
+
+          <div className="text-muted-foreground my-4 flex items-center gap-3 text-xs">
+            <span className="bg-border-solid h-px flex-1" />
+            lub e-mailem
+            <span className="bg-border-solid h-px flex-1" />
+          </div>
+
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="name">Imię</Label>

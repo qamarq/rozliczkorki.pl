@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Korkomat",
-    "slug": "korkomat",
+    "name": "RozliczKorki",
+    "slug": "rozliczkorki",
     "version": "1.0.0",
-    "scheme": "korkomat",
+    "scheme": "rozliczkorki",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -16,22 +16,30 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "pl.korkomat.app"
+      "bundleIdentifier": "pl.rozliczkorki.app",
+      "associatedDomains": ["webcredentials:rozliczkorki.pl"]
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0b0b10"
       },
-      "package": "pl.korkomat.app"
+      "package": "pl.rozliczkorki.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-notifications"]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-notifications",
+      "expo-web-browser"
+    ]
   }
 }

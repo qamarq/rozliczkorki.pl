@@ -2,6 +2,7 @@
 
 import { endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 import { pl } from "date-fns/locale";
+import { CalendarCheck2, CircleSlash2, PiggyBank, Wallet } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc/client";
-import { formatPLN } from "@/lib/utils";
+import { cn, formatPLN } from "@/lib/utils";
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => {
   const date = subMonths(new Date(), i);
@@ -41,10 +42,20 @@ export default function StatsPage() {
     to: to.toISOString(),
   });
 
+  const collectionRate =
+    data && data.theoretical > 0
+      ? Math.round((data.paid / data.theoretical) * 100)
+      : 0;
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Statystyki</h1>
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold">Finanse i rozliczenia</h1>
+          <p className="text-muted-foreground text-sm">
+            Przychody, zaległości i podsumowanie miesiąca.
+          </p>
+        </div>
         <Select value={month} onValueChange={setMonth}>
           <SelectTrigger className="w-48 capitalize">
             <SelectValue />
@@ -59,71 +70,85 @@ export default function StatsPage() {
         </Select>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="bg-brand-gradient border-none text-white">
-          <CardHeader>
-            <CardTitle className="text-sm text-white/80">Teoretyczne zarobki</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-semibold">
-            {formatPLN(data?.theoretical ?? 0)}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-muted-foreground text-sm">Opłacone</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-semibold text-emerald-600">
-            {formatPLN(data?.paid ?? 0)}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-muted-foreground text-sm">Do zapłaty</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-semibold text-amber-600">
-            {formatPLN(data?.unpaid ?? 0)}
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FinanceCard
+          icon={PiggyBank}
+          label="Potencjalny przychód"
+          value={formatPLN(data?.theoretical ?? 0)}
+          tone="primary"
+        />
+        <FinanceCard
+          icon={Wallet}
+          label="Zrealizowany przychód"
+          value={formatPLN(data?.paid ?? 0)}
+          tone="success"
+          sub={`Skuteczność ściągalności ${collectionRate}%`}
+        />
+        <FinanceCard
+          icon={CalendarCheck2}
+          label="Do zapłaty"
+          value={formatPLN(data?.unpaid ?? 0)}
+          tone="warning"
+        />
+        <FinanceCard
+          icon={CircleSlash2}
+          label="Odwołane zajęcia"
+          value={String(data?.cancelledCount ?? 0)}
+          tone="destructive"
+        />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-muted-foreground text-sm">
+          <CardTitle className="text-muted-foreground text-sm font-medium">
             Zajęcia w miesiącu
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-6 text-sm">
-          <span>Odbyte: {data?.completedCount ?? 0}</span>
-          <span>Zaplanowane: {data?.scheduledCount ?? 0}</span>
-          <span>Odwołane: {data?.cancelledCount ?? 0}</span>
+        <CardContent className="flex flex-wrap gap-6 text-sm">
+          <span>
+            Odbyte <b className="tabular-nums">{data?.completedCount ?? 0}</b>
+          </span>
+          <span>
+            Zaplanowane <b className="tabular-nums">{data?.scheduledCount ?? 0}</b>
+          </span>
+          <span>
+            Odwołane <b className="tabular-nums">{data?.cancelledCount ?? 0}</b>
+          </span>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-muted-foreground text-sm">Wg ucznia</CardTitle>
+          <CardTitle className="text-muted-foreground text-sm font-medium">
+            Rozliczenia wg ucznia
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Uczeń</TableHead>
+                <TableHead className="pl-4">Uczeń</TableHead>
                 <TableHead className="text-right">Teoretycznie</TableHead>
                 <TableHead className="text-right">Opłacone</TableHead>
-                <TableHead className="text-right">Do zapłaty</TableHead>
+                <TableHead className="text-right pr-4">Do zapłaty</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data?.byStudent.map((row) => (
                 <TableRow key={row.studentId}>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="pl-4 font-medium">{row.name}</TableCell>
+                  <TableCell className="text-right tabular-nums">
                     {formatPLN(row.theoretical)}
                   </TableCell>
-                  <TableCell className="text-right text-emerald-600">
+                  <TableCell className="text-success text-right tabular-nums">
                     {formatPLN(row.paid)}
                   </TableCell>
-                  <TableCell className="text-right text-amber-600">
+                  <TableCell
+                    className={cn(
+                      "pr-4 text-right tabular-nums",
+                      row.unpaid > 0 && "text-warning",
+                    )}
+                  >
                     {formatPLN(row.unpaid)}
                   </TableCell>
                 </TableRow>
@@ -133,5 +158,41 @@ export default function StatsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function FinanceCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  sub,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  tone: "primary" | "success" | "warning" | "destructive";
+  sub?: string;
+}) {
+  const toneClasses = {
+    primary: "bg-primary/10 text-primary",
+    success: "bg-success/10 text-success",
+    warning: "bg-warning/10 text-warning",
+    destructive: "bg-destructive/10 text-destructive",
+  }[tone];
+
+  return (
+    <Card className="gap-2 p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          {label}
+        </span>
+        <span className={cn("flex size-7 items-center justify-center rounded-md", toneClasses)}>
+          <Icon className="size-3.5" />
+        </span>
+      </div>
+      <span className="text-2xl font-semibold tabular-nums">{value}</span>
+      {sub && <span className="text-muted-foreground text-xs">{sub}</span>}
+    </Card>
   );
 }

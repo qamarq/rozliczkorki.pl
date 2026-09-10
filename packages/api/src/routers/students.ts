@@ -51,6 +51,7 @@ export const studentsRouter = router({
       z.object({
         name: z.string().min(1),
         address: z.string().optional(),
+        phone: z.string().optional(),
         type: z.enum(["private", "school"]).default("private"),
         hourlyRate: z.coerce.number().positive(),
         currency: z.string().default("PLN"),
@@ -64,6 +65,7 @@ export const studentsRouter = router({
           userId: ctx.session.user.id,
           name: input.name,
           address: input.address,
+          phone: input.phone,
           type: input.type,
         })
         .returning();
@@ -88,6 +90,7 @@ export const studentsRouter = router({
         id: z.string().uuid(),
         name: z.string().min(1).optional(),
         address: z.string().nullable().optional(),
+        phone: z.string().nullable().optional(),
         type: z.enum(["private", "school"]).optional(),
         archived: z.boolean().optional(),
       }),
