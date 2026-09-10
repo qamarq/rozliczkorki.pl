@@ -1,0 +1,1 @@
+ALTER TABLE "lessons" ADD COLUMN "prorate" boolean DEFAULT false NOT NULL;

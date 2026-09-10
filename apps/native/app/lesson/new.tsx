@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { Chip, GradientButton, Input, SectionLabel } from "@/components/ui";
+import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
@@ -15,8 +16,26 @@ export default function NewLessonScreen() {
   const [dateStr, setDateStr] = useState(format(new Date(), "yyyy-MM-dd"));
   const [timeStr, setTimeStr] = useState("16:00");
   const [durationMinutes, setDurationMinutes] = useState("60");
+  const [prorate, setProrate] = useState(false);
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("transfer");
+
+  const { data: selectedStudent } = trpc.students.byId.useQuery(
+    { id: studentId ?? "" },
+    { enabled: !!studentId },
+  );
+  const hourlyRate = (() => {
+    const rate = selectedStudent?.rates
+      .filter((r) => r.effectiveFrom <= dateStr)
+      .sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0];
+    return rate ? Number(rate.hourlyRate) : null;
+  })();
+  const previewPrice =
+    hourlyRate == null
+      ? 0
+      : prorate
+        ? (hourlyRate * Number(durationMinutes || 0)) / 60
+        : hourlyRate;
 
   const createLesson = trpc.lessons.create.useMutation({
     onSuccess: () => {
@@ -35,6 +54,7 @@ export default function NewLessonScreen() {
       studentId,
       startsAt: new Date(`${dateStr}T${timeStr}`).toISOString(),
       durationMinutes: Number(durationMinutes),
+      prorate,
       paid,
       paymentMethod: paid ? paymentMethod : null,
     });
@@ -65,6 +85,24 @@ export default function NewLessonScreen() {
         value={durationMinutes}
         onChangeText={setDurationMinutes}
       />
+
+      <View style={styles.switchRow}>
+        <Text style={styles.label}>Nalicz proporcjonalnie do czasu trwania</Text>
+        <Switch
+          value={prorate}
+          onValueChange={setProrate}
+          trackColor={{ true: colors.accentTo }}
+        />
+      </View>
+      {hourlyRate != null && (
+        <Text style={styles.hint}>
+          {prorate
+            ? `Cena = stawka × czas / 60.`
+            : `Domyślnie liczymy pełną stawkę niezależnie od czasu trwania.`}{" "}
+          Przy {formatPLN(hourlyRate)}/h i {durationMinutes || 0} min to{" "}
+          {formatPLN(previewPrice)}.
+        </Text>
+      )}
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Opłacone</Text>
@@ -104,6 +142,7 @@ export default function NewLessonScreen() {
 const styles = StyleSheet.create({
   content: { padding: 20, gap: 14 },
   label: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+  hint: { fontSize: 12, color: colors.textFaint, marginTop: -6 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   switchRow: {
     flexDirection: "row",
