@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <path d="M14 14L24 24L14 34" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M22 34H34" stroke="#10B981" stroke-width="3.5" stroke-linecap="round"/>
-  <circle cx="30" cy="18" r="4" fill="#6366F1"/>
+  <!-- Scaled down from the full mark so it sits inside the Android adaptive-icon safe zone (inner ~66% of the canvas) instead of getting cropped/zoomed by the launcher mask. -->
+  <g transform="translate(24 24) scale(0.62) translate(-24 -24)">
+    <path d="M14 14L24 24L14 34" stroke="#6366F1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M22 34H34" stroke="#10B981" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="30" cy="18" r="4" fill="#6366F1"/>
+  </g>
 </svg>
