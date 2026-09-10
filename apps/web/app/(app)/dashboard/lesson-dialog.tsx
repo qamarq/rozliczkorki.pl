@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc/client";
+import { formatPLN } from "@/lib/utils";
 
 type LessonStatus = "scheduled" | "completed" | "cancelled";
 type PaymentMethod = "cash" | "transfer";
@@ -33,6 +34,7 @@ type LessonRow = {
   studentId: string;
   startsAt: Date | string;
   durationMinutes: number;
+  prorate: boolean;
   status: LessonStatus;
   paid: boolean;
   paymentMethod: PaymentMethod | null;
@@ -61,6 +63,21 @@ export function LessonDialog({
   const [dateStr, setDateStr] = useState("");
   const [timeStr, setTimeStr] = useState("16:00");
   const [durationMinutes, setDurationMinutes] = useState(60);
+  const [prorate, setProrate] = useState(false);
+
+  const { data: selectedStudent } = trpc.students.byId.useQuery(
+    { id: studentId },
+    { enabled: !!studentId },
+  );
+
+  const hourlyRate = (() => {
+    const rate = selectedStudent?.rates
+      .filter((r) => r.effectiveFrom <= dateStr)
+      .sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0];
+    return rate ? Number(rate.hourlyRate) : null;
+  })();
+  const previewPrice =
+    hourlyRate == null ? 0 : prorate ? (hourlyRate * durationMinutes) / 60 : hourlyRate;
   const [status, setStatus] = useState<LessonStatus>("scheduled");
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transfer");
@@ -76,6 +93,7 @@ export function LessonDialog({
       setDateStr(format(d, "yyyy-MM-dd"));
       setTimeStr(format(d, "HH:mm"));
       setDurationMinutes(editing.durationMinutes);
+      setProrate(editing.prorate);
       setStatus(editing.status);
       setPaid(editing.paid);
       setPaymentMethod(editing.paymentMethod ?? "transfer");
@@ -86,6 +104,7 @@ export function LessonDialog({
       setDateStr(format(date ?? new Date(), "yyyy-MM-dd"));
       setTimeStr("16:00");
       setDurationMinutes(60);
+      setProrate(false);
       setStatus("scheduled");
       setPaid(false);
       setPaymentMethod("transfer");
@@ -152,6 +171,7 @@ export function LessonDialog({
         id: editing.id,
         startsAt,
         durationMinutes,
+        prorate,
         status,
         paid,
         paymentMethod: paid ? paymentMethod : null,
@@ -176,6 +196,7 @@ export function LessonDialog({
       studentId,
       startsAt,
       durationMinutes,
+      prorate,
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
@@ -241,6 +262,32 @@ export function LessonDialog({
               onChange={(e) => setDurationMinutes(Number(e.target.value))}
               required
             />
+          </div>
+
+          <div className="flex flex-col gap-2 rounded-md border p-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="prorate"
+                checked={prorate}
+                onCheckedChange={(v) => setProrate(v === true)}
+              />
+              <Label htmlFor="prorate">Nalicz proporcjonalnie do czasu trwania</Label>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {prorate
+                ? "Cena = stawka godzinowa × czas trwania / 60."
+                : "Domyślnie liczymy pełną stawkę godzinową niezależnie od czasu trwania."}
+              {hourlyRate != null && (
+                <>
+                  {" "}
+                  Przy stawce {formatPLN(hourlyRate)}/h i {durationMinutes} min to{" "}
+                  <span className="text-foreground font-medium">
+                    {formatPLN(previewPrice)}
+                  </span>
+                  .
+                </>
+              )}
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">

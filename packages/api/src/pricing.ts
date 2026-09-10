@@ -10,7 +10,12 @@ export function rateEffectiveOn(rates: Rate[], date: Date): Rate | undefined {
 }
 
 export function lessonPrice(
-  lesson: { startsAt: Date; durationMinutes: number; priceOverride: string | null },
+  lesson: {
+    startsAt: Date;
+    durationMinutes: number;
+    priceOverride: string | null;
+    prorate: boolean;
+  },
   rates: Rate[],
 ): number {
   if (lesson.priceOverride != null) {
@@ -18,5 +23,8 @@ export function lessonPrice(
   }
   const rate = rateEffectiveOn(rates, lesson.startsAt);
   if (!rate) return 0;
+  if (!lesson.prorate) {
+    return Number(rate.hourlyRate);
+  }
   return (Number(rate.hourlyRate) * lesson.durationMinutes) / 60;
 }

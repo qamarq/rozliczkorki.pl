@@ -74,6 +74,7 @@ export const lessons = pgTable("lessons", {
   }),
   startsAt: timestamp("starts_at").notNull(),
   durationMinutes: integer("duration_minutes").notNull(),
+  prorate: boolean("prorate").notNull().default(false),
   status: lessonStatusEnum("status").notNull().default("scheduled"),
   paid: boolean("paid").notNull().default(false),
   paymentMethod: paymentMethodEnum("payment_method"),
