@@ -3,6 +3,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { KeyRound, Laptop, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -216,6 +217,14 @@ export default function SettingsPage() {
           ))}
         </CardContent>
       </Card>
+
+      <p className="text-muted-foreground text-sm">
+        Chcesz usunąć konto?{" "}
+        <Link href="/delete-account" className="text-primary underline">
+          Zobacz jak to zrobić
+        </Link>
+        .
+      </p>
     </div>
   );
 }

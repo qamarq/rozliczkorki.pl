@@ -20,7 +20,7 @@ import {
   SectionLabel,
 } from "@/components/ui";
 import { authClient, useSession } from "@/lib/auth-client";
-import { PRIVACY_URL, TERMS_URL } from "@/lib/legal";
+import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { colors } from "@/lib/theme";
 
 type SessionRow = {
@@ -143,6 +143,13 @@ export default function SettingsScreen() {
           </Pressable>
           <Pressable onPress={() => Linking.openURL(TERMS_URL)} style={styles.legalRow}>
             <Text style={styles.legalText}>Regulamin</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+          </Pressable>
+          <Pressable
+            onPress={() => Linking.openURL(DELETE_ACCOUNT_URL)}
+            style={styles.legalRow}
+          >
+            <Text style={styles.legalText}>Jak usunąć konto</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
           </Pressable>
         </Card>
