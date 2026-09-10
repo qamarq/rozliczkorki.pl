@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+NATIVE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$NATIVE_DIR"
 
 PROD_API_URL="${EXPO_PUBLIC_API_URL:-https://rozliczkorki.pl}"
 
 # Point the build at the production API regardless of what .env has for
 # local dev, then restore it afterwards no matter how the script exits.
-if [ -f .env ]; then
-  cp .env .env.local-backup
+# Uses absolute paths since the script cd's into android/ later on, and
+# a trap's cleanup runs in whatever directory the script happens to exit from.
+if [ -f "$NATIVE_DIR/.env" ]; then
+  cp "$NATIVE_DIR/.env" "$NATIVE_DIR/.env.local-backup"
 fi
-printf "EXPO_PUBLIC_API_URL=%s\n" "$PROD_API_URL" > .env
+printf "EXPO_PUBLIC_API_URL=%s\n" "$PROD_API_URL" > "$NATIVE_DIR/.env"
 
 cleanup() {
-  if [ -f .env.local-backup ]; then
-    mv .env.local-backup .env
+  if [ -f "$NATIVE_DIR/.env.local-backup" ]; then
+    mv "$NATIVE_DIR/.env.local-backup" "$NATIVE_DIR/.env"
   else
-    rm -f .env
+    rm -f "$NATIVE_DIR/.env"
   fi
 }
 trap cleanup EXIT
