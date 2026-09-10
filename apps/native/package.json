@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@better-auth/expo": "^1.7.3",
+    "@expo/dom-webview": "^57.0.1",
+    "@expo/ui": "^57.0.17",
     "@expo/vector-icons": "^15.0.2",
     "@repo/api": "workspace:*",
     "@tanstack/react-query": "^5.62.7",
@@ -21,6 +23,7 @@
     "better-auth": "^1.7.3",
     "date-fns": "^4.4.0",
     "expo": "^57.0.21",
+    "expo-blur": "~57.0.2",
     "expo-constants": "~57.0.17",
     "expo-device": "~57.0.0",
     "expo-linear-gradient": "~57.0.0",

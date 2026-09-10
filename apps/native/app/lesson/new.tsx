@@ -1,8 +1,9 @@
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
-import { Chip, GradientButton, Input, SectionLabel } from "@/components/ui";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Chip, GradientButton, Input, SectionLabel, Switch } from "@/components/ui";
+import { alert } from "@/lib/alert";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
@@ -45,7 +46,7 @@ export default function NewLessonScreen() {
       utils.stats.summary.invalidate();
       router.back();
     },
-    onError: (e) => Alert.alert("Błąd", e.message),
+    onError: (e) => alert("Błąd", e.message),
   });
 
   const createRecurring = trpc.recurring.create.useMutation({
@@ -54,7 +55,7 @@ export default function NewLessonScreen() {
       utils.stats.summary.invalidate();
       router.back();
     },
-    onError: (e) => Alert.alert("Błąd", e.message),
+    onError: (e) => alert("Błąd", e.message),
   });
 
   function defaultRecurringEndDate() {
@@ -64,7 +65,7 @@ export default function NewLessonScreen() {
 
   function onSubmit() {
     if (!studentId) {
-      Alert.alert("Wybierz ucznia");
+      alert("Wybierz ucznia");
       return;
     }
     if (recurring) {
@@ -119,7 +120,6 @@ export default function NewLessonScreen() {
         <Switch
           value={prorate}
           onValueChange={setProrate}
-          trackColor={{ true: colors.accentTo }}
         />
       </View>
       {hourlyRate != null && (
@@ -137,7 +137,6 @@ export default function NewLessonScreen() {
         <Switch
           value={paid}
           onValueChange={setPaid}
-          trackColor={{ true: colors.accentTo }}
         />
       </View>
 
@@ -166,7 +165,6 @@ export default function NewLessonScreen() {
               setRecurringEndDate(defaultRecurringEndDate());
             }
           }}
-          trackColor={{ true: colors.accentTo }}
         />
       </View>
       {recurring && (

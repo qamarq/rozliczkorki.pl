@@ -1,15 +1,17 @@
 import { format, startOfDay, startOfToday } from "date-fns";
 import { pl } from "date-fns/locale";
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
+
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, ScreenBackground } from "@/components/ui";
+import { openLessonSheet } from "@/components/lesson-details-sheet";
+import { RefreshableList } from "@/components/refreshable-list";
 import { formatPLN } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
 import { colors, gradients, radius } from "@/lib/theme";
 
 export default function CalendarScreen() {
-  const router = useRouter();
   const from = startOfToday();
   const to = new Date(from.getTime() + 45 * 24 * 60 * 60 * 1000);
 
@@ -42,57 +44,60 @@ export default function CalendarScreen() {
   return (
     <ScreenBackground>
       <Text style={styles.header}>Kalendarz</Text>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        refreshing={isLoading}
-        onRefresh={refetch}
-        contentContainerStyle={styles.list}
-        renderSectionHeader={({ section }) => (
-          <Text style={styles.sectionHeader}>{section.title}</Text>
-        )}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() =>
-              router.push({ pathname: "/lesson/[id]", params: { id: item.id } })
-            }
-          >
-            <Card style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>
-                  {format(new Date(item.startsAt), "HH:mm")} · {item.student?.name}
-                </Text>
-                <View style={styles.badgeRow}>
-                  <Badge
-                    label={
-                      item.status === "cancelled"
-                        ? "Odwołane"
-                        : item.status === "completed"
-                          ? "Odbyły się"
-                          : "Zaplanowane"
-                    }
-                    tone={
-                      item.status === "cancelled"
-                        ? "danger"
-                        : item.status === "completed"
-                          ? "success"
-                          : "default"
-                    }
-                  />
-                  <Badge
-                    label={item.paid ? "opłacone" : "nieopłacone"}
-                    tone={item.paid ? "success" : "warning"}
-                  />
-                </View>
-              </View>
-              <Text style={styles.price}>{formatPLN(item.price)}</Text>
-            </Card>
-          </Pressable>
-        )}
-        ListEmptyComponent={
-          !isLoading ? <Text style={styles.empty}>Brak zaplanowanych zajęć</Text> : null
-        }
-      />
+      <View style={{ flex: 1 }}>
+        <RefreshableList onRefresh={refetch}>
+          {sections.length === 0 && !isLoading ? (
+            <Text key="empty" style={styles.empty}>
+              Brak zaplanowanych zajęć
+            </Text>
+          ) : (
+            sections.flatMap((section) => [
+              <Text key={`h-${section.title}`} style={styles.sectionHeader}>
+                {section.title}
+              </Text>,
+              ...section.data.map((item) => (
+                <Pressable
+                  key={item.id}
+                  style={styles.rowWrap}
+                  onPress={() => openLessonSheet(item.id)}
+                >
+                  <Card style={styles.row}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rowTitle}>
+                        {format(new Date(item.startsAt), "HH:mm")} · {item.student?.name}
+                      </Text>
+                      <View style={styles.badgeRow}>
+                        <Badge
+                          label={
+                            item.status === "cancelled"
+                              ? "Odwołane"
+                              : item.status === "completed"
+                                ? "Odbyły się"
+                                : "Zaplanowane"
+                          }
+                          tone={
+                            item.status === "cancelled"
+                              ? "danger"
+                              : item.status === "completed"
+                                ? "success"
+                                : "default"
+                          }
+                        />
+                        <Badge
+                          label={item.paid ? "opłacone" : "nieopłacone"}
+                          tone={item.paid ? "success" : "warning"}
+                        />
+                      </View>
+                    </View>
+                    <Text style={styles.price}>{formatPLN(item.price)}</Text>
+                  </Card>
+                </Pressable>
+              )),
+            ])
+          )}
+          <View key="bottom-spacer" style={{ height: 96 }} />
+        </RefreshableList>
+      </View>
       <Link href="/lesson/new" asChild>
         <Pressable style={styles.fabWrap}>
           <LinearGradient colors={gradients.accent} style={styles.fab}>
@@ -112,15 +117,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
   },
-  list: { padding: 16, paddingBottom: 96 },
   sectionHeader: {
     fontSize: 13,
     fontWeight: "700",
     color: colors.textFaint,
     marginTop: 18,
     marginBottom: 8,
+    marginHorizontal: 16,
     textTransform: "capitalize",
   },
+  rowWrap: { paddingHorizontal: 16 },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",

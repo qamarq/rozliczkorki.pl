@@ -1,19 +1,35 @@
 import { format } from "date-fns";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
-import { Chip, GradientButton, Input, OutlineButton, SectionLabel } from "@/components/ui";
+import { StyleSheet, Text, View } from "react-native";
+import {
+  Chip,
+  GradientButton,
+  Input,
+  OutlineButton,
+  SectionLabel,
+  Switch,
+} from "@/components/ui";
+import { alert } from "@/lib/alert";
+import { closeSheet, openSheet } from "@/lib/sheet";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
 type LessonStatus = "scheduled" | "completed" | "cancelled";
 
-export default function LessonScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+export function openLessonSheet(lessonId: string) {
+  openSheet(() => <LessonDetailsContent lessonId={lessonId} onClose={closeSheet} />);
+}
+
+function LessonDetailsContent({
+  lessonId,
+  onClose,
+}: {
+  lessonId: string;
+  onClose: () => void;
+}) {
   const utils = trpc.useUtils();
-  const { data: lesson } = trpc.lessons.byId.useQuery({ id });
+  const { data: lesson } = trpc.lessons.byId.useQuery({ id: lessonId });
 
   const [status, setStatus] = useState<LessonStatus>("scheduled");
   const [paid, setPaid] = useState(false);
@@ -51,24 +67,24 @@ export default function LessonScreen() {
 
   const invalidate = () => {
     utils.lessons.range.invalidate();
-    utils.lessons.byId.invalidate({ id });
+    utils.lessons.byId.invalidate({ id: lessonId });
     utils.stats.summary.invalidate();
   };
 
   const updateLesson = trpc.lessons.update.useMutation({
     onSuccess: () => {
       invalidate();
-      router.back();
+      onClose();
     },
-    onError: (e) => Alert.alert("Błąd", e.message),
+    onError: (e) => alert("Błąd", e.message),
   });
 
   const deleteLesson = trpc.lessons.delete.useMutation({
     onSuccess: () => {
       invalidate();
-      router.back();
+      onClose();
     },
-    onError: (e) => Alert.alert("Błąd", e.message),
+    onError: (e) => alert("Błąd", e.message),
   });
 
   function performUpdate(applyToFuture: boolean) {
@@ -92,7 +108,7 @@ export default function LessonScreen() {
   function onSave() {
     if (!lesson) return;
     if (lesson.recurringRuleId) {
-      Alert.alert(
+      alert(
         "Zapisać zmiany?",
         "Te zajęcia są częścią cyklu. Zastosować zmiany tylko do tego wystąpienia, czy też do wszystkich przyszłych zajęć w tym cyklu?",
         [
@@ -109,7 +125,7 @@ export default function LessonScreen() {
   function onDelete() {
     if (!lesson) return;
     if (lesson.recurringRuleId) {
-      Alert.alert(
+      alert(
         "Usunąć zajęcia cykliczne?",
         "Usunąć tylko to wystąpienie, czy też wszystkie przyszłe zajęcia w tym cyklu?",
         [
@@ -130,10 +146,7 @@ export default function LessonScreen() {
   if (!lesson) return null;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bg }}
-      contentContainerStyle={styles.content}
-    >
+    <View style={styles.content}>
       <Text style={styles.title}>{lesson.student?.name}</Text>
       <Text style={styles.subtitle}>
         {format(new Date(lesson.startsAt), "d MMMM, HH:mm")}
@@ -148,11 +161,7 @@ export default function LessonScreen() {
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Nalicz proporcjonalnie do czasu trwania</Text>
-        <Switch
-          value={prorate}
-          onValueChange={setProrate}
-          trackColor={{ true: colors.accentTo }}
-        />
+        <Switch value={prorate} onValueChange={setProrate} />
       </View>
       {hourlyRate != null && (
         <Text style={styles.hint}>
@@ -184,11 +193,7 @@ export default function LessonScreen() {
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Opłacone</Text>
-        <Switch
-          value={paid}
-          onValueChange={setPaid}
-          trackColor={{ true: colors.accentTo }}
-        />
+        <Switch value={paid} onValueChange={setPaid} />
       </View>
 
       {paid && (
@@ -207,7 +212,11 @@ export default function LessonScreen() {
       )}
 
       <View style={{ marginTop: 12, gap: 10 }}>
-        <GradientButton label="Zapisz" onPress={onSave} loading={updateLesson.isPending} />
+        <GradientButton
+          label="Zapisz"
+          onPress={onSave}
+          loading={updateLesson.isPending}
+        />
         <OutlineButton
           label="Usuń zajęcia"
           tone="danger"
@@ -215,12 +224,12 @@ export default function LessonScreen() {
           disabled={deleteLesson.isPending}
         />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, gap: 14 },
+  content: { gap: 14 },
   title: { fontSize: 20, fontWeight: "800", color: colors.text },
   subtitle: { fontSize: 14, color: colors.textMuted, textTransform: "capitalize" },
   label: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
