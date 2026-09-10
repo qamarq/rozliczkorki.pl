@@ -1,6 +1,11 @@
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.DATABASE_URL) {
+// Migrations run DDL, so prefer Neon's direct (unpooled) connection when
+// available — pooled/PgBouncer connections can be unreliable for schema
+// changes. The Neon Vercel integration sets DATABASE_URL_UNPOOLED for you.
+const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
+
+if (!url) {
   throw new Error("DATABASE_URL is not set");
 }
 
@@ -9,7 +14,7 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url,
   },
   strict: true,
 });
