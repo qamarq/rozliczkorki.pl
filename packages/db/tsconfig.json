@@ -1,0 +1,12 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext"],
+    "target": "es2022",
+    "noEmit": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "drizzle"]
+}
