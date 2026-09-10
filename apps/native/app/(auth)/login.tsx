@@ -1,15 +1,9 @@
 import { Link } from "expo-router";
 import { useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { GradientButton, Input, OutlineButton } from "@/components/ui";
 import { ScreenBackground } from "@/components/ui";
+import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
 import { colors } from "@/lib/theme";
 
@@ -24,7 +18,7 @@ export default function LoginScreen() {
     const { error } = await authClient.signIn.email({ email, password });
     setLoading(false);
     if (error) {
-      Alert.alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+      alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
     }
   }
 
@@ -36,7 +30,7 @@ export default function LoginScreen() {
     });
     setGoogleLoading(false);
     if (error) {
-      Alert.alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+      alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
     }
   }
 
@@ -54,12 +48,16 @@ export default function LoginScreen() {
             label="E-mail"
             autoCapitalize="none"
             keyboardType="email-address"
+            textContentType="username"
+            autoComplete="email"
             value={email}
             onChangeText={setEmail}
           />
           <Input
             label="Hasło"
             secureTextEntry
+            textContentType="password"
+            autoComplete="current-password"
             value={password}
             onChangeText={setPassword}
           />

@@ -2,15 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   Card,
   GradientButton,
@@ -19,6 +11,7 @@ import {
   ScreenBackground,
   SectionLabel,
 } from "@/components/ui";
+import { alert } from "@/lib/alert";
 import { authClient, useSession } from "@/lib/auth-client";
 import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { colors } from "@/lib/theme";
@@ -48,7 +41,7 @@ export default function SettingsScreen() {
 
   async function onChangePassword() {
     if (!currentPassword || newPassword.length < 8) {
-      Alert.alert("Hasło musi mieć min. 8 znaków");
+      alert("Hasło musi mieć min. 8 znaków");
       return;
     }
     setSavingPassword(true);
@@ -58,12 +51,12 @@ export default function SettingsScreen() {
     });
     setSavingPassword(false);
     if (error) {
-      Alert.alert("Błąd", error.message ?? "Nie udało się zmienić hasła");
+      alert("Błąd", error.message ?? "Nie udało się zmienić hasła");
       return;
     }
     setCurrentPassword("");
     setNewPassword("");
-    Alert.alert("Zapisano", "Hasło zostało zmienione");
+    alert("Zapisano", "Hasło zostało zmienione");
     loadSessions();
   }
 

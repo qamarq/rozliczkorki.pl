@@ -1,3 +1,4 @@
+import { Host, Switch as UniversalSwitch } from "@expo/ui";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
 import {
@@ -11,6 +12,22 @@ import {
 } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { colors, gradients, radius } from "@/lib/theme";
+
+export function Switch({
+  value,
+  onValueChange,
+  disabled,
+}: {
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Host matchContents colorScheme="dark" seedColor={colors.accentTo}>
+      <UniversalSwitch value={value} onValueChange={onValueChange} disabled={disabled} />
+    </Host>
+  );
+}
 
 export function ScreenBackground({
   children,
