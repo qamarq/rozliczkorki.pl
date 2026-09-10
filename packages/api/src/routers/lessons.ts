@@ -1,6 +1,6 @@
 import { lessons, students, studentRates } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, lte, ne } from "drizzle-orm";
 import { z } from "zod";
 import { lessonPrice } from "../pricing";
 import { protectedProcedure, router } from "../trpc";
@@ -135,11 +135,12 @@ export const lessonsRouter = router({
         paymentMethod: z.enum(["cash", "transfer"]).nullable().optional(),
         priceOverride: z.coerce.number().positive().nullable().optional(),
         notes: z.string().nullable().optional(),
+        applyToFuture: z.boolean().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertOwnsLesson(ctx.db, ctx.session.user.id, input.id);
-      const { id, startsAt, priceOverride, ...rest } = input;
+      const existing = await assertOwnsLesson(ctx.db, ctx.session.user.id, input.id);
+      const { id, startsAt, priceOverride, applyToFuture, ...rest } = input;
       const [updated] = await ctx.db
         .update(lessons)
         .set({
@@ -152,14 +153,77 @@ export const lessonsRouter = router({
         })
         .where(eq(lessons.id, id))
         .returning();
+
+      if (applyToFuture && existing.recurringRuleId) {
+        const futureLessons = await ctx.db
+          .select()
+          .from(lessons)
+          .where(
+            and(
+              eq(lessons.recurringRuleId, existing.recurringRuleId),
+              eq(lessons.userId, ctx.session.user.id),
+              gt(lessons.startsAt, existing.startsAt),
+              ne(lessons.id, id),
+            ),
+          );
+
+        const newStartsAt = startsAt ? new Date(startsAt) : null;
+
+        for (const lesson of futureLessons) {
+          const nextStartsAt = newStartsAt
+            ? (() => {
+                const d = new Date(lesson.startsAt);
+                d.setHours(
+                  newStartsAt.getHours(),
+                  newStartsAt.getMinutes(),
+                  0,
+                  0,
+                );
+                return d;
+              })()
+            : undefined;
+
+          await ctx.db
+            .update(lessons)
+            .set({
+              ...(rest.durationMinutes !== undefined
+                ? { durationMinutes: rest.durationMinutes }
+                : {}),
+              ...(rest.prorate !== undefined ? { prorate: rest.prorate } : {}),
+              ...(rest.paymentMethod !== undefined
+                ? { paymentMethod: rest.paymentMethod }
+                : {}),
+              ...(rest.notes !== undefined ? { notes: rest.notes } : {}),
+              ...(nextStartsAt ? { startsAt: nextStartsAt } : {}),
+              updatedAt: new Date(),
+            })
+            .where(eq(lessons.id, lesson.id));
+        }
+      }
+
       return updated;
     }),
 
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(
+      z.object({ id: z.string().uuid(), applyToFuture: z.boolean().default(false) }),
+    )
     .mutation(async ({ ctx, input }) => {
-      await assertOwnsLesson(ctx.db, ctx.session.user.id, input.id);
-      await ctx.db.delete(lessons).where(eq(lessons.id, input.id));
+      const existing = await assertOwnsLesson(ctx.db, ctx.session.user.id, input.id);
+
+      if (input.applyToFuture && existing.recurringRuleId) {
+        await ctx.db
+          .delete(lessons)
+          .where(
+            and(
+              eq(lessons.recurringRuleId, existing.recurringRuleId),
+              eq(lessons.userId, ctx.session.user.id),
+              gte(lessons.startsAt, existing.startsAt),
+            ),
+          );
+      } else {
+        await ctx.db.delete(lessons).where(eq(lessons.id, input.id));
+      }
       return { success: true };
     }),
 });

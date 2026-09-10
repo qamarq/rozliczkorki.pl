@@ -3,6 +3,16 @@
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -29,6 +39,11 @@ import { formatPLN } from "@/lib/utils";
 type LessonStatus = "scheduled" | "completed" | "cancelled";
 type PaymentMethod = "cash" | "transfer";
 
+function defaultRecurringEndDate() {
+  const nextYear = new Date().getFullYear() + 1;
+  return format(new Date(nextYear, 5, 30), "yyyy-MM-dd");
+}
+
 type LessonRow = {
   id: string;
   studentId: string;
@@ -39,6 +54,7 @@ type LessonRow = {
   paid: boolean;
   paymentMethod: PaymentMethod | null;
   notes: string | null;
+  recurringRuleId: string | null;
 };
 
 export function LessonDialog({
@@ -84,6 +100,7 @@ export function LessonDialog({
   const [notes, setNotes] = useState("");
   const [recurring, setRecurring] = useState(false);
   const [recurringEndDate, setRecurringEndDate] = useState("");
+  const [confirmKind, setConfirmKind] = useState<"update" | "delete" | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -114,7 +131,10 @@ export function LessonDialog({
     }
   }, [open, editing, date, students]);
 
-  const invalidate = () => utils.lessons.range.invalidate();
+  const invalidate = () => {
+    utils.lessons.range.invalidate();
+    utils.stats.summary.invalidate();
+  };
 
   const createLesson = trpc.lessons.create.useMutation({
     onSuccess: () => {
@@ -138,18 +158,26 @@ export function LessonDialog({
     onSuccess: () => {
       invalidate();
       toast.success("Zapisano");
+      setConfirmKind(null);
       onOpenChange(false);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => {
+      setConfirmKind(null);
+      toast.error(e.message);
+    },
   });
 
   const deleteLesson = trpc.lessons.delete.useMutation({
     onSuccess: () => {
       invalidate();
       toast.success("Usunięto zajęcia");
+      setConfirmKind(null);
       onOpenChange(false);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => {
+      setConfirmKind(null);
+      toast.error(e.message);
+    },
   });
 
   const pending =
@@ -158,27 +186,44 @@ export function LessonDialog({
     updateLesson.isPending ||
     deleteLesson.isPending;
 
+  function performUpdate(applyToFuture: boolean) {
+    if (!editing) return;
+    const startsAt = new Date(`${dateStr}T${timeStr}`).toISOString();
+    updateLesson.mutate({
+      id: editing.id,
+      startsAt,
+      durationMinutes,
+      prorate,
+      status,
+      paid,
+      paymentMethod: paid ? paymentMethod : null,
+      notes,
+      applyToFuture,
+    });
+  }
+
+  function performDelete(applyToFuture: boolean) {
+    if (!editing) return;
+    deleteLesson.mutate({ id: editing.id, applyToFuture });
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!studentId) {
       toast.error("Wybierz ucznia");
       return;
     }
-    const startsAt = new Date(`${dateStr}T${timeStr}`).toISOString();
 
     if (editing) {
-      updateLesson.mutate({
-        id: editing.id,
-        startsAt,
-        durationMinutes,
-        prorate,
-        status,
-        paid,
-        paymentMethod: paid ? paymentMethod : null,
-        notes,
-      });
+      if (editing.recurringRuleId) {
+        setConfirmKind("update");
+        return;
+      }
+      performUpdate(false);
       return;
     }
+
+    const startsAt = new Date(`${dateStr}T${timeStr}`).toISOString();
 
     if (recurring) {
       createRecurring.mutate({
@@ -247,6 +292,7 @@ export function LessonDialog({
                 value={timeStr}
                 onChange={(e) => setTimeStr(e.target.value)}
                 required
+                className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
               />
             </div>
           </div>
@@ -342,7 +388,13 @@ export function LessonDialog({
                 <Checkbox
                   id="recurring"
                   checked={recurring}
-                  onCheckedChange={(v) => setRecurring(v === true)}
+                  onCheckedChange={(v) => {
+                    const isChecked = v === true;
+                    setRecurring(isChecked);
+                    if (isChecked && !recurringEndDate) {
+                      setRecurringEndDate(defaultRecurringEndDate());
+                    }
+                  }}
                 />
                 <Label htmlFor="recurring">Zajęcia cykliczne (co tydzień)</Label>
               </div>
@@ -366,7 +418,13 @@ export function LessonDialog({
                 type="button"
                 variant="destructive"
                 disabled={pending}
-                onClick={() => deleteLesson.mutate({ id: editing.id })}
+                onClick={() => {
+                  if (editing.recurringRuleId) {
+                    setConfirmKind("delete");
+                  } else {
+                    performDelete(false);
+                  }
+                }}
               >
                 Usuń
               </Button>
@@ -383,6 +441,44 @@ export function LessonDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <AlertDialog open={confirmKind !== null} onOpenChange={(o) => !o && setConfirmKind(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmKind === "delete" ? "Usunąć zajęcia cykliczne?" : "Zapisać zmiany?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Te zajęcia są częścią cyklu (co tydzień). Czy{" "}
+              {confirmKind === "delete" ? "usunąć" : "zastosować zmiany"} tylko to
+              wystąpienie, czy też wszystkie przyszłe zajęcia w tym cyklu?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-between">
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={() =>
+                  confirmKind === "delete" ? performDelete(false) : performUpdate(false)
+                }
+              >
+                Tylko to
+              </Button>
+              <AlertDialogAction
+                disabled={pending}
+                onClick={() =>
+                  confirmKind === "delete" ? performDelete(true) : performUpdate(true)
+                }
+              >
+                To i przyszłe
+              </AlertDialogAction>
+            </div>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

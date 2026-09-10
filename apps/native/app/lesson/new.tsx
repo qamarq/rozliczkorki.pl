@@ -19,6 +19,8 @@ export default function NewLessonScreen() {
   const [prorate, setProrate] = useState(false);
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("transfer");
+  const [recurring, setRecurring] = useState(false);
+  const [recurringEndDate, setRecurringEndDate] = useState("");
 
   const { data: selectedStudent } = trpc.students.byId.useQuery(
     { id: studentId ?? "" },
@@ -40,14 +42,40 @@ export default function NewLessonScreen() {
   const createLesson = trpc.lessons.create.useMutation({
     onSuccess: () => {
       utils.lessons.range.invalidate();
+      utils.stats.summary.invalidate();
       router.back();
     },
     onError: (e) => Alert.alert("Błąd", e.message),
   });
 
+  const createRecurring = trpc.recurring.create.useMutation({
+    onSuccess: () => {
+      utils.lessons.range.invalidate();
+      utils.stats.summary.invalidate();
+      router.back();
+    },
+    onError: (e) => Alert.alert("Błąd", e.message),
+  });
+
+  function defaultRecurringEndDate() {
+    const nextYear = new Date().getFullYear() + 1;
+    return format(new Date(nextYear, 5, 30), "yyyy-MM-dd");
+  }
+
   function onSubmit() {
     if (!studentId) {
       Alert.alert("Wybierz ucznia");
+      return;
+    }
+    if (recurring) {
+      createRecurring.mutate({
+        studentId,
+        dayOfWeek: new Date(`${dateStr}T00:00`).getDay(),
+        startTime: timeStr,
+        durationMinutes: Number(durationMinutes),
+        startDate: dateStr,
+        endDate: recurringEndDate || null,
+      });
       return;
     }
     createLesson.mutate({
@@ -128,11 +156,32 @@ export default function NewLessonScreen() {
         </View>
       )}
 
+      <View style={styles.switchRow}>
+        <Text style={styles.label}>Zajęcia cykliczne (co tydzień)</Text>
+        <Switch
+          value={recurring}
+          onValueChange={(v) => {
+            setRecurring(v);
+            if (v && !recurringEndDate) {
+              setRecurringEndDate(defaultRecurringEndDate());
+            }
+          }}
+          trackColor={{ true: colors.accentTo }}
+        />
+      </View>
+      {recurring && (
+        <Input
+          label="Do kiedy (RRRR-MM-DD)"
+          value={recurringEndDate}
+          onChangeText={setRecurringEndDate}
+        />
+      )}
+
       <View style={{ marginTop: 12 }}>
         <GradientButton
           label="Dodaj zajęcia"
           onPress={onSubmit}
-          loading={createLesson.isPending}
+          loading={createLesson.isPending || createRecurring.isPending}
         />
       </View>
     </ScrollView>
