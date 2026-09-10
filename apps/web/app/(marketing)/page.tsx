@@ -142,6 +142,18 @@ export default async function MarketingPage() {
             </Card>
           ))}
         </section>
+
+        <footer className="border-border-solid text-muted-foreground flex flex-wrap items-center justify-between gap-3 border-t pt-8 text-sm">
+          <span>© {new Date().getFullYear()} RozliczKorki</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-foreground underline">
+              Polityka prywatności
+            </Link>
+            <Link href="/terms" className="hover:text-foreground underline">
+              Regulamin
+            </Link>
+          </div>
+        </footer>
       </div>
     </div>
   );

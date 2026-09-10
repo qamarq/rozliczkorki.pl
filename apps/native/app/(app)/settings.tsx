@@ -2,7 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   Card,
   GradientButton,
@@ -12,6 +20,7 @@ import {
   SectionLabel,
 } from "@/components/ui";
 import { authClient, useSession } from "@/lib/auth-client";
+import { PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { colors } from "@/lib/theme";
 
 type SessionRow = {
@@ -126,6 +135,18 @@ export default function SettingsScreen() {
           ))}
         </Card>
 
+        <SectionLabel>Informacje prawne</SectionLabel>
+        <Card style={{ gap: 4 }}>
+          <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} style={styles.legalRow}>
+            <Text style={styles.legalText}>Polityka prywatności</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL(TERMS_URL)} style={styles.legalRow}>
+            <Text style={styles.legalText}>Regulamin</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+          </Pressable>
+        </Card>
+
         <OutlineButton
           label="Wyloguj się"
           tone="danger"
@@ -149,6 +170,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  legalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+  },
+  legalText: { color: colors.text, fontSize: 14, fontWeight: "600" },
   profileName: { color: colors.text, fontSize: 16, fontWeight: "700" },
   profileEmail: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
   emptyText: { color: colors.textFaint, fontSize: 13 },
