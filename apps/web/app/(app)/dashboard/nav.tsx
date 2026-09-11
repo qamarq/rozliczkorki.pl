@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BadgeCheck,
   CalendarDays,
   ChevronsUpDown,
-  LifeBuoy,
   LineChart,
   LogOut,
   Send,
@@ -47,17 +46,16 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { SettingsDialog } from "@/components/settings-dialog";
 import { authClient } from "@/lib/auth-client";
 
 const NAV_MAIN = [
   { title: "Kalendarz lekcji", url: "/dashboard", icon: CalendarDays },
   { title: "Uczniowie i stawki", url: "/dashboard/students", icon: Users },
   { title: "Finanse i statystyki", url: "/dashboard/stats", icon: LineChart },
-  { title: "Ustawienia", url: "/dashboard/settings", icon: Settings },
 ];
 
 const NAV_SECONDARY = [
-  { title: "Pomoc", url: "mailto:kontakt@rozliczkorki.pl", icon: LifeBuoy },
   { title: "Zgłoś uwagę", url: "mailto:kontakt@rozliczkorki.pl", icon: Send },
 ];
 
@@ -78,10 +76,12 @@ function NavUser({
   name,
   email,
   image,
+  onOpenSettings,
 }: {
   name: string;
   email: string;
   image?: string | null;
+  onOpenSettings: () => void;
 }) {
   const { isMobile } = useSidebar();
   const signOut = useSignOut();
@@ -130,11 +130,9 @@ function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">
-                  <BadgeCheck />
-                  Konto
-                </Link>
+              <DropdownMenuItem onClick={onOpenSettings}>
+                <Settings />
+                Ustawienia
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -159,77 +157,86 @@ export function AppSidebar({
   userImage?: string | null;
 }) {
   const pathname = usePathname();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <Logo className="size-8!" />
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">RozliczKorki</span>
-                  <span className="truncate text-xs">Panel korepetytora</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Panel</SidebarGroupLabel>
-          <SidebarMenu className="gap-1.5">
-            {NAV_MAIN.map((item) => {
-              const Icon = item.icon;
-              return (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    isActive={pathname === item.url}
-                    className="h-10 gap-3 rounded-lg px-3"
-                  >
-                    <Link href={item.url}>
-                      <Icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
+    <>
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <Sidebar variant="inset" collapsible="icon">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/">
+                  <Logo className="size-8!" />
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">RozliczKorki</span>
+                    <span className="truncate text-xs">Panel korepetytora</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
-        </SidebarGroup>
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV_SECONDARY.map((item) => {
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Panel</SidebarGroupLabel>
+            <SidebarMenu className="gap-1.5">
+              {NAV_MAIN.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
-                      size="sm"
                       tooltip={item.title}
-                      className="h-9 gap-3 rounded-lg px-3"
+                      isActive={pathname === item.url}
+                      className="h-10 gap-3 rounded-lg px-3"
                     >
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         <Icon />
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser name={userName} email={userEmail} image={userImage} />
-      </SidebarFooter>
-    </Sidebar>
+          </SidebarGroup>
+          <SidebarGroup className="mt-auto">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {NAV_SECONDARY.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        size="sm"
+                        tooltip={item.title}
+                        className="h-9 gap-3 rounded-lg px-3"
+                      >
+                        <a href={item.url}>
+                          <Icon />
+                          <span>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <NavUser
+            name={userName}
+            email={userEmail}
+            image={userImage}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        </SidebarFooter>
+      </Sidebar>
+    </>
   );
 }
 

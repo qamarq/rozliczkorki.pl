@@ -46,18 +46,18 @@ export default function TermsPage() {
         <Section title="3. Zakres usługi">
           <p>
             Aplikacja umożliwia planowanie zajęć, oznaczanie ich statusu i płatności,
-            zarządzanie listą uczniów i stawek oraz podgląd statystyk zarobków.
-            Aplikacja jest narzędziem organizacyjnym — nie pośredniczy w płatnościach
-            między Tobą a Twoimi uczniami/rodzicami i nie ponosi odpowiedzialności za
-            rozliczenia dokonywane poza Aplikacją (gotówka, przelew, BLIK itp.).
+            zarządzanie listą uczniów i stawek oraz podgląd statystyk zarobków. Aplikacja
+            jest narzędziem organizacyjnym — nie pośredniczy w płatnościach między Tobą a
+            Twoimi uczniami/rodzicami i nie ponosi odpowiedzialności za rozliczenia
+            dokonywane poza Aplikacją (gotówka, przelew, BLIK itp.).
           </p>
         </Section>
 
         <Section title="4. Dane wprowadzane przez użytkownika">
           <p>
-            Odpowiadasz za zgodność z prawem danych, które wprowadzasz do Aplikacji, w
-            tym danych osobowych swoich uczniów. Wprowadzając dane ucznia, oświadczasz,
-            że posiadasz do tego podstawę prawną (np. zgodę rodzica/opiekuna lub umowę o
+            Odpowiadasz za zgodność z prawem danych, które wprowadzasz do Aplikacji, w tym
+            danych osobowych swoich uczniów. Wprowadzając dane ucznia, oświadczasz, że
+            posiadasz do tego podstawę prawną (np. zgodę rodzica/opiekuna lub umowę o
             korepetycje). Szczegóły dotyczące przetwarzania danych znajdziesz w{" "}
             <Link href="/privacy" className="text-primary underline">
               Polityce prywatności
@@ -86,17 +86,19 @@ export default function TermsPage() {
 
         <Section title="7. Zakończenie korzystania z Aplikacji">
           <p>
-            Możesz w każdej chwili usunąć swoje konto w ustawieniach Aplikacji, co
-            spowoduje usunięcie Twoich danych zgodnie z Polityką prywatności.
-            Zastrzegamy sobie prawo do zawieszenia lub usunięcia konta w przypadku
-            naruszenia niniejszego regulaminu lub obowiązującego prawa.
+            Możesz w każdej chwili usunąć swoje konto samodzielnie w ustawieniach
+            Aplikacji (menu użytkownika → Ustawienia → Usuwanie konta); usunięcie
+            potwierdzasz linkiem wysłanym na Twój adres e-mail. Spowoduje to usunięcie
+            Twoich danych zgodnie z Polityką prywatności. Zastrzegamy sobie prawo do
+            zawieszenia lub usunięcia konta w przypadku naruszenia niniejszego regulaminu
+            lub obowiązującego prawa.
           </p>
         </Section>
 
         <Section title="8. Odpowiedzialność">
           <p>
-            Aplikacja jest udostępniana „tak jak jest". W zakresie dozwolonym przez
-            prawo nie ponosimy odpowiedzialności za szkody wynikające z niedostępności
+            Aplikacja jest udostępniana „tak jak jest". W zakresie dozwolonym przez prawo
+            nie ponosimy odpowiedzialności za szkody wynikające z niedostępności
             Aplikacji, utraty danych wynikającej z przyczyn niezależnych od nas ani za
             błędne dane wprowadzone przez użytkownika (np. nieprawidłowe stawki lub
             terminy zajęć).

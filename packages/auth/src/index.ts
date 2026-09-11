@@ -67,6 +67,45 @@ export const auth = betterAuth({
       });
     },
   },
+  user: {
+    changeEmail: {
+      enabled: true,
+      async sendChangeEmailConfirmation({ user, newEmail, url }) {
+        const { html, text } = actionEmail({
+          heading: "Potwierdź zmianę adresu e-mail",
+          intro: `Cześć ${user.name}! Ktoś poprosił o zmianę adresu konta na ${newEmail}. Potwierdź, jeśli to Ty.`,
+          buttonLabel: "Potwierdź zmianę",
+          url,
+          outro:
+            "Jeśli to nie Ty, zignoruj tę wiadomość — adres pozostanie bez zmian.",
+        });
+        await sendEmail({
+          to: user.email,
+          subject: "Potwierdź zmianę adresu e-mail",
+          html,
+          text,
+        });
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      async sendDeleteAccountVerification({ user, url }) {
+        const { html, text } = actionEmail({
+          heading: "Potwierdź usunięcie konta",
+          intro: `Cześć ${user.name}! Potwierdź usunięcie konta w RozliczKorki. Tej operacji nie da się cofnąć — znikną wszystkie lekcje, stawki i dane uczniów.`,
+          buttonLabel: "Usuń konto na zawsze",
+          url,
+          outro: "Jeśli to nie Ty, zignoruj tę wiadomość — konto zostanie nietknięte.",
+        });
+        await sendEmail({
+          to: user.email,
+          subject: "Potwierdź usunięcie konta w RozliczKorki",
+          html,
+          text,
+        });
+      },
+    },
+  },
   socialProviders:
     googleClientId && googleClientSecret
       ? { google: { clientId: googleClientId, clientSecret: googleClientSecret } }
