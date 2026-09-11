@@ -5,6 +5,7 @@ import { GradientButton, Input, OutlineButton } from "@/components/ui";
 import { ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
+import { getGoogleIdToken } from "@/lib/google-signin";
 import { colors } from "@/lib/theme";
 
 export default function LoginScreen() {
@@ -24,13 +25,25 @@ export default function LoginScreen() {
 
   async function onGoogle() {
     setGoogleLoading(true);
-    const { error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "rozliczkorki://",
-    });
-    setGoogleLoading(false);
-    if (error) {
-      alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+    try {
+      const google = await getGoogleIdToken();
+      if (!google) {
+        // user cancelled the account picker
+        setGoogleLoading(false);
+        return;
+      }
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        idToken: { token: google.idToken, nonce: google.nonce },
+      });
+      if (error) {
+        alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+      }
+    } catch (e) {
+      console.error("Google sign-in failed", e);
+      alert("Błąd logowania", e instanceof Error ? e.message : "Spróbuj ponownie");
+    } finally {
+      setGoogleLoading(false);
     }
   }
 

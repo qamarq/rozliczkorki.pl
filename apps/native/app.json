@@ -40,6 +40,12 @@
       "expo-secure-store",
       "expo-notifications",
       "expo-web-browser",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID"
+        }
+      ],
       "./plugins/withAndroidReleaseSigning"
     ]
   }
