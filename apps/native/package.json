@@ -10,8 +10,7 @@
     "web": "expo start --web",
     "build:android:production": "bash scripts/build-android-release.sh",
     "lint:typecheck": "tsc --noEmit",
-    "build:android:apk": "bash scripts/build-android-release.sh apk",
-    "build:android:apk:install": "bash scripts/build-android-release.sh apk --install"
+    "build:android:apk": "bash scripts/build-android-release-apk.sh"
   },
   "dependencies": {
     "@better-auth/expo": "^1.7.3",
