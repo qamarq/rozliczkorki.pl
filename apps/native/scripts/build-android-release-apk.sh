@@ -7,8 +7,13 @@ PROD_API_URL="${EXPO_PUBLIC_API_URL:-https://rozliczkorki.pl}"
 
 if [ -f "$NATIVE_DIR/.env" ]; then
   cp "$NATIVE_DIR/.env" "$NATIVE_DIR/.env.local-backup"
+  # Keep every other var from .env (e.g. EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) —
+  # only EXPO_PUBLIC_API_URL gets overridden for this build.
+  grep -v '^EXPO_PUBLIC_API_URL=' "$NATIVE_DIR/.env.local-backup" > "$NATIVE_DIR/.env" || true
+  printf "EXPO_PUBLIC_API_URL=%s\n" "$PROD_API_URL" >> "$NATIVE_DIR/.env"
+else
+  printf "EXPO_PUBLIC_API_URL=%s\n" "$PROD_API_URL" > "$NATIVE_DIR/.env"
 fi
-printf "EXPO_PUBLIC_API_URL=%s\n" "$PROD_API_URL" > "$NATIVE_DIR/.env"
 
 cleanup() {
   if [ -f "$NATIVE_DIR/.env.local-backup" ]; then
