@@ -84,6 +84,13 @@ export const lessons = pgTable("lessons", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const iosWaitlistVotes = pgTable("ios_waitlist_votes", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const pushTokens = pgTable("push_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id")
