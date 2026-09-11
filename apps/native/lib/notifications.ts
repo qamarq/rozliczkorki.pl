@@ -1,13 +1,11 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import { DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from "./notification-prefs";
 
 export const NOTIFICATION_CHANNELS = {
   upcoming: "upcoming-lessons",
   overdue: "overdue-payments",
 } as const;
-
-const UPCOMING_REMINDER_MINUTES_BEFORE = 60;
-const OVERDUE_REMINDER_DAYS_AFTER = 3;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -22,7 +20,7 @@ export async function ensureNotificationChannels() {
   if (Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.upcoming, {
     name: "Nadchodzące zajęcia",
-    description: "Przypomnienia godzinę przed zaplanowanymi zajęciami.",
+    description: "Przypomnienia przed zaplanowanymi zajęciami.",
     importance: Notifications.AndroidImportance.HIGH,
   });
   await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.overdue, {
@@ -51,11 +49,27 @@ type LessonForNotif = {
 
 type NotifKind = "upcoming" | "overdue";
 
+function leadLabel(minutes: number) {
+  if (minutes % 1440 === 0) {
+    const days = minutes / 1440;
+    return days === 1 ? "dzień" : `${days} dni`;
+  }
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    if (hours === 1) return "godzinę";
+    return hours < 5 ? `${hours} godziny` : `${hours} godzin`;
+  }
+  return `${minutes} min`;
+}
+
 function buildTag(kind: NotifKind, lessonId: string) {
   return `${kind}:${lessonId}`;
 }
 
-export async function syncLessonNotifications(lessons: LessonForNotif[]) {
+export async function syncLessonNotifications(
+  lessons: LessonForNotif[],
+  prefs: NotificationPrefs = DEFAULT_NOTIFICATION_PREFS,
+) {
   const permission = await Notifications.getPermissionsAsync();
   if (!permission.granted) return;
 
@@ -76,7 +90,7 @@ export async function syncLessonNotifications(lessons: LessonForNotif[]) {
     const startsAt = new Date(lesson.startsAt).getTime();
 
     if (lesson.status === "scheduled") {
-      const fireAt = startsAt - UPCOMING_REMINDER_MINUTES_BEFORE * 60 * 1000;
+      const fireAt = startsAt - prefs.upcomingMinutesBefore * 60 * 1000;
       if (fireAt > now) {
         desired.set(buildTag("upcoming", lesson.id), {
           fireAt,
@@ -87,7 +101,7 @@ export async function syncLessonNotifications(lessons: LessonForNotif[]) {
     }
 
     if (lesson.status === "completed" && !lesson.paid) {
-      const fireAt = startsAt + OVERDUE_REMINDER_DAYS_AFTER * 24 * 60 * 60 * 1000;
+      const fireAt = startsAt + prefs.overdueDaysAfter * 24 * 60 * 60 * 1000;
       if (fireAt > now) {
         desired.set(buildTag("overdue", lesson.id), { fireAt, kind: "overdue", lesson });
       }
@@ -110,7 +124,9 @@ export async function syncLessonNotifications(lessons: LessonForNotif[]) {
     await Notifications.scheduleNotificationAsync({
       content: {
         title:
-          kind === "upcoming" ? "Za godzinę masz zajęcia" : "Zaległa płatność za zajęcia",
+          kind === "upcoming"
+            ? `Za ${leadLabel(prefs.upcomingMinutesBefore)} masz zajęcia`
+            : "Zaległa płatność za zajęcia",
         body:
           kind === "upcoming"
             ? `${lesson.studentName} o ${timeLabel}`

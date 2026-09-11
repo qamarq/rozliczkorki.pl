@@ -3,6 +3,17 @@ set -euo pipefail
 NATIVE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$NATIVE_DIR"
 
+# Usage: build-android-release.sh [aab|apk] [--install]
+FORMAT="aab"
+INSTALL="0"
+for arg in "$@"; do
+  case "$arg" in
+    aab|apk) FORMAT="$arg" ;;
+    --install) INSTALL="1" ;;
+    *) echo "Unknown argument: $arg" >&2; exit 1 ;;
+  esac
+done
+
 PROD_API_URL="${EXPO_PUBLIC_API_URL:-https://rozliczkorki.pl}"
 
 # Point the build at the production API regardless of what .env has for
@@ -34,10 +45,28 @@ npx expo prebuild --platform android --no-install
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export PATH="$ANDROID_HOME/platform-tools:$PATH"
 
-echo "==> Building release AAB (this takes a few minutes)"
-cd android
-./gradlew bundleRelease --no-daemon
+if [ "$FORMAT" = "apk" ]; then
+  echo "==> Building release APK (this takes a few minutes)"
+  cd android
+  ./gradlew assembleRelease --no-daemon
+  cd "$NATIVE_DIR"
+  OUT_PATH="android/app/build/outputs/apk/release/app-release.apk"
+else
+  echo "==> Building release AAB (this takes a few minutes)"
+  cd android
+  ./gradlew bundleRelease --no-daemon
+  cd "$NATIVE_DIR"
+  OUT_PATH="android/app/build/outputs/bundle/release/app-release.aab"
+fi
 
-AAB_PATH="android/app/build/outputs/bundle/release/app-release.aab"
 echo ""
-echo "✔ Build finished: apps/native/${AAB_PATH#./}"
+echo "✔ Build finished: apps/native/${OUT_PATH#./}"
+
+if [ "$INSTALL" = "1" ]; then
+  if [ "$FORMAT" != "apk" ]; then
+    echo "adb install needs an APK — rerun with: $0 apk --install" >&2
+    exit 1
+  fi
+  echo "==> Installing on the connected device"
+  adb install -r "$NATIVE_DIR/$OUT_PATH"
+fi
