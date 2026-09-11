@@ -14,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -74,7 +74,15 @@ function initials(name: string) {
   return name.slice(0, 2).toUpperCase();
 }
 
-function NavUser({ name, email }: { name: string; email: string }) {
+function NavUser({
+  name,
+  email,
+  image,
+}: {
+  name: string;
+  email: string;
+  image?: string | null;
+}) {
   const { isMobile } = useSidebar();
   const signOut = useSignOut();
 
@@ -88,6 +96,7 @@ function NavUser({ name, email }: { name: string; email: string }) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="size-8 rounded-lg">
+                <AvatarImage src={image ?? undefined} alt={name} className="rounded-lg" />
                 <AvatarFallback className="rounded-lg">{initials(name)}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -106,6 +115,11 @@ function NavUser({ name, email }: { name: string; email: string }) {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="size-8 rounded-lg">
+                  <AvatarImage
+                    src={image ?? undefined}
+                    alt={name}
+                    className="rounded-lg"
+                  />
                   <AvatarFallback className="rounded-lg">{initials(name)}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -138,20 +152,22 @@ function NavUser({ name, email }: { name: string; email: string }) {
 export function AppSidebar({
   userName,
   userEmail,
+  userImage,
 }: {
   userName: string;
   userEmail: string;
+  userImage?: string | null;
 }) {
   const pathname = usePathname();
 
   return (
-    <Sidebar variant="inset">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <Logo className="size-8 rounded-lg" />
+                <Logo className="size-8!" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">RozliczKorki</span>
                   <span className="truncate text-xs">Panel korepetytora</span>
@@ -164,7 +180,7 @@ export function AppSidebar({
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Panel</SidebarGroupLabel>
-          <SidebarMenu>
+          <SidebarMenu className="gap-1.5">
             {NAV_MAIN.map((item) => {
               const Icon = item.icon;
               return (
@@ -173,6 +189,7 @@ export function AppSidebar({
                     asChild
                     tooltip={item.title}
                     isActive={pathname === item.url}
+                    className="h-10 gap-3 rounded-lg px-3"
                   >
                     <Link href={item.url}>
                       <Icon />
@@ -191,7 +208,12 @@ export function AppSidebar({
                 const Icon = item.icon;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild size="sm">
+                    <SidebarMenuButton
+                      asChild
+                      size="sm"
+                      tooltip={item.title}
+                      className="h-9 gap-3 rounded-lg px-3"
+                    >
                       <a href={item.url}>
                         <Icon />
                         <span>{item.title}</span>
@@ -205,7 +227,7 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser name={userName} email={userEmail} />
+        <NavUser name={userName} email={userEmail} image={userImage} />
       </SidebarFooter>
     </Sidebar>
   );
