@@ -106,6 +106,7 @@ export function LessonDialog({
     if (!open) return;
     if (editing) {
       const d = new Date(editing.startsAt);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStudentId(editing.studentId);
       setDateStr(format(d, "yyyy-MM-dd"));
       setTimeStr(format(d, "HH:mm"));

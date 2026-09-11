@@ -27,7 +27,7 @@ export default function TermsPage() {
         <Section title="1. Postanowienia ogólne">
           <p>
             Niniejszy regulamin określa zasady korzystania z aplikacji RozliczKorki
-            (strona internetowa rozliczkorki.pl oraz aplikacja mobilna, dalej „Aplikacja")
+            (strona internetowa rozliczkorki.pl oraz aplikacja mobilna, dalej „Aplikacja”)
             służącej do prowadzenia kalendarza korepetycji, ewidencji uczniów, stawek i
             rozliczeń płatności. Korzystając z Aplikacji, akceptujesz niniejszy regulamin.
           </p>
@@ -97,7 +97,7 @@ export default function TermsPage() {
 
         <Section title="8. Odpowiedzialność">
           <p>
-            Aplikacja jest udostępniana „tak jak jest". W zakresie dozwolonym przez prawo
+            Aplikacja jest udostępniana „tak jak jest”. W zakresie dozwolonym przez prawo
             nie ponosimy odpowiedzialności za szkody wynikające z niedostępności
             Aplikacji, utraty danych wynikającej z przyczyn niezależnych od nas ani za
             błędne dane wprowadzone przez użytkownika (np. nieprawidłowe stawki lub

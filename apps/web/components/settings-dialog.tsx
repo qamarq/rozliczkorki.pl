@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import {
@@ -13,7 +14,7 @@ import {
   TriangleAlert,
   User as UserIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { GoogleIcon } from "@/components/google-icon";
 import {
@@ -42,7 +43,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Sidebar,
@@ -133,14 +134,11 @@ function ProfileSection() {
   const { data: session, refetch } = useSession();
   const user = session?.user;
 
-  const [name, setName] = useState("");
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const name = nameDraft ?? user?.name ?? "";
   const [newEmail, setNewEmail] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
-
-  useEffect(() => {
-    if (user?.name) setName(user.name);
-  }, [user?.name]);
 
   async function onSaveName(e: React.FormEvent) {
     e.preventDefault();
@@ -151,6 +149,7 @@ function ProfileSection() {
       toast.error(error.message ?? "Nie udało się zapisać imienia");
       return;
     }
+    setNameDraft(null);
     await refetch();
     toast.success("Zapisano");
   }
@@ -235,7 +234,7 @@ function ProfileSection() {
                 <Input
                   id="settings-name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setNameDraft(e.target.value)}
                   required
                 />
                 <Button
@@ -289,21 +288,21 @@ function ProfileSection() {
 function SecuritySection() {
   const utils = trpc.useUtils();
   const { data: passwordInfo } = trpc.auth.hasPassword.useQuery();
-  const [passkeys, setPasskeys] = useState<PasskeyRow[]>([]);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newAccountPassword, setNewAccountPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
   const [addingPasskey, setAddingPasskey] = useState(false);
 
-  const loadPasskeys = useCallback(async () => {
-    const { data } = await authClient.$fetch<PasskeyRow[]>("/passkey/list-user-passkeys");
-    if (data) setPasskeys(data);
-  }, []);
-
-  useEffect(() => {
-    loadPasskeys();
-  }, [loadPasskeys]);
+  const { data: passkeys = [], refetch: loadPasskeys } = useQuery({
+    queryKey: ["passkeys"],
+    queryFn: async () => {
+      const { data } = await authClient.$fetch<PasskeyRow[]>(
+        "/passkey/list-user-passkeys",
+      );
+      return data ?? [];
+    },
+  });
 
   const setPassword = trpc.auth.setPassword.useMutation({
     onSuccess: () => {
@@ -480,16 +479,13 @@ function SecuritySection() {
 }
 
 function AccountsSection() {
-  const [accounts, setAccounts] = useState<AccountRow[]>([]);
-
-  const load = useCallback(async () => {
-    const { data } = await authClient.$fetch<AccountRow[]>("/list-accounts");
-    if (data) setAccounts(data);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data: accounts = [], refetch: load } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: async () => {
+      const { data } = await authClient.$fetch<AccountRow[]>("/list-accounts");
+      return data ?? [];
+    },
+  });
 
   const google = accounts.find((a) => a.providerId === "google");
   const credential = accounts.find((a) => a.providerId === "credential");
@@ -561,17 +557,15 @@ function AccountsSection() {
 }
 
 function SessionsSection() {
-  const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [revokingAll, setRevokingAll] = useState(false);
 
-  const load = useCallback(async () => {
-    const { data } = await authClient.$fetch<SessionRow[]>("/list-sessions");
-    if (data) setSessions(data);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data: sessions = [], refetch: load } = useQuery({
+    queryKey: ["sessions"],
+    queryFn: async () => {
+      const { data } = await authClient.$fetch<SessionRow[]>("/list-sessions");
+      return data ?? [];
+    },
+  });
 
   async function onRevoke(token: string) {
     await authClient.revokeSession({ token });
