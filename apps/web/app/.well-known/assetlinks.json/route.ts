@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 
-// Upload-key fingerprint (apps/native/android/app/release.keystore, alias
-// "rozliczkorki"). Once the app is first uploaded to Play Console, Google
-// re-signs it with its own key for distribution (Play App Signing) — swap
-// this for the "App signing key certificate" SHA-256 from Play Console >
-// Setup > App integrity, or credential sharing won't work for real users.
+// Play App Signing key (classical) — what every install from Play is signed with.
 const ANDROID_SHA256_FINGERPRINTS = [
-  "D3:B4:57:DB:4B:B4:99:A3:54:7E:6F:78:C9:5A:CA:C1:79:96:9B:1C:7F:A8:CD:BE:6A:81:55:43:56:05:3B:5F",
+  "E8:31:FC:11:6E:2B:69:BB:B9:C8:07:DD:53:C0:37:C2:DD:44:85:F6:4F:00:DE:02:29:79:82:5D:D7:4C:7F:78",
 ];
 
 export function GET() {
