@@ -31,7 +31,9 @@ export function SheetHost({ blurTarget }: { blurTarget: RefObject<View | null> }
 
   const fullHeight = Math.round(height - insets.top - insets.bottom - MARGIN * 2);
   const baseHeight = Math.min(
-    contentHeight > 0 ? Math.ceil(contentHeight) + HANDLE_HEIGHT : Math.round(height * 0.5),
+    contentHeight > 0
+      ? Math.ceil(contentHeight) + HANDLE_HEIGHT
+      : Math.round(height * 0.5),
     fullHeight,
   );
   const hiddenY = fullHeight + MARGIN + insets.bottom;

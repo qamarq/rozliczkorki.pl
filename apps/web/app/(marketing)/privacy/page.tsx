@@ -93,13 +93,13 @@ export default function PrivacyPage() {
           <p>
             Zgodnie z RODO masz prawo do: dostępu do swoich danych, ich sprostowania,
             usunięcia, ograniczenia przetwarzania, przenoszenia danych oraz sprzeciwu
-            wobec przetwarzania. Konto i wszystkie powiązane dane możesz usunąć,
-            pisząc do nas zgodnie z instrukcją na stronie{" "}
+            wobec przetwarzania. Konto i wszystkie powiązane dane możesz usunąć
+            samodzielnie w ustawieniach aplikacji (menu użytkownika → Ustawienia →
+            Usuwanie konta); szczegóły opisaliśmy na stronie{" "}
             <Link href="/delete-account" className="text-primary underline">
               usuwania konta
             </Link>
-            . Masz też prawo wniesienia skargi do Prezesa Urzędu Ochrony Danych
-            Osobowych.
+            . Masz też prawo wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych.
           </p>
         </Section>
 

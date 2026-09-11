@@ -38,17 +38,25 @@ export default function DeleteAccountPage() {
         </div>
 
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Aby usunąć swoje konto wraz ze wszystkimi powiązanymi danymi (profil,
-          uczniowie, zajęcia, historia płatności, sesje logowania i zapisane klucze
-          dostępu), napisz do nas na adres poniżej. Poproś o usunięcie konta z tego
-          samego adresu e-mail, którego używasz do logowania — pozwala nam to
+          Konto wraz ze wszystkimi powiązanymi danymi (profil, uczniowie, zajęcia,
+          historia płatności, sesje logowania i zapisane klucze dostępu) usuniesz
+          samodzielnie w aplikacji: zaloguj się, kliknij swoje imię w lewym dolnym rogu,
+          wybierz <strong>Ustawienia</strong>, a następnie sekcję{" "}
+          <strong>Usuwanie konta</strong>. Wyślemy link potwierdzający na Twój adres
+          e-mail — po kliknięciu w niego konto i dane znikają natychmiast i
+          nieodwracalnie.
+        </p>
+
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Jeśli nie możesz zalogować się do aplikacji, napisz do nas na adres poniżej z
+          tego samego adresu e-mail, którego używasz do logowania — pozwala nam to
           zweryfikować, że to Ty składasz wniosek.
         </p>
 
         <Card>
           <CardContent className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-medium">Napisz e-mail z prośbą o usunięcie konta</p>
+              <p className="font-medium">Nie masz dostępu do konta? Napisz do nas</p>
               <p className="text-muted-foreground text-sm">{SUPPORT_EMAIL}</p>
             </div>
             <Button asChild>
@@ -61,17 +69,17 @@ export default function DeleteAccountPage() {
         </Card>
 
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">Co dzieje się dalej</h2>
+          <h2 className="text-lg font-semibold">Co dzieje się dalej (droga mailowa)</h2>
           <ol className="text-muted-foreground list-decimal space-y-1.5 pl-5 text-sm leading-relaxed">
             <li>
-              Wysyłasz wiadomość na {SUPPORT_EMAIL} z adresu e-mail powiązanego z
-              kontem (albo podajesz go w treści, jeśli piszesz z innego adresu).
+              Wysyłasz wiadomość na {SUPPORT_EMAIL} z adresu e-mail powiązanego z kontem
+              (albo podajesz go w treści, jeśli piszesz z innego adresu).
             </li>
             <li>Potwierdzamy tożsamość i zakres usunięcia w odpowiedzi mailowej.</li>
             <li>
               Usuwamy konto oraz wszystkie powiązane dane (profil, uczniowie, zajęcia,
-              stawki, historia płatności, sesje, klucze dostępu, token powiadomień
-              push) w ciągu 30 dni od potwierdzenia.
+              stawki, historia płatności, sesje, klucze dostępu, token powiadomień push) w
+              ciągu 30 dni od potwierdzenia.
             </li>
             <li>
               Wysyłamy potwierdzenie usunięcia na Twój adres e-mail. Ta operacja jest

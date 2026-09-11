@@ -55,6 +55,7 @@ export function StudentDialog({
   useEffect(() => {
     if (!open) return;
     if (student) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(student.name);
       setAddress(student.address ?? "");
       setPhone(student.phone ?? "");

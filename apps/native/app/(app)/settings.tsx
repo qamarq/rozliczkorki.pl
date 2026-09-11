@@ -86,7 +86,9 @@ export default function SettingsScreen() {
         <Card style={{ gap: 4 }}>
           <Pressable onPress={() => Linking.openSettings()} style={styles.legalRow}>
             <View>
-              <Text style={styles.legalText}>Nadchodzące zajęcia i zaległe płatności</Text>
+              <Text style={styles.legalText}>
+                Nadchodzące zajęcia i zaległe płatności
+              </Text>
               <Text style={styles.sessionDate}>
                 Zarządzaj kategoriami powiadomień w ustawieniach systemowych
               </Text>

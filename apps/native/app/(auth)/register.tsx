@@ -1,6 +1,13 @@
 import { Link } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
@@ -45,7 +52,12 @@ export default function RegisterScreen() {
         <Text style={styles.subtitle}>Za darmo, zajmie minutę</Text>
 
         <View style={styles.form}>
-          <Input label="Imię" textContentType="name" value={name} onChangeText={setName} />
+          <Input
+            label="Imię"
+            textContentType="name"
+            value={name}
+            onChangeText={setName}
+          />
           <Input
             label="E-mail"
             autoCapitalize="none"
