@@ -19,11 +19,5 @@
     "node": ">=18"
   },
   "name": "rozliczkorki",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "10.18.0"
-    }
-  },
   "packageManager": "pnpm@10.18.0"
 }
