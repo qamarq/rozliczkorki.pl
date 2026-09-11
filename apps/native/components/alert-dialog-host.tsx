@@ -67,7 +67,11 @@ export function AlertDialogHost({ blurTarget }: { blurTarget: RefObject<View | n
         <Animated.View
           style={[
             styles.card,
-            { width: Math.min(360, width - 48), opacity: progress, transform: [{ scale }] },
+            {
+              width: Math.min(360, width - 48),
+              opacity: progress,
+              transform: [{ scale }],
+            },
           ]}
         >
           <Text style={styles.title}>{state.title}</Text>

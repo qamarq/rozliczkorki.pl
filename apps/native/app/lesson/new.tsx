@@ -117,10 +117,7 @@ export default function NewLessonScreen() {
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Nalicz proporcjonalnie do czasu trwania</Text>
-        <Switch
-          value={prorate}
-          onValueChange={setProrate}
-        />
+        <Switch value={prorate} onValueChange={setProrate} />
       </View>
       {hourlyRate != null && (
         <Text style={styles.hint}>
@@ -134,10 +131,7 @@ export default function NewLessonScreen() {
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Opłacone</Text>
-        <Switch
-          value={paid}
-          onValueChange={setPaid}
-        />
+        <Switch value={paid} onValueChange={setPaid} />
       </View>
 
       {paid && (

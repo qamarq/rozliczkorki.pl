@@ -173,12 +173,7 @@ export const lessonsRouter = router({
           const nextStartsAt = newStartsAt
             ? (() => {
                 const d = new Date(lesson.startsAt);
-                d.setHours(
-                  newStartsAt.getHours(),
-                  newStartsAt.getMinutes(),
-                  0,
-                  0,
-                );
+                d.setHours(newStartsAt.getHours(), newStartsAt.getMinutes(), 0, 0);
                 return d;
               })()
             : undefined;
@@ -205,9 +200,7 @@ export const lessonsRouter = router({
     }),
 
   delete: protectedProcedure
-    .input(
-      z.object({ id: z.string().uuid(), applyToFuture: z.boolean().default(false) }),
-    )
+    .input(z.object({ id: z.string().uuid(), applyToFuture: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
       const existing = await assertOwnsLesson(ctx.db, ctx.session.user.id, input.id);
 

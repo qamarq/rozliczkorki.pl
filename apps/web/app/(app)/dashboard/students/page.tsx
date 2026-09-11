@@ -66,7 +66,7 @@ export default function StudentsPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+          <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -78,10 +78,7 @@ export default function StudentsPage() {
           <FilterTab active={filter === "active"} onClick={() => setFilter("active")}>
             Aktywni ({activeCount})
           </FilterTab>
-          <FilterTab
-            active={filter === "archived"}
-            onClick={() => setFilter("archived")}
-          >
+          <FilterTab active={filter === "archived"} onClick={() => setFilter("archived")}>
             Zarchiwizowani ({archivedCount})
           </FilterTab>
           <FilterTab active={filter === "all"} onClick={() => setFilter("all")}>
@@ -97,7 +94,9 @@ export default function StudentsPage() {
           <Users className="text-muted-foreground size-8" />
           <p className="font-medium">Brak uczniów do wyświetlenia</p>
           <p className="text-muted-foreground text-sm">
-            {query ? "Zmień zapytanie albo filtr." : "Dodaj pierwszego ucznia, żeby zacząć."}
+            {query
+              ? "Zmień zapytanie albo filtr."
+              : "Dodaj pierwszego ucznia, żeby zacząć."}
           </p>
         </Card>
       )}
@@ -172,7 +171,7 @@ function FilterTab({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-md px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+        "whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
         active
           ? "bg-card text-foreground shadow-sm"
           : "text-muted-foreground hover:text-foreground",

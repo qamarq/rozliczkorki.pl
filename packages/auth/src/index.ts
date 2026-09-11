@@ -76,8 +76,7 @@ export const auth = betterAuth({
           intro: `Cześć ${user.name}! Ktoś poprosił o zmianę adresu konta na ${newEmail}. Potwierdź, jeśli to Ty.`,
           buttonLabel: "Potwierdź zmianę",
           url,
-          outro:
-            "Jeśli to nie Ty, zignoruj tę wiadomość — adres pozostanie bez zmian.",
+          outro: "Jeśli to nie Ty, zignoruj tę wiadomość — adres pozostanie bez zmian.",
         });
         await sendEmail({
           to: user.email,

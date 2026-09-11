@@ -67,7 +67,10 @@ export async function syncLessonNotifications(lessons: LessonForNotif[]) {
     if (typeof tag === "string") existingByTag.set(tag, req.identifier);
   }
 
-  const desired = new Map<string, { fireAt: number; kind: NotifKind; lesson: LessonForNotif }>();
+  const desired = new Map<
+    string,
+    { fireAt: number; kind: NotifKind; lesson: LessonForNotif }
+  >();
 
   for (const lesson of lessons) {
     const startsAt = new Date(lesson.startsAt).getTime();
@@ -75,7 +78,11 @@ export async function syncLessonNotifications(lessons: LessonForNotif[]) {
     if (lesson.status === "scheduled") {
       const fireAt = startsAt - UPCOMING_REMINDER_MINUTES_BEFORE * 60 * 1000;
       if (fireAt > now) {
-        desired.set(buildTag("upcoming", lesson.id), { fireAt, kind: "upcoming", lesson });
+        desired.set(buildTag("upcoming", lesson.id), {
+          fireAt,
+          kind: "upcoming",
+          lesson,
+        });
       }
     }
 
@@ -103,9 +110,7 @@ export async function syncLessonNotifications(lessons: LessonForNotif[]) {
     await Notifications.scheduleNotificationAsync({
       content: {
         title:
-          kind === "upcoming"
-            ? "Za godzinę masz zajęcia"
-            : "Zaległa płatność za zajęcia",
+          kind === "upcoming" ? "Za godzinę masz zajęcia" : "Zaległa płatność za zajęcia",
         body:
           kind === "upcoming"
             ? `${lesson.studentName} o ${timeLabel}`

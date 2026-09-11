@@ -4,7 +4,11 @@ export type AlertButton = {
   onPress?: () => void;
 };
 
-export type AlertState = { title: string; message?: string; buttons: AlertButton[] } | null;
+export type AlertState = {
+  title: string;
+  message?: string;
+  buttons: AlertButton[];
+} | null;
 
 let state: AlertState = null;
 const listeners = new Set<(s: AlertState) => void>();
@@ -14,7 +18,7 @@ function notify() {
 }
 
 export function alert(title: string, message?: string, buttons?: AlertButton[]) {
-  state ={ title, message, buttons: buttons?.length ? buttons : [{ text: "OK" }] };
+  state = { title, message, buttons: buttons?.length ? buttons : [{ text: "OK" }] };
   notify();
 }
 

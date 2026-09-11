@@ -443,7 +443,10 @@ export function LessonDialog({
         </form>
       </DialogContent>
 
-      <AlertDialog open={confirmKind !== null} onOpenChange={(o) => !o && setConfirmKind(null)}>
+      <AlertDialog
+        open={confirmKind !== null}
+        onOpenChange={(o) => !o && setConfirmKind(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
