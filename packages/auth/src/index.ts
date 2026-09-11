@@ -1,8 +1,16 @@
 import { expo } from "@better-auth/expo";
 import { passkey } from "@better-auth/passkey";
-import { db, account, passkey as passkeyTable, session, user, verification } from "@repo/db";
+import {
+  db,
+  account,
+  passkey as passkeyTable,
+  session,
+  user,
+  verification,
+} from "@repo/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 
 const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "")
   .split(",")
@@ -27,7 +35,10 @@ export const auth = betterAuth({
       ? { google: { clientId: googleClientId, clientSecret: googleClientSecret } }
       : undefined,
   trustedOrigins,
-  plugins: [passkey({ rpName: "RozliczKorki" }), expo()],
+  advanced: {
+    cookiePrefix: process.env.AUTH_COOKIE_PREFIX ?? "better-auth",
+  },
+  plugins: [passkey({ rpName: "RozliczKorki" }), expo(), nextCookies()],
 });
 
 export type Auth = typeof auth;

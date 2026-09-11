@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { GoogleIcon } from "@/components/google-icon";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +53,7 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <Button variant="outline" onClick={onGoogle} type="button" className="w-full">
+            <GoogleIcon data-icon="inline-start" />
             Kontynuuj przez Google
           </Button>
 
@@ -106,7 +108,7 @@ export default function RegisterPage() {
               Zaloguj się
             </Link>
           </p>
-          <p className="text-muted-foreground mt-3 text-center text-xs text-balance">
+          <p className="text-muted-foreground mt-3 text-balance text-center text-xs">
             Zakładając konto, akceptujesz{" "}
             <Link href="/terms" className="underline">
               Regulamin

@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { KeyRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { GoogleIcon } from "@/components/google-icon";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,9 +73,11 @@ export default function LoginPage() {
         <CardContent>
           <div className="flex flex-col gap-2">
             <Button variant="outline" onClick={onGoogle} type="button">
+              <GoogleIcon data-icon="inline-start" />
               Kontynuuj przez Google
             </Button>
             <Button variant="outline" onClick={onPasskey} type="button">
+              <KeyRound data-icon="inline-start" />
               Zaloguj kluczem dostępu
             </Button>
           </div>
