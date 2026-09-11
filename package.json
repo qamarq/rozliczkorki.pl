@@ -21,8 +21,8 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.9.0"
+      "version": "10.18.0"
     }
   },
-  "packageManager": "pnpm@11.9.0"
+  "packageManager": "pnpm@10.18.0"
 }
