@@ -1,18 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { CalendarDays, LineChart, LogOut, Settings, Users } from "lucide-react";
+import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  CalendarDays,
+  ChevronsUpDown,
+  LineChart,
+  LogOut,
+  Send,
+  Settings,
+  Users,
+} from "lucide-react";
 import { Logo } from "@/components/logo";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { SettingsDialog } from "@/components/settings-dialog";
 import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
 
-const LINKS = [
-  { href: "/dashboard", label: "Kalendarz lekcji", icon: CalendarDays },
-  { href: "/dashboard/students", label: "Uczniowie i stawki", icon: Users },
-  { href: "/dashboard/stats", label: "Finanse i statystyki", icon: LineChart },
-  { href: "/dashboard/settings", label: "Ustawienia", icon: Settings },
+const NAV_MAIN = [
+  { title: "Kalendarz lekcji", url: "/dashboard", icon: CalendarDays },
+  { title: "Uczniowie i stawki", url: "/dashboard/students", icon: Users },
+  { title: "Finanse i statystyki", url: "/dashboard/stats", icon: LineChart },
+];
+
+const NAV_SECONDARY = [
+  { title: "Zgłoś uwagę", url: "mailto:kontakt@rozliczkorki.pl", icon: Send },
 ];
 
 function useSignOut() {
@@ -24,89 +68,204 @@ function useSignOut() {
   };
 }
 
-export function DashboardSidebar({ userName }: { userName: string }) {
-  const pathname = usePathname();
+function initials(name: string) {
+  return name.slice(0, 2).toUpperCase();
+}
+
+function NavUser({
+  name,
+  email,
+  image,
+  onOpenSettings,
+}: {
+  name: string;
+  email: string;
+  image?: string | null;
+  onOpenSettings: () => void;
+}) {
+  const { isMobile } = useSidebar();
   const signOut = useSignOut();
 
   return (
-    <aside className="bg-sidebar border-sidebar-border sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r lg:flex">
-      <div className="flex items-center gap-2 px-5 py-6">
-        <Logo />
-        <div className="flex flex-col leading-none">
-          <span className="text-sm font-semibold text-white">RozliczKorki</span>
-          <span className="text-muted-foreground text-[11px] tracking-wide uppercase">
-            Panel korepetytora
-          </span>
-        </div>
-      </div>
-
-      <nav className="flex flex-col gap-1 px-3">
-        {LINKS.map((link) => {
-          const active = pathname === link.href;
-          const Icon = link.icon;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Icon className="size-4" />
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="border-sidebar-border mt-auto flex items-center justify-between gap-2 border-t px-4 py-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="bg-accent text-accent-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-            {userName.slice(0, 2).toUpperCase()}
-          </span>
-          <span className="truncate text-sm font-medium">{userName}</span>
-        </div>
-        <Button variant="ghost" size="icon-sm" onClick={signOut} title="Wyloguj">
-          <LogOut className="size-4" />
-        </Button>
-      </div>
-    </aside>
+              <Avatar className="size-8 rounded-lg">
+                <AvatarImage src={image ?? undefined} alt={name} className="rounded-lg" />
+                <AvatarFallback className="rounded-lg">{initials(name)}</AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{name}</span>
+                <span className="truncate text-xs">{email}</span>
+              </div>
+              <ChevronsUpDown className="ml-auto size-4" />
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            side={isMobile ? "bottom" : "right"}
+            align="end"
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="p-0 font-normal">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <Avatar className="size-8 rounded-lg">
+                  <AvatarImage
+                    src={image ?? undefined}
+                    alt={name}
+                    className="rounded-lg"
+                  />
+                  <AvatarFallback className="rounded-lg">{initials(name)}</AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">{name}</span>
+                  <span className="truncate text-xs">{email}</span>
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={onOpenSettings}>
+                <Settings />
+                Ustawienia
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={signOut}>
+              <LogOut />
+              Wyloguj
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
   );
 }
 
-export function DashboardTopbar({ userName }: { userName: string }) {
+export function AppSidebar({
+  userName,
+  userEmail,
+  userImage,
+}: {
+  userName: string;
+  userEmail: string;
+  userImage?: string | null;
+}) {
   const pathname = usePathname();
-  const signOut = useSignOut();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <header className="bg-background/80 border-border sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur-sm lg:hidden">
-      <span className="flex items-center gap-2">
-        <Logo className="size-6" />
-        <span className="text-brand-gradient text-base font-bold">RozliczKorki</span>
-      </span>
-      <nav className="flex items-center gap-1 overflow-x-auto">
-        {LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={cn(
-              "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-              pathname === link.href
-                ? "bg-primary text-white"
-                : "text-muted-foreground hover:bg-accent",
-            )}
-          >
-            {link.label}
-          </Link>
-        ))}
-      </nav>
-      <Button variant="ghost" size="icon-sm" onClick={signOut} title="Wyloguj">
-        <LogOut className="size-4" />
-      </Button>
-      <span className="sr-only">{userName}</span>
+    <>
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <Sidebar variant="inset" collapsible="icon">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/">
+                  <Logo className="size-8!" />
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">RozliczKorki</span>
+                    <span className="truncate text-xs">Panel korepetytora</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupLabel>Panel</SidebarGroupLabel>
+            <SidebarMenu className="gap-1.5">
+              {NAV_MAIN.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.title}
+                      isActive={pathname === item.url}
+                      className="h-10 gap-3 rounded-lg px-3"
+                    >
+                      <Link href={item.url}>
+                        <Icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+          <SidebarGroup className="mt-auto">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {NAV_SECONDARY.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        size="sm"
+                        tooltip={item.title}
+                        className="h-9 gap-3 rounded-lg px-3"
+                      >
+                        <a href={item.url}>
+                          <Icon />
+                          <span>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <NavUser
+            name={userName}
+            email={userEmail}
+            image={userImage}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+        </SidebarFooter>
+      </Sidebar>
+    </>
+  );
+}
+
+export function DashboardHeader() {
+  const pathname = usePathname();
+  const current = NAV_MAIN.find((item) => item.url === pathname);
+
+  return (
+    <header className="flex h-16 shrink-0 items-center gap-2">
+      <div className="flex items-center gap-2 px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator
+          orientation="vertical"
+          className="data-vertical:h-4 data-vertical:self-auto mr-2"
+        />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink asChild>
+                <Link href="/dashboard">RozliczKorki</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{current?.title ?? "Panel"}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
     </header>
   );
 }

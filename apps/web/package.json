@@ -7,13 +7,15 @@
     "build": "next build",
     "vercel-build": "pnpm --filter @repo/db db:migrate:deploy && next build",
     "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "lint:check": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:typecheck": "tsc --noEmit",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "dependencies": {
     "@better-auth/passkey": "1.7.3",
+    "@next/third-parties": "^16.3.5",
     "@repo/api": "workspace:*",
     "@repo/auth": "workspace:*",
     "@repo/db": "workspace:*",

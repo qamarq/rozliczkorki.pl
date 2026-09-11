@@ -16,8 +16,14 @@ const ONBOARDING_KEY = "onboarding_complete";
 
 const FEATURES = [
   { icon: "calendar-outline" as const, text: "Kalendarz zajęć zawsze pod ręką" },
-  { icon: "checkmark-done-outline" as const, text: "Odbyte i opłacone — jednym dotknięciem" },
-  { icon: "trending-up-outline" as const, text: "Zarobki na żywo, bez liczenia w głowie" },
+  {
+    icon: "checkmark-done-outline" as const,
+    text: "Odbyte i opłacone — jednym dotknięciem",
+  },
+  {
+    icon: "trending-up-outline" as const,
+    text: "Zarobki na żywo, bez liczenia w głowie",
+  },
 ];
 
 export default function OnboardingScreen() {
@@ -79,9 +85,7 @@ export default function OnboardingScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <Animated.View
-        style={[styles.content, { opacity, transform: [{ translateY }] }]}
-      >
+      <Animated.View style={[styles.content, { opacity, transform: [{ translateY }] }]}>
         {step === 0 && (
           <>
             <Animated.View
@@ -120,9 +124,9 @@ export default function OnboardingScreen() {
             </View>
             <Text style={styles.title}>Włącz powiadomienia</Text>
             <Text style={styles.subtitle}>
-              Przypomnimy Ci godzinę przed zajęciami i dopilnujemy zaległych
-              płatności. Możesz to później zmienić w ustawieniach telefonu — mamy dwie
-              osobne kategorie:
+              Przypomnimy Ci godzinę przed zajęciami i dopilnujemy zaległych płatności.
+              Możesz to później zmienić w ustawieniach telefonu — mamy dwie osobne
+              kategorie:
             </Text>
             <View style={{ gap: 12, marginTop: 4, width: "100%" }}>
               <View style={styles.featureRow}>

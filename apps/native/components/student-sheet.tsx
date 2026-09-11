@@ -152,7 +152,11 @@ function StudentForm({
 
       <SectionLabel>Typ</SectionLabel>
       <View style={styles.chipRow}>
-        <Chip label="Korki" active={type === "private"} onPress={() => setType("private")} />
+        <Chip
+          label="Korki"
+          active={type === "private"}
+          onPress={() => setType("private")}
+        />
         <Chip
           label="Szkółka"
           active={type === "school"}

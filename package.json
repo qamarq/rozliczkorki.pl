@@ -3,11 +3,12 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "lint:check": "turbo run lint:check",
+    "lint:fix": "turbo run lint:fix",
+    "lint:typecheck": "turbo run lint:typecheck",
+    "format:check": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
     "prettier": "^3.1.1",
@@ -18,11 +19,5 @@
     "node": ">=18"
   },
   "name": "rozliczkorki",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "10.18.0"
-    }
-  },
   "packageManager": "pnpm@10.18.0"
 }

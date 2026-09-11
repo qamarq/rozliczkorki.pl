@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { TRPCProvider } from "@/lib/trpc/client";
 import { Inter } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { cn } from "cn";
 
@@ -20,15 +22,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pl" suppressHydrationWarning>
       <body className={cn(inter.className, "antialiased")}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          disableTransitionOnChange
-        >
-          <TRPCProvider>{children}</TRPCProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+          <TooltipProvider>
+            <TRPCProvider>{children}</TRPCProvider>
+          </TooltipProvider>
           <Toaster />
         </ThemeProvider>
       </body>
+      <GoogleAnalytics gaId="G-EQDGQFNTLF" />
     </html>
   );
 }

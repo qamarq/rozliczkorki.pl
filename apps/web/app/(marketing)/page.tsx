@@ -37,18 +37,21 @@ export default async function MarketingPage() {
 
   return (
     <div className="relative isolate overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
         <div className="bg-primary absolute -top-40 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full opacity-20 blur-[120px]" />
-        <div className="bg-primary absolute top-1/3 -right-24 size-80 rounded-full opacity-10 blur-[110px]" />
-        <div className="bg-primary absolute bottom-0 -left-20 size-72 rounded-full opacity-10 blur-[100px]" />
+        <div className="bg-primary absolute -right-24 top-1/3 size-80 rounded-full opacity-10 blur-[110px]" />
+        <div className="bg-primary absolute -left-20 bottom-0 size-72 rounded-full opacity-10 blur-[100px]" />
       </div>
 
       <div className="relative mx-auto flex max-w-5xl flex-col gap-24 px-6 py-16">
         <header className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Logo />
             <span className="text-brand-gradient text-lg font-bold">RozliczKorki</span>
-          </span>
+          </Link>
           <nav className="flex items-center gap-3">
             {session ? (
               <Button asChild>
@@ -72,12 +75,12 @@ export default async function MarketingPage() {
             <Badge className="bg-primary/10 text-primary border-primary/20">
               Zero skomplikowanych tabelek
             </Badge>
-            <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+            <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl">
               Korki pod pełną <span className="text-brand-gradient">kontrolą</span>.
             </h1>
-            <p className="text-muted-foreground max-w-md text-lg text-pretty">
-              Prosty kalendarz, odznaczanie lekcji i automatyczne finanse — bez
-              zapisków w zeszycie i zastanawiania się, kto już zapłacił.
+            <p className="text-muted-foreground max-w-md text-pretty text-lg">
+              Prosty kalendarz, odznaczanie lekcji i automatyczne finanse — bez zapisków w
+              zeszycie i zastanawiania się, kto już zapłacił.
             </p>
             <Button size="lg" asChild>
               <Link href={session ? "/dashboard" : "/register"}>

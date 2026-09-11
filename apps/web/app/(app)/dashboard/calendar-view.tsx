@@ -186,7 +186,7 @@ export function CalendarView() {
                   <div
                     key={key}
                     className={cn(
-                      "group bg-card relative flex min-h-28 flex-col gap-1 p-1.5",
+                      "bg-card group relative flex min-h-28 flex-col gap-1 p-1.5",
                       !isSameMonth(day, month) &&
                         "bg-background/60 text-muted-foreground",
                       isCurrentDay && "bg-primary/[0.06]",
@@ -248,10 +248,7 @@ export function CalendarView() {
         </div>
 
         <div className="flex flex-col gap-5 lg:col-span-4">
-          <TodayPanel
-            lessons={todayLessons}
-            onOpen={(id) => openEditDialog(today, id)}
-          />
+          <TodayPanel lessons={todayLessons} onOpen={(id) => openEditDialog(today, id)} />
           <DuePanel lessons={dueLessons} onOpen={(day, id) => openEditDialog(day, id)} />
         </div>
       </div>
@@ -319,7 +316,9 @@ function TodayPanel({
                 size="sm"
                 variant="outline"
                 disabled={markCompleted.isPending}
-                onClick={() => markCompleted.mutate({ id: lesson.id, status: "completed" })}
+                onClick={() =>
+                  markCompleted.mutate({ id: lesson.id, status: "completed" })
+                }
               >
                 <Check className="size-3.5" />
                 Odbyta
@@ -475,10 +474,15 @@ function StatCard({
   return (
     <Card className="gap-2 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
           {label}
         </span>
-        <span className={cn("flex size-7 items-center justify-center rounded-md", toneClasses)}>
+        <span
+          className={cn(
+            "flex size-7 items-center justify-center rounded-md",
+            toneClasses,
+          )}
+        >
           <Icon className="size-3.5" />
         </span>
       </div>

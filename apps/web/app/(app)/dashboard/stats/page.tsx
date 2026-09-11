@@ -43,9 +43,7 @@ export default function StatsPage() {
   });
 
   const collectionRate =
-    data && data.theoretical > 0
-      ? Math.round((data.paid / data.theoretical) * 100)
-      : 0;
+    data && data.theoretical > 0 ? Math.round((data.paid / data.theoretical) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -130,7 +128,7 @@ export default function StatsPage() {
                 <TableHead className="pl-4">Uczeń</TableHead>
                 <TableHead className="text-right">Teoretycznie</TableHead>
                 <TableHead className="text-right">Opłacone</TableHead>
-                <TableHead className="text-right pr-4">Do zapłaty</TableHead>
+                <TableHead className="pr-4 text-right">Do zapłaty</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -184,10 +182,15 @@ function FinanceCard({
   return (
     <Card className="gap-2 p-4">
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
           {label}
         </span>
-        <span className={cn("flex size-7 items-center justify-center rounded-md", toneClasses)}>
+        <span
+          className={cn(
+            "flex size-7 items-center justify-center rounded-md",
+            toneClasses,
+          )}
+        >
           <Icon className="size-3.5" />
         </span>
       </div>
