@@ -65,7 +65,8 @@ export function StoreButtons({ className }: { className?: string }) {
           <>
             Razem z Tobą na wersję na iOS czeka{" "}
             <span className="text-foreground font-semibold tabular-nums">{votes}</span>{" "}
-            {plural(votes)}. Damy znać mailem, gdy będzie gotowa.
+            {plural(votes)}. <br />
+            Damy znać mailem, gdy będzie gotowa.
           </>
         ) : data?.canVote ? (
           <>
