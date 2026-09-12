@@ -22,6 +22,7 @@ import {
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient, useSession } from "@/lib/auth-client";
+import { CALENDAR_VIEW_OPTIONS, useDefaultCalendarView } from "@/lib/calendar-prefs";
 import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL, WEB_URL } from "@/lib/legal";
 import {
   OVERDUE_OPTIONS,
@@ -45,6 +46,7 @@ export default function SettingsScreen() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { prefs, update } = useNotificationPrefs();
+  const calendarView = useDefaultCalendarView();
 
   async function loadSessions() {
     const { data } = await authClient.$fetch<SessionRow[]>("/list-sessions");
@@ -128,6 +130,24 @@ export default function SettingsScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.profileName}>{session?.user?.name}</Text>
             <Text style={styles.profileEmail}>{session?.user?.email}</Text>
+          </View>
+        </Card>
+
+        <SectionLabel>Kalendarz</SectionLabel>
+        <Card style={{ gap: 8 }}>
+          <Text style={styles.prefLabel}>Domyślny widok</Text>
+          <Text style={styles.prefHint}>
+            Który widok pokazywać po otwarciu kalendarza.
+          </Text>
+          <View style={styles.chipRow}>
+            {CALENDAR_VIEW_OPTIONS.map((opt) => (
+              <Chip
+                key={opt.value}
+                label={opt.label}
+                active={calendarView.view === opt.value}
+                onPress={() => calendarView.update(opt.value)}
+              />
+            ))}
           </View>
         </Card>
 
