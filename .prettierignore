@@ -4,3 +4,7 @@ node_modules
 dist
 drizzle
 pnpm-lock.yaml
+
+# expo prebuild output (gitignored, regenerated on every native build)
+apps/native/android
+apps/native/ios

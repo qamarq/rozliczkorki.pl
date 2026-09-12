@@ -2,7 +2,7 @@
   "expo": {
     "name": "RozliczKorki",
     "slug": "rozliczkorki",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "rozliczkorki",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,7 +27,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#111827"
       },
-      "package": "pl.rozliczkorki.app"
+      "package": "pl.rozliczkorki.app",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -44,7 +45,17 @@
           "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID"
         }
       ],
-      "./plugins/withAndroidReleaseSigning"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      "./plugins/withAndroidReleaseSigning",
+      "./plugins/withAndroidEdgeToEdge"
     ]
   }
 }

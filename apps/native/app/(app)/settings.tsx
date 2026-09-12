@@ -2,9 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useEffect, useState } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   Card,
+  Chip,
   GradientButton,
   Input,
   OutlineButton,
@@ -13,7 +22,12 @@ import {
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient, useSession } from "@/lib/auth-client";
-import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
+import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL, WEB_URL } from "@/lib/legal";
+import {
+  OVERDUE_OPTIONS,
+  UPCOMING_OPTIONS,
+  useNotificationPrefs,
+} from "@/lib/notification-prefs";
 import { colors } from "@/lib/theme";
 
 type SessionRow = {
@@ -29,6 +43,8 @@ export default function SettingsScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { prefs, update } = useNotificationPrefs();
 
   async function loadSessions() {
     const { data } = await authClient.$fetch<SessionRow[]>("/list-sessions");
@@ -60,6 +76,35 @@ export default function SettingsScreen() {
     loadSessions();
   }
 
+  function onDeleteAccount() {
+    alert(
+      "Usunąć konto?",
+      "Wyślemy link potwierdzający na Twój adres e-mail. Po kliknięciu w niego konto i wszystkie dane (uczniowie, zajęcia, stawki) znikną bezpowrotnie.",
+      [
+        { text: "Anuluj", style: "cancel" },
+        {
+          text: "Wyślij link",
+          style: "destructive",
+          onPress: async () => {
+            setDeleting(true);
+            const { error } = await authClient.deleteUser({
+              callbackURL: `${WEB_URL}/`,
+            });
+            setDeleting(false);
+            if (error) {
+              alert("Błąd", error.message ?? "Nie udało się rozpocząć usuwania konta");
+              return;
+            }
+            alert(
+              "Sprawdź skrzynkę",
+              "Wysłaliśmy link potwierdzający usunięcie konta na Twój adres e-mail.",
+            );
+          },
+        },
+      ],
+    );
+  }
+
   async function onRevoke(token: string) {
     await authClient.$fetch("/revoke-session", { method: "POST", body: { token } });
     loadSessions();
@@ -71,11 +116,15 @@ export default function SettingsScreen() {
         <Text style={styles.title}>Ustawienia</Text>
 
         <Card style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {session?.user?.name?.[0]?.toUpperCase() ?? "?"}
-            </Text>
-          </View>
+          {session?.user?.image ? (
+            <Image source={{ uri: session.user.image }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarText}>
+                {session?.user?.name?.[0]?.toUpperCase() ?? "?"}
+              </Text>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={styles.profileName}>{session?.user?.name}</Text>
             <Text style={styles.profileEmail}>{session?.user?.email}</Text>
@@ -83,7 +132,41 @@ export default function SettingsScreen() {
         </Card>
 
         <SectionLabel>Powiadomienia</SectionLabel>
-        <Card style={{ gap: 4 }}>
+        <Card style={{ gap: 16 }}>
+          <View style={{ gap: 8 }}>
+            <Text style={styles.prefLabel}>Przypomnienie przed zajęciami</Text>
+            <Text style={styles.prefHint}>
+              Ile wcześniej powiadomić o zaplanowanych zajęciach.
+            </Text>
+            <View style={styles.chipRow}>
+              {UPCOMING_OPTIONS.map((opt) => (
+                <Chip
+                  key={opt.value}
+                  label={opt.label}
+                  active={prefs.upcomingMinutesBefore === opt.value}
+                  onPress={() => update({ upcomingMinutesBefore: opt.value })}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={{ gap: 8 }}>
+            <Text style={styles.prefLabel}>Przypomnienie o zaległej płatności</Text>
+            <Text style={styles.prefHint}>
+              Ile po odbytych zajęciach przypomnieć, jeśli wciąż nie są opłacone.
+            </Text>
+            <View style={styles.chipRow}>
+              {OVERDUE_OPTIONS.map((opt) => (
+                <Chip
+                  key={opt.value}
+                  label={opt.label}
+                  active={prefs.overdueDaysAfter === opt.value}
+                  onPress={() => update({ overdueDaysAfter: opt.value })}
+                />
+              ))}
+            </View>
+          </View>
+
           <Pressable onPress={() => Linking.openSettings()} style={styles.legalRow}>
             <View>
               <Text style={styles.legalText}>
@@ -157,7 +240,7 @@ export default function SettingsScreen() {
             onPress={() => Linking.openURL(DELETE_ACCOUNT_URL)}
             style={styles.legalRow}
           >
-            <Text style={styles.legalText}>Jak usunąć konto</Text>
+            <Text style={styles.legalText}>Zasady usuwania konta</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
           </Pressable>
         </Card>
@@ -167,6 +250,20 @@ export default function SettingsScreen() {
           tone="danger"
           onPress={() => authClient.signOut()}
         />
+
+        <SectionLabel>Usuwanie konta</SectionLabel>
+        <Card style={{ gap: 12 }}>
+          <Text style={styles.prefHint}>
+            Konto i wszystkie dane znikają bezpowrotnie. Dla bezpieczeństwa potwierdzasz
+            to linkiem, który wyślemy na Twój e-mail.
+          </Text>
+          <OutlineButton
+            label={deleting ? "Wysyłanie…" : "Usuń konto"}
+            tone="danger"
+            onPress={onDeleteAccount}
+            disabled={deleting}
+          />
+        </Card>
       </ScrollView>
     </ScreenBackground>
   );
@@ -176,14 +273,15 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 14, paddingBottom: 40 },
   title: { fontSize: 24, fontWeight: "800", color: colors.text, marginBottom: 4 },
   profileCard: { flexDirection: "row", alignItems: "center", gap: 14 },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  avatar: { width: 52, height: 52, borderRadius: 26 },
+  avatarFallback: {
     backgroundColor: colors.accentTo,
     alignItems: "center",
     justifyContent: "center",
   },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  prefLabel: { color: colors.text, fontSize: 14, fontWeight: "600" },
+  prefHint: { color: colors.textFaint, fontSize: 12, lineHeight: 17 },
   avatarText: { color: "#fff", fontSize: 20, fontWeight: "700" },
   legalRow: {
     flexDirection: "row",
