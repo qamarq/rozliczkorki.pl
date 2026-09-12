@@ -22,12 +22,12 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "RozliczKorki",
+    default: "Rozlicz Korki",
     template: "%s",
   },
   description: "Prosty tracker korepetycji — kalendarz, płatności, zarobki.",
   openGraph: {
-    siteName: "RozliczKorki",
+    siteName: "Rozlicz Korki",
     locale: "pl_PL",
     type: "website",
   },

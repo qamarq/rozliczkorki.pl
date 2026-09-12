@@ -170,7 +170,7 @@ export function AppSidebar({
                 <Link href="/">
                   <Logo className="size-8!" />
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">RozliczKorki</span>
+                    <span className="truncate font-semibold">RozliczKorki.pl</span>
                     <span className="truncate text-xs">Panel korepetytora</span>
                   </div>
                 </Link>
