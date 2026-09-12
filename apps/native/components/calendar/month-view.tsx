@@ -13,7 +13,14 @@ import {
 } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { trpc } from "@/lib/trpc";
 import { colors, radius } from "@/lib/theme";
 import {

@@ -66,7 +66,10 @@ export default function CalendarScreen() {
         href={
           mode === "list"
             ? "/lesson/new"
-            : { pathname: "/lesson/new", params: { date: format(selectedDate, "yyyy-MM-dd") } }
+            : {
+                pathname: "/lesson/new",
+                params: { date: format(selectedDate, "yyyy-MM-dd") },
+              }
         }
         asChild
       >
