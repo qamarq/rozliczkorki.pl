@@ -82,7 +82,10 @@ export default function LoginScreen() {
           />
         </View>
 
-        <Link href="/register" style={styles.link}>
+        <Link href="/forgot-password" style={styles.link}>
+          Nie pamiętasz hasła?
+        </Link>
+        <Link href="/register" style={styles.linkTight}>
           Nie masz konta? Załóż konto
         </Link>
       </KeyboardAvoidingView>
@@ -101,4 +104,5 @@ const styles = StyleSheet.create({
   },
   form: { gap: 14 },
   link: { marginTop: 20, textAlign: "center", color: colors.textMuted },
+  linkTight: { marginTop: 10, textAlign: "center", color: colors.textMuted },
 });
