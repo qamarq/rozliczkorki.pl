@@ -7,6 +7,11 @@ settings:
 overrides:
   '@expo/dom-webview': ^57.0.1
 
+patchedDependencies:
+  react-native-google-one-tap-signin:
+    hash: ee8eb04d03d7154e70a4b7472aca9a4ecd5deab3fab48260bb09cb3ac6037d17
+    path: patches/react-native-google-one-tap-signin.patch
+
 importers:
 
   .:
@@ -110,6 +115,9 @@ importers:
       react-native:
         specifier: 0.86.3
         version: 0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
+      react-native-google-one-tap-signin:
+        specifier: ^1.1.1
+        version: 1.1.1(patch_hash=ee8eb04d03d7154e70a4b7472aca9a4ecd5deab3fab48260bb09cb3ac6037d17)(prop-types@15.8.1)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
       react-native-safe-area-context:
         specifier: ~5.7.0
         version: 5.7.0(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
@@ -6116,6 +6124,13 @@ packages:
   react-native-gesture-handler@3.2.1:
     resolution: {integrity: sha512-VEWscxUN29aeccbD2McF0LSXrwOhSdisaSRFiEWg0O/3WrVghNJp/tOtLrCgzb9gfcZ3xdA+K2Sp8F5G3iHx/Q==}
     peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  react-native-google-one-tap-signin@1.1.1:
+    resolution: {integrity: sha512-gINaM2KRDGWMXS2JMhgqlNDAhtrThs3rJT69nXIgqhDf8X/k2+N9ddgeEA4EcpJzGNTbk22WH0sN1oohjj9yEw==}
+    peerDependencies:
+      prop-types: '*'
       react: '*'
       react-native: '*'
 
@@ -13853,6 +13868,12 @@ snapshots:
     dependencies:
       '@types/react-test-renderer': 19.3.0
       invariant: 2.2.4
+      react: 19.2.3
+      react-native: 0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
+
+  react-native-google-one-tap-signin@1.1.1(patch_hash=ee8eb04d03d7154e70a4b7472aca9a4ecd5deab3fab48260bb09cb3ac6037d17)(prop-types@15.8.1)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3):
+    dependencies:
+      prop-types: 15.8.1
       react: 19.2.3
       react-native: 0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.87.1(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
 

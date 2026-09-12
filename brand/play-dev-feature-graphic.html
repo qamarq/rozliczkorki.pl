@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #0b1220;
+      }
+      .stage {
+        width: 2048px;
+        height: 1152px;
+        position: relative;
+        overflow: hidden;
+        font-family:
+          -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background:
+          radial-gradient(
+            1200px 800px at 24% 18%,
+            rgba(99, 102, 241, 0.28),
+            transparent 62%
+          ),
+          radial-gradient(
+            1000px 760px at 82% 86%,
+            rgba(16, 185, 129, 0.22),
+            transparent 60%
+          ),
+          linear-gradient(135deg, #131c31 0%, #111827 46%, #0b1220 100%);
+      }
+      .grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+        background-size: 64px 64px;
+        -webkit-mask-image: radial-gradient(
+          1300px 760px at 50% 50%,
+          #000 10%,
+          transparent 78%
+        );
+      }
+      .vignette {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          1500px 1000px at 50% 50%,
+          transparent 45%,
+          rgba(6, 10, 20, 0.55) 100%
+        );
+      }
+      .center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 44px;
+      }
+      .mark {
+        width: 236px;
+        height: 236px;
+        border-radius: 60px;
+        background: linear-gradient(160deg, #1b2439, #0f1626);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+          0 40px 90px rgba(0, 0, 0, 0.55),
+          inset 0 2px 0 rgba(255, 255, 255, 0.09),
+          0 0 0 2px rgba(99, 102, 241, 0.28);
+      }
+      .mark svg {
+        width: 150px;
+        height: 150px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 128px;
+        line-height: 1;
+        letter-spacing: -3.5px;
+        font-weight: 700;
+        color: #f8fafc;
+        text-shadow: 0 6px 40px rgba(0, 0, 0, 0.45);
+      }
+      h1 .a {
+        color: #f8fafc;
+      }
+      p {
+        margin: 0;
+        font-size: 46px;
+        line-height: 1.25;
+        font-weight: 450;
+        color: #a9b4cc;
+        letter-spacing: -0.4px;
+        text-align: center;
+        max-width: 1560px;
+        white-space: nowrap;
+      }
+      .chips {
+        display: flex;
+        gap: 22px;
+        margin-top: 10px;
+      }
+      .chip {
+        font-size: 31px;
+        font-weight: 550;
+        color: #cbd5e1;
+        padding: 17px 34px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.055);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .dot {
+        width: 13px;
+        height: 13px;
+        border-radius: 999px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="grid"></div>
+      <div class="vignette"></div>
+      <div class="center">
+        <div class="mark">
+          <svg viewBox="0 0 48 48" fill="none">
+            <path
+              d="M14 14L24 24L14 34"
+              stroke="#6366F1"
+              stroke-width="3.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M22 34H34"
+              stroke="#10B981"
+              stroke-width="3.5"
+              stroke-linecap="round"
+            />
+            <circle cx="30" cy="18" r="4" fill="#6366F1" />
+          </svg>
+        </div>
+        <h1>RozliczKorki</h1>
+        <p>Korepetycje, płatności i zarobki — w jednym miejscu</p>
+        <div class="chips">
+          <div class="chip">
+            <span class="dot" style="background: #6366f1"></span>Zajęcia i uczniowie
+          </div>
+          <div class="chip">
+            <span class="dot" style="background: #10b981"></span>Płatności
+          </div>
+          <div class="chip">
+            <span class="dot" style="background: #38bdf8"></span>Statystyki
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
