@@ -10,6 +10,13 @@ const ANDROID_SHA256_FINGERPRINTS = [
 export function GET() {
   return NextResponse.json([
     {
+      relation: ["delegate_permission/common.get_login_creds"],
+      target: {
+        namespace: "web",
+        site: "https://rozliczkorki.pl",
+      },
+    },
+    {
       relation: [
         "delegate_permission/common.get_login_creds",
         "delegate_permission/common.handle_all_urls",
