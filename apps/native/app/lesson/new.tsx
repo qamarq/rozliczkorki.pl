@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Chip, GradientButton, Input, SectionLabel, Switch } from "@/components/ui";
@@ -14,7 +14,8 @@ export default function NewLessonScreen() {
   const { data: students = [] } = trpc.students.list.useQuery();
 
   const [studentId, setStudentId] = useState<string | null>(null);
-  const [dateStr, setDateStr] = useState(format(new Date(), "yyyy-MM-dd"));
+  const params = useLocalSearchParams<{ date?: string }>();
+  const [dateStr, setDateStr] = useState(params.date ?? format(new Date(), "yyyy-MM-dd"));
   const [timeStr, setTimeStr] = useState("16:00");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [prorate, setProrate] = useState(false);
