@@ -8,4 +8,3 @@ onlyBuiltDependencies:
 
 overrides:
   "@expo/dom-webview": ^57.0.1
-
