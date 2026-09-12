@@ -51,9 +51,7 @@ function withAndroidAssetStatements(config, props) {
   if (domains.length === 0) {
     return config;
   }
-  return withAssetStatementsMetaData(
-    withAssetStatementsStrings(config, domains),
-  );
+  return withAssetStatementsMetaData(withAssetStatementsStrings(config, domains));
 }
 
 module.exports = withAndroidAssetStatements;

@@ -55,10 +55,7 @@
         }
       ],
       "./plugins/withAndroidR8Optimization",
-      [
-        "./plugins/withAndroidAssetStatements",
-        { "domains": ["rozliczkorki.pl"] }
-      ],
+      ["./plugins/withAndroidAssetStatements", { "domains": ["rozliczkorki.pl"] }],
       "./plugins/withAndroidReleaseSigning",
       "./plugins/withAndroidEdgeToEdge"
     ]
