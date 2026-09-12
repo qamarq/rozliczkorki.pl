@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CalendarDays,
@@ -46,7 +45,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { SettingsDialog } from "@/components/settings-dialog";
+import { openSettings, SettingsDialog } from "@/components/settings-dialog";
 import { authClient } from "@/lib/auth-client";
 
 const NAV_MAIN = [
@@ -157,11 +156,10 @@ export function AppSidebar({
   userImage?: string | null;
 }) {
   const pathname = usePathname();
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <>
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog />
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader>
           <SidebarMenu>
@@ -232,7 +230,7 @@ export function AppSidebar({
             name={userName}
             email={userEmail}
             image={userImage}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={() => openSettings()}
           />
         </SidebarFooter>
       </Sidebar>
