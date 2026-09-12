@@ -1,104 +1,75 @@
-import { format, startOfDay, startOfToday } from "date-fns";
-import { pl } from "date-fns/locale";
+import { format } from "date-fns";
 import { Link } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Badge, Card, ScreenBackground } from "@/components/ui";
-import { openLessonSheet } from "@/components/lesson-details-sheet";
-import { RefreshableList } from "@/components/refreshable-list";
-import { formatPLN } from "@/lib/format";
-import { trpc } from "@/lib/trpc";
+import { ScreenBackground } from "@/components/ui";
+import { ListView } from "@/components/calendar/list-view";
+import { MonthView } from "@/components/calendar/month-view";
+import { WeekView } from "@/components/calendar/week-view";
+import {
+  CALENDAR_VIEW_OPTIONS,
+  type CalendarView,
+  useDefaultCalendarView,
+} from "@/lib/calendar-prefs";
 import { colors, gradients, radius } from "@/lib/theme";
 
 export default function CalendarScreen() {
-  const from = startOfToday();
-  const to = new Date(from.getTime() + 45 * 24 * 60 * 60 * 1000);
+  const defaultView = useDefaultCalendarView();
+  const [mode, setMode] = useState<CalendarView | null>(null);
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
 
-  const {
-    data: lessons = [],
-    refetch,
-    isLoading,
-  } = trpc.lessons.range.useQuery({
-    from: from.toISOString(),
-    to: to.toISOString(),
-  });
+  useEffect(() => {
+    if (defaultView.loaded) setMode(defaultView.view);
+  }, [defaultView.loaded, defaultView.view]);
 
-  const sections = Object.values(
-    lessons.reduce<Record<string, { title: string; data: typeof lessons }>>(
-      (acc, lesson) => {
-        const key = format(startOfDay(new Date(lesson.startsAt)), "yyyy-MM-dd");
-        if (!acc[key]) {
-          acc[key] = {
-            title: format(new Date(lesson.startsAt), "EEEE, d MMMM", { locale: pl }),
-            data: [],
-          };
-        }
-        acc[key].data.push(lesson);
-        return acc;
-      },
-      {},
-    ),
-  );
+  if (!mode) return <ScreenBackground>{null}</ScreenBackground>;
 
   return (
     <ScreenBackground>
-      <Text style={styles.header}>Kalendarz</Text>
-      <View style={{ flex: 1 }}>
-        <RefreshableList onRefresh={refetch}>
-          {sections.length === 0 && !isLoading ? (
-            <Text key="empty" style={styles.empty}>
-              Brak zaplanowanych zajęć
-            </Text>
-          ) : (
-            sections.flatMap((section) => [
-              <Text key={`h-${section.title}`} style={styles.sectionHeader}>
-                {section.title}
-              </Text>,
-              ...section.data.map((item) => (
-                <Pressable
-                  key={item.id}
-                  style={styles.rowWrap}
-                  onPress={() => openLessonSheet(item.id)}
-                >
-                  <Card style={styles.row}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.rowTitle}>
-                        {format(new Date(item.startsAt), "HH:mm")} · {item.student?.name}
-                      </Text>
-                      <View style={styles.badgeRow}>
-                        <Badge
-                          label={
-                            item.status === "cancelled"
-                              ? "Odwołane"
-                              : item.status === "completed"
-                                ? "Odbyły się"
-                                : "Zaplanowane"
-                          }
-                          tone={
-                            item.status === "cancelled"
-                              ? "danger"
-                              : item.status === "completed"
-                                ? "success"
-                                : "default"
-                          }
-                        />
-                        <Badge
-                          label={item.paid ? "opłacone" : "nieopłacone"}
-                          tone={item.paid ? "success" : "warning"}
-                        />
-                      </View>
-                    </View>
-                    <Text style={styles.price}>{formatPLN(item.price)}</Text>
-                  </Card>
-                </Pressable>
-              )),
-            ])
-          )}
-          <View key="bottom-spacer" style={{ height: 96 }} />
-        </RefreshableList>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>Kalendarz</Text>
+        <View style={styles.segmented}>
+          {CALENDAR_VIEW_OPTIONS.map((m) => {
+            const active = m.value === mode;
+            return (
+              <Pressable key={m.value} onPress={() => setMode(m.value)}>
+                {active ? (
+                  <LinearGradient
+                    colors={gradients.accent}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.segment}
+                  >
+                    <Text style={styles.segmentTextActive}>{m.label}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.segment}>
+                    <Text style={styles.segmentText}>{m.label}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
-      <Link href="/lesson/new" asChild>
+      <View style={{ flex: 1 }}>
+        {mode === "month" && (
+          <MonthView selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+        )}
+        {mode === "week" && (
+          <WeekView selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+        )}
+        {mode === "list" && <ListView />}
+      </View>
+      <Link
+        href={
+          mode === "list"
+            ? "/lesson/new"
+            : { pathname: "/lesson/new", params: { date: format(selectedDate, "yyyy-MM-dd") } }
+        }
+        asChild
+      >
         <Pressable style={styles.fabWrap}>
           <LinearGradient colors={gradients.accent} style={styles.fab}>
             <Text style={styles.fabText}>+</Text>
@@ -110,33 +81,35 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    marginBottom: 12,
+    gap: 8,
+  },
   header: {
     fontSize: 24,
     fontWeight: "800",
     color: colors.text,
-    paddingHorizontal: 20,
-    paddingTop: 8,
   },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.textFaint,
-    marginTop: 18,
-    marginBottom: 8,
-    marginHorizontal: 16,
-    textTransform: "capitalize",
-  },
-  rowWrap: { paddingHorizontal: 16 },
-  row: {
+  segmented: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.full,
+    padding: 3,
   },
-  rowTitle: { fontSize: 15, fontWeight: "700", color: colors.text },
-  badgeRow: { flexDirection: "row", gap: 6, marginTop: 8 },
-  price: { fontSize: 15, fontWeight: "700", color: colors.text },
-  empty: { textAlign: "center", color: colors.textFaint, marginTop: 40 },
+  segment: {
+    borderRadius: radius.full,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+  },
+  segmentText: { color: colors.textMuted, fontWeight: "600", fontSize: 12 },
+  segmentTextActive: { color: "#fff", fontWeight: "700", fontSize: 12 },
   fabWrap: {
     position: "absolute",
     right: 20,
