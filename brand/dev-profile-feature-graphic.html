@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html,body{margin:0;padding:0;background:#0B1220;}
+  .stage{width:2048px;height:1152px;position:relative;overflow:hidden;
+    font-family:-apple-system,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 800px at 24% 18%, rgba(99,102,241,.28), transparent 62%),
+      radial-gradient(1000px 760px at 82% 86%, rgba(16,185,129,.22), transparent 60%),
+      linear-gradient(135deg,#131C31 0%,#111827 46%,#0B1220 100%);
+  }
+  .grid{position:absolute;inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(1300px 760px at 50% 50%, #000 10%, transparent 78%);}
+  .vignette{position:absolute;inset:0;background:radial-gradient(1500px 1000px at 50% 50%, transparent 45%, rgba(6,10,20,.55) 100%);}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:46px;}
+  .mark{width:224px;height:224px;border-radius:58px;background:linear-gradient(160deg,#1B2439,#0F1626);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 40px 90px rgba(0,0,0,.55), inset 0 2px 0 rgba(255,255,255,.09), 0 0 0 2px rgba(99,102,241,.28);
+    font-size:96px;font-weight:700;letter-spacing:-4px;
+    background-clip:padding-box;}
+  .mark span{background:linear-gradient(135deg,#818CF8 0%,#34D399 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  h1{margin:0;font-size:126px;line-height:1;letter-spacing:-3.5px;font-weight:700;color:#F8FAFC;
+     text-shadow:0 6px 40px rgba(0,0,0,.45);white-space:nowrap;}
+  p{margin:0;font-size:46px;line-height:1.25;font-weight:450;color:#A9B4CC;letter-spacing:-.4px;text-align:center;white-space:nowrap;}
+  .chips{display:flex;gap:22px;margin-top:12px;}
+  .chip{font-size:31px;font-weight:550;color:#CBD5E1;padding:17px 34px;border-radius:999px;
+    background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);
+    display:flex;align-items:center;gap:14px;white-space:nowrap;}
+  .dot{width:13px;height:13px;border-radius:999px;}
+</style></head><body>
+<div class="stage">
+  <div class="grid"></div>
+  <div class="vignette"></div>
+  <div class="center">
+    <div class="mark"><span>KM</span></div>
+    <h1>Kamil Marczak</h1>
+    <p>Aplikacje mobilne i webowe — proste narzędzia do codziennej pracy</p>
+    <div class="chips">
+      <div class="chip"><span class="dot" style="background:#6366F1"></span>Android &amp; iOS</div>
+      <div class="chip"><span class="dot" style="background:#10B981"></span>Web</div>
+      <div class="chip"><span class="dot" style="background:#38BDF8"></span>Made in Poland</div>
+    </div>
+  </div>
+</div>
+</body></html>
