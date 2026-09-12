@@ -9,5 +9,3 @@ onlyBuiltDependencies:
 overrides:
   "@expo/dom-webview": ^57.0.1
 
-patchedDependencies:
-  react-native-google-one-tap-signin: patches/react-native-google-one-tap-signin.patch

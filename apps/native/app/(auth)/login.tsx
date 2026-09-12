@@ -34,7 +34,7 @@ export default function LoginScreen() {
       }
       const { error } = await authClient.signIn.social({
         provider: "google",
-        idToken: { token: google.idToken, nonce: google.nonce },
+        idToken: { token: google.idToken },
       });
       if (error) {
         alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
