@@ -56,6 +56,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import { clearHash, pushHash, replaceHash, useHash } from "@/hooks/use-hash";
 import { authClient, useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -90,6 +91,19 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
+
+const SETTINGS_HASH = "settings";
+const DEFAULT_SECTION: SectionId = "profile";
+
+function sectionFromHash(hash: string): SectionId | null {
+  if (hash !== SETTINGS_HASH && !hash.startsWith(`${SETTINGS_HASH}/`)) return null;
+  const slug = hash.slice(SETTINGS_HASH.length + 1);
+  return SECTIONS.find((s) => s.id === slug)?.id ?? DEFAULT_SECTION;
+}
+
+export function openSettings(section: SectionId = DEFAULT_SECTION) {
+  pushHash(`${SETTINGS_HASH}/${section}`);
+}
 
 function relative(date: string) {
   return formatDistanceToNow(new Date(date), { addSuffix: true, locale: pl });
@@ -693,18 +707,22 @@ function DangerSection() {
   );
 }
 
-export function SettingsDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const [section, setSection] = useState<SectionId>("profile");
+export function SettingsDialog() {
+  const hashSection = sectionFromHash(useHash());
+  const section = hashSection ?? DEFAULT_SECTION;
   const active = SECTIONS.find((s) => s.id === section)!;
 
+  function selectSection(id: SectionId) {
+    replaceHash(`${SETTINGS_HASH}/${id}`);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={hashSection !== null}
+      onOpenChange={(next) => {
+        if (!next) clearHash();
+      }}
+    >
       <DialogContent className="overflow-hidden p-0 md:max-h-[600px] md:max-w-[900px] lg:max-w-[980px]">
         <DialogTitle className="sr-only">Ustawienia konta</DialogTitle>
         <DialogDescription className="sr-only">
@@ -724,7 +742,7 @@ export function SettingsDialog({
                         <SidebarMenuItem key={item.id}>
                           <SidebarMenuButton
                             isActive={item.id === section}
-                            onClick={() => setSection(item.id)}
+                            onClick={() => selectSection(item.id)}
                             className="h-9 gap-3 rounded-lg px-3"
                           >
                             <Icon />
@@ -757,7 +775,7 @@ export function SettingsDialog({
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setSection(item.id)}
+                  onClick={() => selectSection(item.id)}
                   className={cn(
                     "shrink-0 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
                     item.id === section
