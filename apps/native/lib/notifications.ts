@@ -66,10 +66,19 @@ function buildTag(kind: NotifKind, lessonId: string) {
   return `${kind}:${lessonId}`;
 }
 
-export async function syncLessonNotifications(
+let syncQueue: Promise<void> = Promise.resolve();
+
+export function syncLessonNotifications(
   lessons: LessonForNotif[],
   prefs: NotificationPrefs = DEFAULT_NOTIFICATION_PREFS,
 ) {
+  syncQueue = syncQueue
+    .then(() => runSync(lessons, prefs))
+    .catch((e) => console.warn("Lesson notification sync failed", e));
+  return syncQueue;
+}
+
+async function runSync(lessons: LessonForNotif[], prefs: NotificationPrefs) {
   const permission = await Notifications.getPermissionsAsync();
   if (!permission.granted) return;
 
@@ -100,7 +109,7 @@ export async function syncLessonNotifications(
       }
     }
 
-    if (lesson.status === "completed" && !lesson.paid) {
+    if (lesson.status !== "cancelled" && !lesson.paid) {
       const fireAt = startsAt + prefs.overdueDaysAfter * 24 * 60 * 60 * 1000;
       if (fireAt > now) {
         desired.set(buildTag("overdue", lesson.id), { fireAt, kind: "overdue", lesson });
