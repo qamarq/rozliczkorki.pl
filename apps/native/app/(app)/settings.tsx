@@ -30,6 +30,7 @@ import {
   useNotificationPrefs,
 } from "@/lib/notification-prefs";
 import { colors } from "@/lib/theme";
+import { openExactAlarmSettings, useExactAlarmsAllowed } from "@/modules/exact-alarms";
 
 type SessionRow = {
   id: string;
@@ -47,6 +48,7 @@ export default function SettingsScreen() {
   const [deleting, setDeleting] = useState(false);
   const { prefs, update } = useNotificationPrefs();
   const calendarView = useDefaultCalendarView();
+  const exactAlarmsAllowed = useExactAlarmsAllowed();
 
   async function loadSessions() {
     const { data } = await authClient.$fetch<SessionRow[]>("/list-sessions");
@@ -186,6 +188,27 @@ export default function SettingsScreen() {
               ))}
             </View>
           </View>
+
+          <Pressable
+            onPress={() => {
+              if (!openExactAlarmSettings()) Linking.openSettings();
+            }}
+            style={styles.legalRow}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.legalText}>Przypomnienia na czas</Text>
+              <Text style={styles.sessionDate}>
+                {exactAlarmsAllowed
+                  ? "Włączone — przypomnienia przychodzą o ustawionej porze"
+                  : "Wyłączone — przypomnienia mogą się spóźniać. Dotknij, aby zezwolić"}
+              </Text>
+            </View>
+            <Ionicons
+              name={exactAlarmsAllowed ? "checkmark-circle" : "alert-circle"}
+              size={20}
+              color={exactAlarmsAllowed ? colors.success : colors.warning}
+            />
+          </Pressable>
 
           <Pressable onPress={() => Linking.openSettings()} style={styles.legalRow}>
             <View>
