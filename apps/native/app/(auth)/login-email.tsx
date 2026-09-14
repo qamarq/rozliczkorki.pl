@@ -1,23 +1,15 @@
 import { Link } from "expo-router";
 import { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { GoogleIcon } from "@/components/google-icon";
 import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
 import { savePasswordCredential } from "@/lib/credentials";
-import { PRIVACY_URL, TERMS_URL } from "@/lib/legal";
+import { getGoogleIdToken } from "@/lib/google-signin";
 import { colors } from "@/lib/theme";
 
-export default function RegisterScreen() {
-  const [name, setName] = useState("");
+export default function LoginEmailScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,10 +17,10 @@ export default function RegisterScreen() {
 
   async function onSubmit() {
     setLoading(true);
-    const { error } = await authClient.signUp.email({ name, email, password });
+    const { error } = await authClient.signIn.email({ email, password });
     setLoading(false);
     if (error) {
-      alert("Błąd rejestracji", error.message ?? "Spróbuj ponownie");
+      alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
       return;
     }
     await savePasswordCredential(email, password);
@@ -36,13 +28,23 @@ export default function RegisterScreen() {
 
   async function onGoogle() {
     setGoogleLoading(true);
-    const { error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "rozliczkorki://",
-    });
-    setGoogleLoading(false);
-    if (error) {
-      alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+    try {
+      const google = await getGoogleIdToken();
+      if (!google) return;
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        idToken: google.nonce
+          ? { token: google.idToken, nonce: google.nonce }
+          : { token: google.idToken },
+      });
+      if (error) {
+        alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+      }
+    } catch (e) {
+      console.error("Google sign-in failed", e);
+      alert("Błąd logowania", e instanceof Error ? e.message : "Spróbuj ponownie");
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -52,16 +54,10 @@ export default function RegisterScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
       >
-        <Text style={styles.logo}>Załóż konto</Text>
-        <Text style={styles.subtitle}>Za darmo, zajmie minutę</Text>
+        <Text style={styles.logo}>RozliczKorki</Text>
+        <Text style={styles.subtitle}>Zaloguj się e-mailem i hasłem</Text>
 
         <View style={styles.form}>
-          <Input
-            label="Imię"
-            textContentType="name"
-            value={name}
-            onChangeText={setName}
-          />
           <Input
             label="E-mail"
             autoCapitalize="none"
@@ -74,12 +70,12 @@ export default function RegisterScreen() {
           <Input
             label="Hasło"
             secureTextEntry
-            textContentType="newPassword"
-            autoComplete="new-password"
+            textContentType="password"
+            autoComplete="current-password"
             value={password}
             onChangeText={setPassword}
           />
-          <GradientButton label="Załóż konto" onPress={onSubmit} loading={loading} />
+          <GradientButton label="Zaloguj się" onPress={onSubmit} loading={loading} />
           <OutlineButton
             label="Kontynuuj przez Google"
             icon={<GoogleIcon />}
@@ -88,20 +84,12 @@ export default function RegisterScreen() {
           />
         </View>
 
-        <Link href="/login" style={styles.link}>
-          Masz już konto? Zaloguj się
+        <Link href="/forgot-password" style={styles.link}>
+          Nie pamiętasz hasła?
         </Link>
-        <Text style={styles.legal}>
-          Zakładając konto, akceptujesz{" "}
-          <Text style={styles.legalLink} onPress={() => Linking.openURL(TERMS_URL)}>
-            Regulamin
-          </Text>{" "}
-          i{" "}
-          <Text style={styles.legalLink} onPress={() => Linking.openURL(PRIVACY_URL)}>
-            Politykę prywatności
-          </Text>
-          .
-        </Text>
+        <Link href="/register" style={styles.linkTight}>
+          Nie masz konta? Załóż konto
+        </Link>
       </KeyboardAvoidingView>
     </ScreenBackground>
   );
@@ -118,11 +106,5 @@ const styles = StyleSheet.create({
   },
   form: { gap: 14 },
   link: { marginTop: 20, textAlign: "center", color: colors.textMuted },
-  legal: {
-    marginTop: 16,
-    textAlign: "center",
-    fontSize: 12,
-    color: colors.textFaint,
-  },
-  legalLink: { textDecorationLine: "underline" },
+  linkTight: { marginTop: 10, textAlign: "center", color: colors.textMuted },
 });

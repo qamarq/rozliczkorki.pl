@@ -2,7 +2,7 @@
   "expo": {
     "name": "RozliczKorki",
     "slug": "rozliczkorki",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "scheme": "rozliczkorki",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,7 +28,7 @@
         "backgroundColor": "#111827"
       },
       "package": "pl.rozliczkorki.app",
-      "versionCode": 10,
+      "versionCode": 11,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.POST_PROMOTED_NOTIFICATIONS"

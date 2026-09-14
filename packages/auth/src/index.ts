@@ -18,6 +18,17 @@ const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "")
   .map((origin: string) => origin.trim())
   .filter(Boolean);
 
+// Android apps sign WebAuthn requests with android:apk-key-hash:<base64url SHA-256 of the signing cert>.
+const ANDROID_APK_KEY_HASHES = [
+  "07RX20u0maNUfm94yVrKwXmWmxx_qM2-aoFVQ1YFO18",
+  "29WbsTk-wf7yTBS8TRXg4tVfY3QnpneH_k086B2MLFA",
+];
+
+const passkeyOrigins = [
+  ...(process.env.BETTER_AUTH_URL ? [new URL(process.env.BETTER_AUTH_URL).origin] : []),
+  ...ANDROID_APK_KEY_HASHES.map((hash) => `android:apk-key-hash:${hash}`),
+];
+
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -113,7 +124,11 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: process.env.AUTH_COOKIE_PREFIX ?? "better-auth",
   },
-  plugins: [passkey({ rpName: "RozliczKorki" }), expo(), nextCookies()],
+  plugins: [
+    passkey({ rpName: "RozliczKorki", origin: passkeyOrigins }),
+    expo(),
+    nextCookies(),
+  ],
 });
 
 export type Auth = typeof auth;
