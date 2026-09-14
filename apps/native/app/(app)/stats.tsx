@@ -19,7 +19,7 @@ export default function StatsScreen() {
   });
 
   return (
-    <ScreenBackground>
+    <ScreenBackground syncStatus>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.header}>Statystyki</Text>
 

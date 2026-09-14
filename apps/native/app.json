@@ -2,7 +2,7 @@
   "expo": {
     "name": "RozliczKorki",
     "slug": "rozliczkorki",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "scheme": "rozliczkorki",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,7 +28,11 @@
         "backgroundColor": "#111827"
       },
       "package": "pl.rozliczkorki.app",
-      "versionCode": 8
+      "versionCode": 9,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.POST_PROMOTED_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -63,7 +67,14 @@
       "./plugins/withAndroidR8Optimization",
       ["./plugins/withAndroidAssetStatements", { "domains": ["rozliczkorki.pl"] }],
       "./plugins/withAndroidReleaseSigning",
-      "./plugins/withAndroidEdgeToEdge"
+      "./plugins/withAndroidEdgeToEdge",
+      [
+        "expo-live-updates",
+        {
+          "channelId": "lesson-live",
+          "channelName": "Trwające zajęcia"
+        }
+      ]
     ]
   }
 }

@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["pl.rozliczkorki.lessonlive.LessonLiveModule"]
+  }
+}

@@ -2,7 +2,14 @@ import { format } from "date-fns";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Chip, GradientButton, Input, SectionLabel, Switch } from "@/components/ui";
+import {
+  Chip,
+  DateTimeField,
+  GradientButton,
+  Input,
+  SectionLabel,
+  Switch,
+} from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
@@ -107,8 +114,18 @@ export default function NewLessonScreen() {
         ))}
       </View>
 
-      <Input label="Data (RRRR-MM-DD)" value={dateStr} onChangeText={setDateStr} />
-      <Input label="Godzina (GG:MM)" value={timeStr} onChangeText={setTimeStr} />
+      <DateTimeField
+        label="Data"
+        mode="date"
+        value={new Date(`${dateStr}T00:00`)}
+        onChange={(date) => setDateStr(format(date, "yyyy-MM-dd"))}
+      />
+      <DateTimeField
+        label="Godzina"
+        mode="time"
+        value={new Date(`${dateStr}T${timeStr}`)}
+        onChange={(date) => setTimeStr(format(date, "HH:mm"))}
+      />
       <Input
         label="Czas trwania (minuty)"
         keyboardType="numeric"
@@ -163,10 +180,11 @@ export default function NewLessonScreen() {
         />
       </View>
       {recurring && (
-        <Input
-          label="Do kiedy (RRRR-MM-DD)"
-          value={recurringEndDate}
-          onChangeText={setRecurringEndDate}
+        <DateTimeField
+          label="Do kiedy"
+          mode="date"
+          value={new Date(`${recurringEndDate || defaultRecurringEndDate()}T00:00`)}
+          onChange={(date) => setRecurringEndDate(format(date, "yyyy-MM-dd"))}
         />
       )}
 

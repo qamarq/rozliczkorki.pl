@@ -15,13 +15,8 @@ export function usePushRegistration(enabled: boolean) {
     (async () => {
       try {
         const Notifications = await import("expo-notifications");
-        const existing = await Notifications.getPermissionsAsync();
-        let status = existing.status;
-        if (status !== "granted") {
-          const requested = await Notifications.requestPermissionsAsync();
-          status = requested.status;
-        }
-        if (status !== "granted") return;
+        const permission = await Notifications.getPermissionsAsync();
+        if (!permission.granted) return;
 
         const { data: token } = await Notifications.getExpoPushTokenAsync();
         registerToken.mutate({ token, platform: Platform.OS });
