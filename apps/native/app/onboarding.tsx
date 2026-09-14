@@ -3,14 +3,33 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
-import { GradientButton, OutlineButton } from "@/components/ui";
+import {
+  Animated,
+  AppState,
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { GradientButton, Switch } from "@/components/ui";
+import { alert } from "@/lib/alert";
 import { useSession } from "@/lib/auth-client";
 import {
+  DEFAULT_NOTIFICATION_PREFS,
+  NOTIFICATION_CHANNEL_OPTIONS,
+  type NotificationChannelKey,
+  readNotificationPrefs,
+  writeNotificationPrefs,
+} from "@/lib/notification-prefs";
+import {
+  EXACT_ALARMS_PROMPTED_KEY,
   ensureNotificationChannels,
   requestNotificationPermission,
 } from "@/lib/notifications";
 import { colors, gradients } from "@/lib/theme";
+import { canScheduleExactAlarms, openExactAlarmSettings } from "@/modules/exact-alarms";
+import { canPostLiveUpdates, openLiveUpdateSettings } from "@/modules/lesson-live";
 
 const ONBOARDING_KEY = "onboarding_complete";
 
@@ -26,11 +45,20 @@ const FEATURES = [
   },
 ];
 
+const CHANNEL_ICONS = {
+  upcoming: "time-outline",
+  overdue: "cash-outline",
+  live: "pulse-outline",
+} as const;
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const { data: session } = useSession();
   const [step, setStep] = useState(0);
   const [requesting, setRequesting] = useState(false);
+  const [channels, setChannels] = useState(DEFAULT_NOTIFICATION_PREFS.channels);
+  const awaitingSettings = useRef(false);
+  const anySelected = Object.values(channels).some(Boolean);
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(16)).current;
@@ -60,19 +88,83 @@ export default function OnboardingScreen() {
     }
   }, [step]);
 
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active" || !awaitingSettings.current) return;
+      awaitingSettings.current = false;
+      onContinue();
+    });
+    return () => sub.remove();
+  }, [channels]);
+
   async function finish() {
     await SecureStore.setItemAsync(ONBOARDING_KEY, "true");
     router.replace(session?.user ? "/" : "/login");
   }
 
-  async function onEnableNotifications() {
+  function toggleChannel(key: NotificationChannelKey) {
+    setChannels((current) => ({ ...current, [key]: !current[key] }));
+  }
+
+  function askToOpenSettings(title: string, message: string, open: () => void) {
+    alert(title, message, [
+      { text: "Anuluj", style: "cancel" },
+      {
+        text: "Otwórz ustawienia",
+        onPress: () => {
+          awaitingSettings.current = true;
+          open();
+        },
+      },
+    ]);
+  }
+
+  async function onContinue() {
     setRequesting(true);
     try {
+      const prefs = await readNotificationPrefs();
+      await writeNotificationPrefs({ ...prefs, channels });
+      if (!anySelected) {
+        await finish();
+        return;
+      }
+
       await ensureNotificationChannels();
-      await requestNotificationPermission();
+      if (!(await requestNotificationPermission())) {
+        askToOpenSettings(
+          "Zezwól na powiadomienia",
+          "Bez tej zgody wybrane powiadomienia nie będą działać. Włącz je w ustawieniach aplikacji albo odznacz wszystkie rodzaje powiadomień.",
+          () => Linking.openSettings(),
+        );
+        return;
+      }
+
+      if (!canScheduleExactAlarms()) {
+        await SecureStore.setItemAsync(EXACT_ALARMS_PROMPTED_KEY, "1");
+        askToOpenSettings(
+          "Przypomnienia na czas",
+          "Zezwól na ustawianie alarmów i przypomnień — dzięki temu powiadomienia przyjdą dokładnie o czasie.",
+          () => {
+            if (!openExactAlarmSettings()) Linking.openSettings();
+          },
+        );
+        return;
+      }
+
+      if (channels.live && !canPostLiveUpdates()) {
+        askToOpenSettings(
+          "Zajęcia na żywo",
+          "Zezwól na powiadomienia na żywo, żeby postęp zajęć był widoczny na pasku statusu i ekranie blokady.",
+          () => {
+            if (!openLiveUpdateSettings()) Linking.openSettings();
+          },
+        );
+        return;
+      }
+
+      await finish();
     } finally {
       setRequesting(false);
-      finish();
     }
   }
 
@@ -122,26 +214,41 @@ export default function OnboardingScreen() {
             <View style={styles.logoBadge}>
               <Ionicons name="notifications" size={36} color="#fff" />
             </View>
-            <Text style={styles.title}>Włącz powiadomienia</Text>
+            <Text style={styles.title}>Powiadomienia</Text>
             <Text style={styles.subtitle}>
-              Przypomnimy Ci godzinę przed zajęciami i dopilnujemy zaległych płatności.
-              Możesz to później zmienić w ustawieniach telefonu — mamy dwie osobne
-              kategorie:
+              Wybierz, o czym mamy Ci przypominać. Zmienisz to później w ustawieniach.
             </Text>
-            <View style={{ gap: 12, marginTop: 4, width: "100%" }}>
-              <View style={styles.featureRow}>
-                <View style={styles.featureIcon}>
-                  <Ionicons name="time-outline" size={20} color={colors.accentTo} />
-                </View>
-                <Text style={styles.featureText}>Nadchodzące zajęcia</Text>
-              </View>
-              <View style={styles.featureRow}>
-                <View style={styles.featureIcon}>
-                  <Ionicons name="cash-outline" size={20} color={colors.accentTo} />
-                </View>
-                <Text style={styles.featureText}>Zaległe płatności</Text>
-              </View>
+            <View style={{ gap: 10, marginTop: 4, width: "100%" }}>
+              {NOTIFICATION_CHANNEL_OPTIONS.map((opt) => (
+                <Pressable
+                  key={opt.key}
+                  style={styles.channelRow}
+                  onPress={() => toggleChannel(opt.key)}
+                >
+                  <View style={styles.featureIcon}>
+                    <Ionicons
+                      name={CHANNEL_ICONS[opt.key]}
+                      size={20}
+                      color={colors.accentTo}
+                    />
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={styles.channelLabel}>{opt.label}</Text>
+                    <Text style={styles.channelHint}>{opt.description}</Text>
+                  </View>
+                  <Switch
+                    value={channels[opt.key]}
+                    onValueChange={() => toggleChannel(opt.key)}
+                  />
+                </Pressable>
+              ))}
             </View>
+            {anySelected && (
+              <Text style={styles.permissionHint}>
+                Poprosimy o zgodę na powiadomienia i dokładne alarmy — bez nich wybrane
+                powiadomienia nie zadziałają.
+              </Text>
+            )}
           </>
         )}
       </Animated.View>
@@ -156,14 +263,11 @@ export default function OnboardingScreen() {
         {step < 2 ? (
           <GradientButton label="Dalej" onPress={() => setStep((s) => s + 1)} />
         ) : (
-          <>
-            <GradientButton
-              label="Włącz powiadomienia"
-              onPress={onEnableNotifications}
-              loading={requesting}
-            />
-            <OutlineButton label="Może później" onPress={finish} disabled={requesting} />
-          </>
+          <GradientButton
+            label={anySelected ? "Włącz wybrane" : "Dalej bez powiadomień"}
+            onPress={onContinue}
+            loading={requesting}
+          />
         )}
       </View>
     </View>
@@ -176,7 +280,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
     gap: 14,
   },
   logoBadge: {
@@ -214,6 +318,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   featureText: { fontSize: 15, fontWeight: "600", color: colors.text, flex: 1 },
+  channelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  channelLabel: { fontSize: 14, fontWeight: "700", color: colors.text },
+  channelHint: { fontSize: 12, color: colors.textFaint, lineHeight: 16 },
+  permissionHint: {
+    fontSize: 12,
+    color: colors.textFaint,
+    textAlign: "center",
+    lineHeight: 17,
+  },
   dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 20 },
   dot: {
     width: 7,

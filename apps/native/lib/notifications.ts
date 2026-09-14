@@ -8,6 +8,8 @@ export const NOTIFICATION_CHANNELS = {
   overdue: "overdue-payments",
 } as const;
 
+export const EXACT_ALARMS_PROMPTED_KEY = "exact-alarms-prompted";
+
 const REMINDED_KEY = "reminded-lessons";
 
 Notifications.setNotificationHandler({
@@ -117,7 +119,7 @@ async function runSync(lessons: LessonForNotif[], prefs: NotificationPrefs) {
   for (const lesson of lessons) {
     const startsAt = new Date(lesson.startsAt).getTime();
 
-    if (lesson.status === "scheduled" && startsAt > now) {
+    if (prefs.channels.upcoming && lesson.status === "scheduled" && startsAt > now) {
       const fireAt = startsAt - prefs.upcomingMinutesBefore * 60 * 1000;
       const key = `${lesson.id}:${startsAt}`;
       if (fireAt > now) {
@@ -137,7 +139,7 @@ async function runSync(lessons: LessonForNotif[], prefs: NotificationPrefs) {
       }
     }
 
-    if (lesson.status !== "cancelled" && !lesson.paid) {
+    if (prefs.channels.overdue && lesson.status !== "cancelled" && !lesson.paid) {
       const fireAt = startsAt + prefs.overdueDaysAfter * 24 * 60 * 60 * 1000;
       if (fireAt > now) {
         desired.set(buildTag("overdue", lesson.id), { fireAt, kind: "overdue", lesson });

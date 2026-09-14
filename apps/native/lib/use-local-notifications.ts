@@ -3,18 +3,23 @@ import * as SecureStore from "expo-secure-store";
 import { useEffect, useMemo, useState } from "react";
 import { AppState } from "react-native";
 import { canScheduleExactAlarms, openExactAlarmSettings } from "@/modules/exact-alarms";
+import { LIVE_WRAP_UP_MS, syncLiveLessons } from "@/modules/lesson-live";
 import { alert } from "./alert";
 import { useNotificationPrefs } from "./notification-prefs";
-import { ensureNotificationChannels, syncLessonNotifications } from "./notifications";
+import {
+  EXACT_ALARMS_PROMPTED_KEY,
+  ensureNotificationChannels,
+  syncLessonNotifications,
+} from "./notifications";
 import { trpc } from "./trpc";
 
 const NO_LESSONS: never[] = [];
-const EXACT_PROMPT_KEY = "exact-alarms-prompted";
+const LIVE_HORIZON_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function promptForExactAlarms() {
   if (canScheduleExactAlarms()) return;
-  if (await SecureStore.getItemAsync(EXACT_PROMPT_KEY)) return;
-  await SecureStore.setItemAsync(EXACT_PROMPT_KEY, "1");
+  if (await SecureStore.getItemAsync(EXACT_ALARMS_PROMPTED_KEY)) return;
+  await SecureStore.setItemAsync(EXACT_ALARMS_PROMPTED_KEY, "1");
   alert(
     "Przypomnienia na czas",
     "Żeby przypomnienia o zajęciach przychodziły dokładnie o ustawionej porze, zezwól aplikacji na ustawianie alarmów i przypomnień.",
@@ -58,17 +63,39 @@ export function useLocalNotificationsSync(enabled: boolean) {
 
   useEffect(() => {
     if (!enabled || !loaded || !isSuccess) return;
+    const withStudents = lessons.filter((l) => l.student != null);
+
     syncLessonNotifications(
-      lessons
-        .filter((l) => l.student != null)
-        .map((l) => ({
-          id: l.id,
-          startsAt: l.startsAt,
-          status: l.status,
-          paid: l.paid,
-          studentName: l.student!.name,
-        })),
+      withStudents.map((l) => ({
+        id: l.id,
+        startsAt: l.startsAt,
+        status: l.status,
+        paid: l.paid,
+        studentName: l.student!.name,
+      })),
       prefs,
+    );
+
+    const now = Date.now();
+    syncLiveLessons(
+      prefs.channels.live
+        ? withStudents
+            .filter((l) => l.status !== "cancelled")
+            .map((l) => {
+              const startsAt = new Date(l.startsAt).getTime();
+              return {
+                id: l.id,
+                studentName: l.student!.name,
+                startsAt,
+                endsAt: startsAt + l.durationMinutes * 60 * 1000,
+                paid: l.paid,
+              };
+            })
+            .filter(
+              (l) =>
+                l.endsAt + LIVE_WRAP_UP_MS > now && l.startsAt < now + LIVE_HORIZON_MS,
+            )
+        : [],
     );
   }, [enabled, loaded, isSuccess, lessons, prefs, resumeTick]);
 }

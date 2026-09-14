@@ -26,7 +26,7 @@ export default function CalendarScreen() {
   if (!mode) return <ScreenBackground>{null}</ScreenBackground>;
 
   return (
-    <ScreenBackground>
+    <ScreenBackground syncStatus>
       <View style={styles.headerRow}>
         <Text style={styles.header}>Kalendarz</Text>
         <View style={styles.segmented}>

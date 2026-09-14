@@ -19,18 +19,28 @@ import {
   OutlineButton,
   ScreenBackground,
   SectionLabel,
+  Switch,
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient, useSession } from "@/lib/auth-client";
 import { CALENDAR_VIEW_OPTIONS, useDefaultCalendarView } from "@/lib/calendar-prefs";
 import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL, WEB_URL } from "@/lib/legal";
 import {
+  NOTIFICATION_CHANNEL_OPTIONS,
+  type NotificationChannelKey,
   OVERDUE_OPTIONS,
   UPCOMING_OPTIONS,
   useNotificationPrefs,
 } from "@/lib/notification-prefs";
+import { requestNotificationPermission } from "@/lib/notifications";
 import { colors } from "@/lib/theme";
+import { clearOfflineCache } from "@/lib/trpc";
 import { openExactAlarmSettings, useExactAlarmsAllowed } from "@/modules/exact-alarms";
+import {
+  openLiveUpdateSettings,
+  syncLiveLessons,
+  useLiveUpdatesAllowed,
+} from "@/modules/lesson-live";
 
 type SessionRow = {
   id: string;
@@ -49,6 +59,28 @@ export default function SettingsScreen() {
   const { prefs, update } = useNotificationPrefs();
   const calendarView = useDefaultCalendarView();
   const exactAlarmsAllowed = useExactAlarmsAllowed();
+  const liveUpdatesAllowed = useLiveUpdatesAllowed();
+
+  async function onToggleChannel(key: NotificationChannelKey, enabled: boolean) {
+    if (enabled && !(await requestNotificationPermission())) {
+      alert(
+        "Powiadomienia są wyłączone",
+        "Zezwól aplikacji na powiadomienia w ustawieniach systemu, żeby włączyć ten rodzaj powiadomień.",
+        [
+          { text: "Anuluj", style: "cancel" },
+          { text: "Otwórz ustawienia", onPress: () => Linking.openSettings() },
+        ],
+      );
+      return;
+    }
+    update({ channels: { ...prefs.channels, [key]: enabled } });
+  }
+
+  async function onSignOut() {
+    await authClient.signOut();
+    syncLiveLessons([]);
+    await clearOfflineCache();
+  }
 
   async function loadSessions() {
     const { data } = await authClient.$fetch<SessionRow[]>("/list-sessions");
@@ -115,7 +147,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScreenBackground>
+    <ScreenBackground syncStatus>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Ustawienia</Text>
 
@@ -155,39 +187,60 @@ export default function SettingsScreen() {
 
         <SectionLabel>Powiadomienia</SectionLabel>
         <Card style={{ gap: 16 }}>
-          <View style={{ gap: 8 }}>
-            <Text style={styles.prefLabel}>Przypomnienie przed zajęciami</Text>
-            <Text style={styles.prefHint}>
-              Ile wcześniej powiadomić o zaplanowanych zajęciach.
-            </Text>
-            <View style={styles.chipRow}>
-              {UPCOMING_OPTIONS.map((opt) => (
-                <Chip
-                  key={opt.value}
-                  label={opt.label}
-                  active={prefs.upcomingMinutesBefore === opt.value}
-                  onPress={() => update({ upcomingMinutesBefore: opt.value })}
+          {NOTIFICATION_CHANNEL_OPTIONS.map((opt) => (
+            <View key={opt.key} style={{ gap: 8 }}>
+              <View style={styles.switchRow}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={styles.prefLabel}>{opt.label}</Text>
+                  <Text style={styles.prefHint}>{opt.description}</Text>
+                </View>
+                <Switch
+                  value={prefs.channels[opt.key]}
+                  onValueChange={(enabled) => onToggleChannel(opt.key, enabled)}
                 />
-              ))}
-            </View>
-          </View>
+              </View>
 
-          <View style={{ gap: 8 }}>
-            <Text style={styles.prefLabel}>Przypomnienie o zaległej płatności</Text>
-            <Text style={styles.prefHint}>
-              Ile po odbytych zajęciach przypomnieć, jeśli wciąż nie są opłacone.
-            </Text>
-            <View style={styles.chipRow}>
-              {OVERDUE_OPTIONS.map((opt) => (
-                <Chip
-                  key={opt.value}
-                  label={opt.label}
-                  active={prefs.overdueDaysAfter === opt.value}
-                  onPress={() => update({ overdueDaysAfter: opt.value })}
-                />
-              ))}
+              {opt.key === "upcoming" && prefs.channels.upcoming && (
+                <View style={styles.chipRow}>
+                  {UPCOMING_OPTIONS.map((option) => (
+                    <Chip
+                      key={option.value}
+                      label={option.label}
+                      active={prefs.upcomingMinutesBefore === option.value}
+                      onPress={() => update({ upcomingMinutesBefore: option.value })}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {opt.key === "overdue" && prefs.channels.overdue && (
+                <View style={styles.chipRow}>
+                  {OVERDUE_OPTIONS.map((option) => (
+                    <Chip
+                      key={option.value}
+                      label={option.label}
+                      active={prefs.overdueDaysAfter === option.value}
+                      onPress={() => update({ overdueDaysAfter: option.value })}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {opt.key === "live" && prefs.channels.live && !liveUpdatesAllowed && (
+                <Pressable
+                  onPress={() => {
+                    if (!openLiveUpdateSettings()) Linking.openSettings();
+                  }}
+                  style={styles.legalRow}
+                >
+                  <Text style={[styles.sessionDate, { flex: 1 }]}>
+                    Powiadomienia na żywo są zablokowane w systemie. Dotknij, aby zezwolić
+                  </Text>
+                  <Ionicons name="alert-circle" size={20} color={colors.warning} />
+                </Pressable>
+              )}
             </View>
-          </View>
+          ))}
 
           <Pressable
             onPress={() => {
@@ -212,9 +265,7 @@ export default function SettingsScreen() {
 
           <Pressable onPress={() => Linking.openSettings()} style={styles.legalRow}>
             <View>
-              <Text style={styles.legalText}>
-                Nadchodzące zajęcia i zaległe płatności
-              </Text>
+              <Text style={styles.legalText}>Kategorie powiadomień</Text>
               <Text style={styles.sessionDate}>
                 Zarządzaj kategoriami powiadomień w ustawieniach systemowych
               </Text>
@@ -288,11 +339,7 @@ export default function SettingsScreen() {
           </Pressable>
         </Card>
 
-        <OutlineButton
-          label="Wyloguj się"
-          tone="danger"
-          onPress={() => authClient.signOut()}
-        />
+        <OutlineButton label="Wyloguj się" tone="danger" onPress={onSignOut} />
 
         <SectionLabel>Usuwanie konta</SectionLabel>
         <Card style={{ gap: 12 }}>
@@ -323,6 +370,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  switchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   prefLabel: { color: colors.text, fontSize: 14, fontWeight: "600" },
   prefHint: { color: colors.textFaint, fontSize: 12, lineHeight: 17 },
   avatarText: { color: "#fff", fontSize: 20, fontWeight: "700" },
