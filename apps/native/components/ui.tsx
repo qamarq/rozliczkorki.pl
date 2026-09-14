@@ -131,15 +131,34 @@ export function OutlineButton({
 }
 
 export function Input(props: TextInputProps & { label?: string }) {
-  const { label, style, ...rest } = props;
+  const { label, style, secureTextEntry, ...rest } = props;
+  const [revealed, setRevealed] = useState(false);
   return (
     <View style={{ gap: 6 }}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        placeholderTextColor={colors.textFaint}
-        style={[styles.input, style]}
-        {...rest}
-      />
+      <View>
+        <TextInput
+          placeholderTextColor={colors.textFaint}
+          style={[styles.input, secureTextEntry && styles.inputWithToggle, style]}
+          secureTextEntry={secureTextEntry && !revealed}
+          {...rest}
+        />
+        {secureTextEntry && (
+          <Pressable
+            onPress={() => setRevealed((v) => !v)}
+            hitSlop={8}
+            style={styles.inputToggle}
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? "Ukryj hasło" : "Pokaż hasło"}
+          >
+            <Ionicons
+              name={revealed ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color={colors.textMuted}
+            />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -345,6 +364,14 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 15,
     color: colors.text,
+  },
+  inputWithToggle: { paddingRight: 44 },
+  inputToggle: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
   },
   pickerField: {
     flexDirection: "row",
