@@ -1,6 +1,10 @@
+import type { AppRouter } from "@repo/api";
+import type { inferRouterClient } from "@trpc/client";
+import { getQueryKey } from "@trpc/react-query";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import type { LessonRow } from "@/components/calendar/shared";
 import {
   Chip,
   GradientButton,
@@ -13,12 +17,26 @@ import { alert } from "@/lib/alert";
 import { closeSheet, openSheet } from "@/lib/sheet";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
-import { trpc } from "@/lib/trpc";
+import { queryClient, trpc } from "@/lib/trpc";
 
 type LessonStatus = "scheduled" | "completed" | "cancelled";
+type LessonDetails = Awaited<
+  ReturnType<inferRouterClient<AppRouter>["lessons"]["byId"]["query"]>
+>;
 
 export function openLessonSheet(lessonId: string) {
   openSheet(() => <LessonDetailsContent lessonId={lessonId} onClose={closeSheet} />);
+}
+
+function findCachedLesson(lessonId: string) {
+  const cached = queryClient.getQueriesData<LessonRow[]>({
+    queryKey: getQueryKey(trpc.lessons.range),
+  });
+  for (const [, rows] of cached) {
+    const match = rows?.find((row) => row.id === lessonId);
+    if (match) return match as LessonDetails;
+  }
+  return undefined;
 }
 
 function LessonDetailsContent({
@@ -29,13 +47,17 @@ function LessonDetailsContent({
   onClose: () => void;
 }) {
   const utils = trpc.useUtils();
-  const { data: lesson } = trpc.lessons.byId.useQuery({ id: lessonId });
+  const { data: lesson } = trpc.lessons.byId.useQuery(
+    { id: lessonId },
+    { placeholderData: () => findCachedLesson(lessonId) },
+  );
 
   const [status, setStatus] = useState<LessonStatus>("scheduled");
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("transfer");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [prorate, setProrate] = useState(false);
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     if (!lesson) return;
@@ -44,6 +66,7 @@ function LessonDetailsContent({
     setPaymentMethod(lesson.paymentMethod ?? "transfer");
     setDurationMinutes(String(lesson.durationMinutes));
     setProrate(lesson.prorate);
+    setNotes(lesson.notes ?? "");
   }, [lesson]);
 
   const { data: student } = trpc.students.byId.useQuery(
@@ -89,6 +112,7 @@ function LessonDetailsContent({
 
   function performUpdate(applyToFuture: boolean) {
     if (!lesson) return;
+    const trimmedNotes = notes.trim();
     updateLesson.mutate({
       id: lesson.id,
       durationMinutes: Number(durationMinutes),
@@ -96,6 +120,7 @@ function LessonDetailsContent({
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
+      ...(trimmedNotes !== (lesson.notes ?? "") ? { notes: trimmedNotes || null } : {}),
       applyToFuture,
     });
   }
@@ -211,6 +236,15 @@ function LessonDetailsContent({
         </View>
       )}
 
+      <Input
+        label="Notatki"
+        placeholder="Co przerobiliście, zadanie domowe…"
+        multiline
+        value={notes}
+        onChangeText={setNotes}
+        style={styles.notes}
+      />
+
       <View style={{ marginTop: 12, gap: 10 }}>
         <GradientButton
           label="Zapisz"
@@ -235,6 +269,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
   hint: { fontSize: 12, color: colors.textFaint, marginTop: -6 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  notes: { minHeight: 80, textAlignVertical: "top" },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",

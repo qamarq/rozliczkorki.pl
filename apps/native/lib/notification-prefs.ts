@@ -3,15 +3,42 @@ import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "notification-prefs";
 
+export type NotificationChannelKey = "upcoming" | "overdue" | "live";
+
 export type NotificationPrefs = {
   upcomingMinutesBefore: number;
   overdueDaysAfter: number;
+  channels: Record<NotificationChannelKey, boolean>;
 };
 
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   upcomingMinutesBefore: 60,
   overdueDaysAfter: 3,
+  channels: { upcoming: true, overdue: true, live: true },
 };
+
+export const NOTIFICATION_CHANNEL_OPTIONS: {
+  key: NotificationChannelKey;
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: "upcoming",
+    label: "Przypomnienie przed zajęciami",
+    description: "Powiadomienie chwilę przed zaplanowanymi zajęciami.",
+  },
+  {
+    key: "overdue",
+    label: "Przypomnienie o nieopłaconych",
+    description: "Po zajęciach, które wciąż nie są oznaczone jako opłacone.",
+  },
+  {
+    key: "live",
+    label: "Zajęcia na żywo",
+    description:
+      "Powiadomienie z postępem przez całe zajęcia i chwilę po nich — do oznaczenia płatności.",
+  },
+];
 
 export const UPCOMING_OPTIONS = [
   { value: 15, label: "15 min" },
@@ -32,15 +59,21 @@ function parse(raw: string | null): NotificationPrefs {
   if (!raw) return DEFAULT_NOTIFICATION_PREFS;
   try {
     const parsed = JSON.parse(raw) as Partial<NotificationPrefs>;
+    const defaults = DEFAULT_NOTIFICATION_PREFS;
     return {
       upcomingMinutesBefore:
         typeof parsed.upcomingMinutesBefore === "number"
           ? parsed.upcomingMinutesBefore
-          : DEFAULT_NOTIFICATION_PREFS.upcomingMinutesBefore,
+          : defaults.upcomingMinutesBefore,
       overdueDaysAfter:
         typeof parsed.overdueDaysAfter === "number"
           ? parsed.overdueDaysAfter
-          : DEFAULT_NOTIFICATION_PREFS.overdueDaysAfter,
+          : defaults.overdueDaysAfter,
+      channels: {
+        upcoming: parsed.channels?.upcoming ?? defaults.channels.upcoming,
+        overdue: parsed.channels?.overdue ?? defaults.channels.overdue,
+        live: parsed.channels?.live ?? defaults.channels.live,
+      },
     };
   } catch {
     return DEFAULT_NOTIFICATION_PREFS;

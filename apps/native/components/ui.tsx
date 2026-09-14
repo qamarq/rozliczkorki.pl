@@ -1,6 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Host, Switch as UniversalSwitch } from "@expo/ui";
+import DateTimePicker from "@expo/ui/community/datetime-picker";
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
 import { LinearGradient } from "expo-linear-gradient";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
+import { OfflineBanner } from "@/components/sync-status";
 import { colors, gradients, radius } from "@/lib/theme";
 
 export function Switch({
@@ -32,9 +37,11 @@ export function Switch({
 export function ScreenBackground({
   children,
   edges = ["top", "bottom"],
+  syncStatus,
 }: {
   children: ReactNode;
   edges?: Edge[];
+  syncStatus?: boolean;
 }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -45,7 +52,8 @@ export function ScreenBackground({
         style={StyleSheet.absoluteFill}
       />
       <SafeAreaView style={{ flex: 1 }} edges={edges}>
-        {children}
+        {syncStatus && <OfflineBanner />}
+        <View style={{ flex: 1 }}>{children}</View>
       </SafeAreaView>
     </View>
   );
@@ -128,6 +136,50 @@ export function Input(props: TextInputProps & { label?: string }) {
         style={[styles.input, style]}
         {...rest}
       />
+    </View>
+  );
+}
+
+export function DateTimeField({
+  label,
+  mode,
+  value,
+  onChange,
+}: {
+  label: string;
+  mode: "date" | "time";
+  value: Date;
+  onChange: (value: Date) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable onPress={() => setOpen(true)} style={[styles.input, styles.pickerField]}>
+        <Text style={styles.pickerText}>
+          {format(value, mode === "date" ? "EEEE, d MMMM yyyy" : "HH:mm", { locale: pl })}
+        </Text>
+        <Ionicons
+          name={mode === "date" ? "calendar-outline" : "time-outline"}
+          size={18}
+          color={colors.textMuted}
+        />
+      </Pressable>
+      {open && (
+        <DateTimePicker
+          value={value}
+          mode={mode}
+          presentation="dialog"
+          is24Hour
+          accentColor={colors.accentTo}
+          onValueChange={(_, selected) => {
+            setOpen(false);
+            onChange(selected);
+          }}
+          onDismiss={() => setOpen(false)}
+        />
+      )}
     </View>
   );
 }
@@ -221,6 +273,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text,
   },
+  pickerField: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  pickerText: { fontSize: 15, color: colors.text },
   chip: {
     borderRadius: radius.full,
     paddingVertical: 9,

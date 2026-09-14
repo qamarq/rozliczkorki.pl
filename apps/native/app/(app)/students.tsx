@@ -11,7 +11,7 @@ export default function StudentsScreen() {
   const { data: students = [], isLoading, refetch } = trpc.students.list.useQuery();
 
   return (
-    <ScreenBackground>
+    <ScreenBackground syncStatus>
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
           <View key="head" style={styles.head}>

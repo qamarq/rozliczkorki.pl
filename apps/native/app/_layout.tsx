@@ -8,6 +8,7 @@ import { AlertDialogHost } from "@/components/alert-dialog-host";
 import { SheetHost } from "@/components/sheet-host";
 import { TRPCProvider } from "@/lib/trpc";
 import { colors } from "@/lib/theme";
+import { useNotificationTaps } from "@/lib/use-notification-taps";
 
 const ONBOARDING_KEY = "onboarding_complete";
 
@@ -30,6 +31,7 @@ function OnboardingGate() {
 
 export default function RootLayout() {
   const blurTarget = useRef<View>(null);
+  useNotificationTaps();
 
   return (
     <TRPCProvider>
