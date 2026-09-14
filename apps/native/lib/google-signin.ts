@@ -17,7 +17,7 @@ function isUserCancelled(e: unknown) {
   return /cancel/i.test(code) || /cancel/i.test(message);
 }
 
-function randomNonce() {
+export function randomNonce() {
   return Array.from(Crypto.getRandomBytes(24))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");

@@ -1,98 +1,62 @@
-import { Link } from "expo-router";
-import { useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
-import { GoogleIcon } from "@/components/google-icon";
-import { GradientButton, Input, OutlineButton } from "@/components/ui";
-import { ScreenBackground } from "@/components/ui";
+import { Link, Redirect, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { GradientButton, OutlineButton, ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
-import { authClient } from "@/lib/auth-client";
-import { getGoogleIdToken } from "@/lib/google-signin";
+import { credentialManagerAvailable, signInWithSavedCredential } from "@/lib/credentials";
 import { colors } from "@/lib/theme";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const router = useRouter();
+  const [savedLoading, setSavedLoading] = useState(false);
 
-  async function onSubmit() {
-    setLoading(true);
-    const { error } = await authClient.signIn.email({ email, password });
-    setLoading(false);
-    if (error) {
-      alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
+  async function onSavedCredential(manual: boolean) {
+    setSavedLoading(true);
+    const result = await signInWithSavedCredential();
+    setSavedLoading(false);
+    if (result.status === "error") {
+      alert("Błąd logowania", result.message);
+    } else if (result.status === "unavailable" && manual) {
+      alert(
+        "Brak zapisanych danych",
+        "Nie znaleziono zapisanych haseł ani kluczy dostępu. Zaloguj się e-mailem i hasłem.",
+      );
     }
   }
 
-  async function onGoogle() {
-    setGoogleLoading(true);
-    try {
-      const google = await getGoogleIdToken();
-      if (!google) {
-        // user cancelled the account picker
-        setGoogleLoading(false);
-        return;
-      }
-      const { error } = await authClient.signIn.social({
-        provider: "google",
-        idToken: google.nonce
-          ? { token: google.idToken, nonce: google.nonce }
-          : { token: google.idToken },
-      });
-      if (error) {
-        alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
-      }
-    } catch (e) {
-      console.error("Google sign-in failed", e);
-      alert("Błąd logowania", e instanceof Error ? e.message : "Spróbuj ponownie");
-    } finally {
-      setGoogleLoading(false);
-    }
-  }
+  useEffect(() => {
+    if (credentialManagerAvailable) void onSavedCredential(false);
+  }, []);
+
+  if (!credentialManagerAvailable) return <Redirect href="/login-email" />;
 
   return (
     <ScreenBackground>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.container}
-      >
+      <View style={styles.container}>
         <Text style={styles.logo}>RozliczKorki</Text>
         <Text style={styles.subtitle}>Zaloguj się do panelu</Text>
 
         <View style={styles.form}>
-          <Input
-            label="E-mail"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            textContentType="username"
-            autoComplete="email"
-            value={email}
-            onChangeText={setEmail}
+          <GradientButton
+            label="Zaloguj się zapisanymi danymi"
+            onPress={() => onSavedCredential(true)}
+            loading={savedLoading}
           />
-          <Input
-            label="Hasło"
-            secureTextEntry
-            textContentType="password"
-            autoComplete="current-password"
-            value={password}
-            onChangeText={setPassword}
-          />
-          <GradientButton label="Zaloguj się" onPress={onSubmit} loading={loading} />
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerLabel}>lub</Text>
+            <View style={styles.dividerLine} />
+          </View>
           <OutlineButton
-            label="Kontynuuj przez Google"
-            icon={<GoogleIcon />}
-            onPress={onGoogle}
-            disabled={googleLoading}
+            label="Zaloguj się e-mailem i hasłem"
+            onPress={() => router.push("/login-email")}
           />
         </View>
 
-        <Link href="/forgot-password" style={styles.link}>
-          Nie pamiętasz hasła?
-        </Link>
-        <Link href="/register" style={styles.linkTight}>
+        <Link href="/register" style={styles.link}>
           Nie masz konta? Załóż konto
         </Link>
-      </KeyboardAvoidingView>
+      </View>
     </ScreenBackground>
   );
 }
@@ -107,6 +71,12 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   form: { gap: 14 },
+  divider: { flexDirection: "row", alignItems: "center", gap: 12 },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+  dividerLabel: { fontSize: 13, color: colors.textFaint },
   link: { marginTop: 20, textAlign: "center", color: colors.textMuted },
-  linkTight: { marginTop: 10, textAlign: "center", color: colors.textMuted },
 });
