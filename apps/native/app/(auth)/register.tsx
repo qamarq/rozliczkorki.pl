@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { GoogleIcon } from "@/components/google-icon";
 import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
@@ -78,6 +79,7 @@ export default function RegisterScreen() {
           <GradientButton label="Załóż konto" onPress={onSubmit} loading={loading} />
           <OutlineButton
             label="Kontynuuj przez Google"
+            icon={<GoogleIcon />}
             onPress={onGoogle}
             disabled={googleLoading}
           />
