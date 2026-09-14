@@ -1,6 +1,7 @@
 import { Link } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { GoogleIcon } from "@/components/google-icon";
 import { GradientButton, Input, OutlineButton } from "@/components/ui";
 import { ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
@@ -79,6 +80,7 @@ export default function LoginScreen() {
           <GradientButton label="Zaloguj się" onPress={onSubmit} loading={loading} />
           <OutlineButton
             label="Kontynuuj przez Google"
+            icon={<GoogleIcon />}
             onPress={onGoogle}
             disabled={googleLoading}
           />
