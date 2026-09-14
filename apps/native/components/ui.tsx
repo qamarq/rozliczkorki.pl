@@ -1,6 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Host, Switch as UniversalSwitch } from "@expo/ui";
 import { LinearGradient } from "expo-linear-gradient";
-import type { ReactNode } from "react";
+import { useRouter } from "expo-router";
+import { Children, type ComponentProps, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -93,11 +95,13 @@ export function OutlineButton({
   onPress,
   tone = "default",
   disabled,
+  icon,
 }: {
   label: string;
   onPress: () => void;
   tone?: "default" | "danger";
   disabled?: boolean;
+  icon?: ReactNode;
 }) {
   return (
     <Pressable
@@ -109,6 +113,7 @@ export function OutlineButton({
         disabled && styles.disabled,
       ]}
     >
+      {icon}
       <Text
         style={[styles.outlineButtonText, tone === "danger" && { color: colors.danger }]}
       >
@@ -186,6 +191,72 @@ export function SectionLabel({ children }: { children: ReactNode }) {
   return <Text style={styles.sectionLabel}>{children}</Text>;
 }
 
+export function ScreenHeader({ title }: { title: string }) {
+  const router = useRouter();
+  return (
+    <View style={styles.screenHeader}>
+      <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backButton}>
+        <Ionicons name="chevron-back" size={24} color={colors.text} />
+      </Pressable>
+      <Text style={styles.screenHeaderTitle} numberOfLines={1}>
+        {title}
+      </Text>
+    </View>
+  );
+}
+
+export function MenuGroup({ children }: { children: ReactNode }) {
+  const items = Children.toArray(children);
+  return (
+    <View style={styles.menuGroup}>
+      {items.map((child, i) => (
+        <View key={i} style={i > 0 && styles.menuDivider}>
+          {child}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function MenuRow({
+  icon,
+  label,
+  description,
+  onPress,
+  trailing,
+  tone = "default",
+}: {
+  icon: ComponentProps<typeof Ionicons>["name"];
+  label: string;
+  description?: string;
+  onPress: () => void;
+  trailing?: ReactNode;
+  tone?: "default" | "danger";
+}) {
+  const tint = tone === "danger" ? colors.danger : "#a78bfa";
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
+    >
+      <View style={[styles.menuIcon, tone === "danger" && styles.menuIconDanger]}>
+        <Ionicons name={icon} size={18} color={tint} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.menuLabel, tone === "danger" && { color: colors.danger }]}>
+          {label}
+        </Text>
+        {description && <Text style={styles.menuDescription}>{description}</Text>}
+      </View>
+      {trailing === undefined ? (
+        <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+      ) : (
+        trailing
+      )}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
@@ -207,7 +278,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     paddingVertical: 13,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
   },
   outlineButtonText: { color: colors.text, fontWeight: "600", fontSize: 15 },
   disabled: { opacity: 0.5 },
@@ -242,5 +316,47 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 8,
+  },
+  screenHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  backButton: { padding: 4 },
+  screenHeaderTitle: { flex: 1, fontSize: 20, fontWeight: "800", color: colors.text },
+  menuGroup: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  menuDivider: { borderTopWidth: 1, borderTopColor: colors.borderSubtle },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  menuRowPressed: { backgroundColor: colors.surfaceHover },
+  menuIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.sm,
+    backgroundColor: "rgba(139, 92, 246, 0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuIconDanger: { backgroundColor: colors.dangerBg },
+  menuLabel: { color: colors.text, fontSize: 15, fontWeight: "600" },
+  menuDescription: {
+    color: colors.textFaint,
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
   },
 });
