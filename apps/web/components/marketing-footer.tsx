@@ -101,7 +101,17 @@ export function MarketingFooter() {
           <span>
             © {new Date().getFullYear()} RozliczKorki. Wszystkie prawa zastrzeżone.
           </span>
-          <span className="font-mono-ui">Zrobione w Polsce · dla korepetytorów</span>
+          <span className="font-mono-ui">
+            Made with ❤️ by{" "}
+            <Link
+              href="https://kamilmarczak.pl"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-foreground transition-colors hover:underline"
+            >
+              Kamil Marczak
+            </Link>
+          </span>
         </div>
       </div>
 
