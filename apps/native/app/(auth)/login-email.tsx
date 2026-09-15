@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
@@ -7,7 +8,7 @@ import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
 import { savePasswordCredential } from "@/lib/credentials";
 import { getGoogleIdToken } from "@/lib/google-signin";
-import { colors } from "@/lib/theme";
+import { colors, radius } from "@/lib/theme";
 
 export default function LoginEmailScreen() {
   const { verified, error: verifyError } = useLocalSearchParams<{
@@ -62,17 +63,22 @@ export default function LoginEmailScreen() {
         <Text style={styles.subtitle}>
           {verifyError
             ? "Link aktywacyjny wygasł lub jest nieprawidłowy. Zaloguj się, żeby dostać nowy."
-            : verified
-              ? "Konto aktywne! Zaloguj się e-mailem i hasłem."
-              : "Zaloguj się e-mailem i hasłem"}
+            : "Zaloguj się e-mailem i hasłem"}
         </Text>
+        {verified && !verifyError ? (
+          <View style={styles.verifiedPill}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+            <Text style={styles.verifiedText}>Konto aktywne</Text>
+          </View>
+        ) : null}
+        <View style={styles.headerSpacer} />
 
         <View style={styles.form}>
           <Input
             label="E-mail"
             autoCapitalize="none"
             keyboardType="email-address"
-            textContentType="username"
+            textContentType="emailAddress"
             autoComplete="email"
             value={email}
             onChangeText={setEmail}
@@ -112,8 +118,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     textAlign: "center",
-    marginBottom: 32,
   },
+  verifiedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.successBg,
+  },
+  verifiedText: { fontSize: 13, fontWeight: "600", color: colors.success },
+  headerSpacer: { height: 16 },
   form: { gap: 14 },
   link: { marginTop: 20, textAlign: "center", color: colors.textMuted },
   linkTight: { marginTop: 10, textAlign: "center", color: colors.textMuted },
