@@ -59,8 +59,8 @@ export default function RegisterScreen() {
       return;
     }
     setPendingSignUp({ email, password });
-    await savePasswordCredential(email, password);
     setSentTo(email);
+    void savePasswordCredential(email, password);
   }
 
   async function onResend() {
