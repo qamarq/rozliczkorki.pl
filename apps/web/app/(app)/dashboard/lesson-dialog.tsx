@@ -34,7 +34,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc/client";
-import { formatPLN } from "@/lib/utils";
+import { cn, formatPLN } from "@/lib/utils";
 
 type LessonStatus = "scheduled" | "completed" | "cancelled";
 type PaymentMethod = "cash" | "transfer";
@@ -275,164 +275,219 @@ export function LessonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{editing ? "Edytuj zajęcia" : "Nowe zajęcia"}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label>Uczeń</Label>
-            <Select value={studentId} onValueChange={setStudentId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Wybierz ucznia" />
-              </SelectTrigger>
-              <SelectContent>
-                {students.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <form onSubmit={onSubmit} className="grid gap-x-6 gap-y-5 md:grid-cols-2">
+          <section className="flex flex-col gap-4">
+            <h3 className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
+              Termin
+            </h3>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 flex flex-col gap-2">
-              <Label htmlFor="date">Data</Label>
-              <Input
-                id="date"
-                type="date"
-                value={dateStr}
-                onChange={(e) => setDateStr(e.target.value)}
-                required
-              />
-            </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="time">Godzina</Label>
-              <Input
-                id="time"
-                type="time"
-                value={timeStr}
-                onChange={(e) => setTimeStr(e.target.value)}
-                required
-                className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-              />
+              <Label>Uczeń</Label>
+              <Select value={studentId} onValueChange={setStudentId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Wybierz ucznia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {students.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="duration">Czas trwania (minuty)</Label>
-            <Input
-              id="duration"
-              type="number"
-              min={15}
-              step={15}
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              required
-            />
-          </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2 flex flex-col gap-2">
+                <Label htmlFor="date">Data</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={dateStr}
+                  onChange={(e) => setDateStr(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="time">Godzina</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={timeStr}
+                  onChange={(e) => setTimeStr(e.target.value)}
+                  required
+                  className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                />
+              </div>
+            </div>
 
-          <div className="flex flex-col gap-2 rounded-md border p-3">
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="duration">Czas (min)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min={15}
+                  step={15}
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label>Status</Label>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as LessonStatus)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="scheduled">Zaplanowane</SelectItem>
+                    <SelectItem value="completed">Odbyły się</SelectItem>
+                    <SelectItem value="cancelled">Odwołane</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
               <Checkbox
                 id="prorate"
                 checked={prorate}
                 onCheckedChange={(v) => setProrate(v === true)}
+                className="mt-0.5"
               />
-              <Label htmlFor="prorate">Nalicz proporcjonalnie do czasu trwania</Label>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="prorate">Nalicz proporcjonalnie do czasu trwania</Label>
+                <p className="text-muted-foreground text-xs">
+                  {prorate
+                    ? "Cena = stawka godzinowa × czas trwania / 60."
+                    : "Domyślnie pełna stawka godzinowa niezależnie od czasu."}
+                </p>
+              </div>
             </div>
-            <p className="text-muted-foreground text-xs">
-              {prorate
-                ? "Cena = stawka godzinowa × czas trwania / 60."
-                : "Domyślnie liczymy pełną stawkę godzinową niezależnie od czasu trwania."}
-              {hourlyRate != null && (
-                <>
-                  {" "}
-                  Przy stawce {formatPLN(hourlyRate)}/h i {durationMinutes} min to{" "}
-                  <span className="text-foreground font-medium">
-                    {formatPLN(previewPrice)}
+
+            {!editing && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="recurring"
+                    checked={recurring}
+                    onCheckedChange={(v) => {
+                      const isChecked = v === true;
+                      setRecurring(isChecked);
+                      if (isChecked && !recurringEndDate) {
+                        setRecurringEndDate(defaultRecurringEndDate());
+                      }
+                    }}
+                  />
+                  <Label htmlFor="recurring">Zajęcia cykliczne (co tydzień)</Label>
+                </div>
+                {recurring && (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="recurringEnd">Do kiedy (opcjonalnie)</Label>
+                    <Input
+                      id="recurringEnd"
+                      type="date"
+                      value={recurringEndDate}
+                      onChange={(e) => setRecurringEndDate(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-4">
+            <h3 className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
+              Rozliczenie
+            </h3>
+
+            <div className="bg-muted/40 flex flex-col gap-1.5 rounded-lg border p-3 text-xs">
+              <div className="text-muted-foreground flex justify-between">
+                <span>
+                  Cena zajęć
+                  {hourlyRate != null &&
+                    ` (${formatPLN(hourlyRate)}/h · ${durationMinutes} min)`}
+                </span>
+                <span className="tabular-nums">{formatPLN(currentPrice)}</span>
+              </div>
+              {carry !== 0 && (
+                <div className="text-muted-foreground flex justify-between">
+                  <span>
+                    {carry > 0
+                      ? "Nadpłata z poprzednich zajęć"
+                      : "Zaległość z poprzednich zajęć"}
                   </span>
-                  .
-                </>
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      carry > 0 ? "text-success" : "text-warning",
+                    )}
+                  >
+                    {carry > 0 ? "−" : "+"}
+                    {formatPLN(Math.abs(carry))}
+                  </span>
+                </div>
               )}
-            </p>
-          </div>
+              <div className="flex justify-between border-t pt-1.5 text-sm font-semibold">
+                <span>Do zapłaty</span>
+                <span className="tabular-nums">{formatPLN(amountDue)}</span>
+              </div>
+            </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as LessonStatus)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="scheduled">Zaplanowane</SelectItem>
-                <SelectItem value="completed">Odbyły się</SelectItem>
-                <SelectItem value="cancelled">Odwołane</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2 rounded-md border p-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between rounded-lg border p-3">
               <Label htmlFor="paid">Opłacone</Label>
               <Switch id="paid" checked={paid} onCheckedChange={setPaid} />
             </div>
-            {editing && carry !== 0 && (
-              <p className="text-muted-foreground text-xs">
-                {carry > 0
-                  ? `Nadpłata z poprzednich zajęć: ${formatPLN(carry)}.`
-                  : `Zaległość z poprzednich zajęć: ${formatPLN(-carry)}.`}{" "}
-                Do zapłaty za te zajęcia:{" "}
-                <span className="text-foreground font-medium">
-                  {formatPLN(amountDue)}
-                </span>
-                .
-              </p>
-            )}
-          </div>
 
-          {paid && (
-            <>
-              <div className="flex flex-col gap-2">
-                <Label>Sposób płatności</Label>
-                <Select
-                  value={paymentMethod}
-                  onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Gotówka</SelectItem>
-                    <SelectItem value="transfer">Przelew</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Wpłacona kwota</Label>
-                <Select
-                  value={customAmount ? "custom" : "full"}
-                  onValueChange={(v) => setCustomAmount(v === "custom")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full">
-                      {editing ? `Pełna kwota (${formatPLN(amountDue)})` : "Pełna kwota"}
-                    </SelectItem>
-                    <SelectItem value="custom">Inna kwota</SelectItem>
-                  </SelectContent>
-                </Select>
+            {paid && (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-2">
+                    <Label>Sposób płatności</Label>
+                    <Select
+                      value={paymentMethod}
+                      onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Gotówka</SelectItem>
+                        <SelectItem value="transfer">Przelew</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Wpłacona kwota</Label>
+                    <Select
+                      value={customAmount ? "custom" : "full"}
+                      onValueChange={(v) => setCustomAmount(v === "custom")}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full">Pełna kwota</SelectItem>
+                        <SelectItem value="custom">Inna kwota</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
                 {customAmount && (
                   <Input
                     type="number"
                     min={0}
                     step="0.01"
-                    placeholder="Kwota w zł"
+                    placeholder={`Kwota w zł, np. ${amountDue}`}
                     value={paidAmount}
                     onChange={(e) => setPaidAmount(e.target.value)}
                     required
@@ -446,49 +501,20 @@ export function LessonDialog({
                   </p>
                 )}
               </div>
-            </>
-          )}
+            )}
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="notes">Notatki</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-
-          {!editing && (
-            <div className="flex flex-col gap-3 rounded-md border p-3">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="recurring"
-                  checked={recurring}
-                  onCheckedChange={(v) => {
-                    const isChecked = v === true;
-                    setRecurring(isChecked);
-                    if (isChecked && !recurringEndDate) {
-                      setRecurringEndDate(defaultRecurringEndDate());
-                    }
-                  }}
-                />
-                <Label htmlFor="recurring">Zajęcia cykliczne (co tydzień)</Label>
-              </div>
-              {recurring && (
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="recurringEnd">Do kiedy (opcjonalnie)</Label>
-                  <Input
-                    id="recurringEnd"
-                    type="date"
-                    value={recurringEndDate}
-                    onChange={(e) => setRecurringEndDate(e.target.value)}
-                  />
-                </div>
-              )}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="notes">Notatki</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-20"
+              />
             </div>
-          )}
+          </section>
 
-          <DialogFooter className="gap-2 sm:justify-between">
+          <DialogFooter className="gap-2 sm:justify-between md:col-span-2">
             {editing ? (
               <Button
                 type="button"
