@@ -1,0 +1,92 @@
+name: Android release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/native/**
+      - packages/**
+      - pnpm-lock.yaml
+      - .github/workflows/android-release.yml
+  workflow_dispatch:
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build AAB and upload to Play (internal)
+    runs-on: ubuntu-latest
+    env:
+      # Play requires a unique, increasing versionCode; offset keeps it above the manually released 11.
+      VERSION_CODE_OFFSET: 100
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set versionCode
+        working-directory: apps/native
+        run: |
+          VERSION_CODE=$((VERSION_CODE_OFFSET + GITHUB_RUN_NUMBER))
+          node -e '
+            const fs = require("fs");
+            const config = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            config.expo.android.versionCode = Number(process.argv[1]);
+            fs.writeFileSync("app.json", JSON.stringify(config, null, 2) + "\n");
+          ' "$VERSION_CODE"
+          echo "versionCode=$VERSION_CODE"
+
+      - name: Restore signing keystore and env
+        working-directory: apps/native
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+        run: |
+          mkdir -p android-signing
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android-signing/release.keystore
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android-signing/keystore.properties
+          echo "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID" > .env
+
+      - name: Build release AAB
+        working-directory: apps/native
+        run: bash scripts/build-android-release.sh
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ github.run_number }}
+          path: apps/native/android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload to Google Play (internal)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: pl.rozliczkorki.app
+          releaseFiles: apps/native/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
