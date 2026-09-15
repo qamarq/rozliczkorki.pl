@@ -78,7 +78,7 @@ export default function LoginEmailScreen() {
             label="E-mail"
             autoCapitalize="none"
             keyboardType="email-address"
-            textContentType="username"
+            textContentType="emailAddress"
             autoComplete="email"
             value={email}
             onChangeText={setEmail}
