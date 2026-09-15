@@ -36,7 +36,7 @@ export function groupByDay(lessons: LessonRow[]) {
 
 export function lessonTone(lesson: LessonRow) {
   if (lesson.status === "cancelled") return { fg: colors.danger, bg: colors.dangerBg };
-  if (lesson.paid) return { fg: colors.success, bg: colors.successBg };
+  if (lesson.settled) return { fg: colors.success, bg: colors.successBg };
   return { fg: colors.warning, bg: colors.warningBg };
 }
 
@@ -97,8 +97,8 @@ export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boo
               }
             />
             <Badge
-              label={item.paid ? "opłacone" : "nieopłacone"}
-              tone={item.paid ? "success" : "warning"}
+              label={item.settled ? "opłacone" : "nieopłacone"}
+              tone={item.settled ? "success" : "warning"}
             />
           </View>
         </View>

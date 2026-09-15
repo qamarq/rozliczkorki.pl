@@ -78,6 +78,7 @@ export const lessons = pgTable("lessons", {
   status: lessonStatusEnum("status").notNull().default("scheduled"),
   paid: boolean("paid").notNull().default(false),
   paymentMethod: paymentMethodEnum("payment_method"),
+  paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }),
   priceOverride: numeric("price_override", { precision: 10, scale: 2 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

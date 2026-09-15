@@ -70,7 +70,7 @@ export function useLocalNotificationsSync(enabled: boolean) {
         id: l.id,
         startsAt: l.startsAt,
         status: l.status,
-        paid: l.paid,
+        paid: l.settled,
         studentName: l.student!.name,
       })),
       prefs,
@@ -88,7 +88,7 @@ export function useLocalNotificationsSync(enabled: boolean) {
                 studentName: l.student!.name,
                 startsAt,
                 endsAt: startsAt + l.durationMinutes * 60 * 1000,
-                paid: l.paid,
+                paid: l.settled,
               };
             })
             .filter(
