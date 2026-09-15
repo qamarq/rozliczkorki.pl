@@ -18,6 +18,7 @@ jobs:
   release:
     name: Build AAB and upload to Play (internal)
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     env:
       # Play requires a unique, increasing versionCode; offset keeps it above the manually released 11.
       VERSION_CODE_OFFSET: 100
@@ -35,6 +36,17 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Configure Gradle for CI
+        run: |
+          mkdir -p ~/.gradle
+          {
+            echo "org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g"
+            echo "org.gradle.caching=true"
+            echo "reactNativeArchitectures=armeabi-v7a,arm64-v8a"
+          } >> ~/.gradle/gradle.properties
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
