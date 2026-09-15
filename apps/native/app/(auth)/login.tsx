@@ -19,7 +19,9 @@ export default function LoginScreen() {
     } else if (result.status === "unavailable" && manual) {
       alert(
         "Brak zapisanych danych",
-        "Nie znaleziono zapisanych haseł ani kluczy dostępu. Zaloguj się e-mailem i hasłem.",
+        `Nie znaleziono zapisanych haseł ani kluczy dostępu. Zaloguj się e-mailem i hasłem.${
+          __DEV__ && result.detail ? `\n\n${result.detail}` : ""
+        }`,
       );
     }
   }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "RozliczKorki",
     "slug": "rozliczkorki",
-    "version": "1.0.10",
+    "version": "1.0.11",
     "scheme": "rozliczkorki",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "pl.rozliczkorki.app",
+      "usesAppleSignIn": true,
       "associatedDomains": ["webcredentials:rozliczkorki.pl"]
     },
     "android": {
@@ -65,7 +66,12 @@
         }
       ],
       "./plugins/withAndroidR8Optimization",
-      ["./plugins/withAndroidAssetStatements", { "domains": ["rozliczkorki.pl"] }],
+      [
+        "./plugins/withAndroidAssetStatements",
+        {
+          "domains": ["rozliczkorki.pl"]
+        }
+      ],
       "./plugins/withAndroidReleaseSigning",
       "./plugins/withAndroidEdgeToEdge",
       [
