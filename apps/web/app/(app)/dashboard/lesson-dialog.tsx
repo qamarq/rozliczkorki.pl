@@ -53,6 +53,9 @@ type LessonRow = {
   status: LessonStatus;
   paid: boolean;
   paymentMethod: PaymentMethod | null;
+  paidAmount: string | null;
+  price: number;
+  carry: number;
   notes: string | null;
   recurringRuleId: string | null;
 };
@@ -97,7 +100,18 @@ export function LessonDialog({
   const [status, setStatus] = useState<LessonStatus>("scheduled");
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("transfer");
+  const [customAmount, setCustomAmount] = useState(false);
+  const [paidAmount, setPaidAmount] = useState("");
   const [notes, setNotes] = useState("");
+
+  const carry = editing?.carry ?? 0;
+  const currentPrice =
+    editing && durationMinutes === editing.durationMinutes && prorate === editing.prorate
+      ? editing.price
+      : previewPrice;
+  const amountDue = Math.max(0, currentPrice - carry);
+  const paymentDiff =
+    customAmount && paidAmount !== "" ? Number(paidAmount) - amountDue : 0;
   const [recurring, setRecurring] = useState(false);
   const [recurringEndDate, setRecurringEndDate] = useState("");
   const [confirmKind, setConfirmKind] = useState<"update" | "delete" | null>(null);
@@ -115,6 +129,8 @@ export function LessonDialog({
       setStatus(editing.status);
       setPaid(editing.paid);
       setPaymentMethod(editing.paymentMethod ?? "transfer");
+      setCustomAmount(editing.paidAmount != null);
+      setPaidAmount(editing.paidAmount ?? "");
       setNotes(editing.notes ?? "");
       setRecurring(false);
     } else {
@@ -126,6 +142,8 @@ export function LessonDialog({
       setStatus("scheduled");
       setPaid(false);
       setPaymentMethod("transfer");
+      setCustomAmount(false);
+      setPaidAmount("");
       setNotes("");
       setRecurring(false);
       setRecurringEndDate("");
@@ -187,6 +205,9 @@ export function LessonDialog({
     updateLesson.isPending ||
     deleteLesson.isPending;
 
+  const paidAmountValue =
+    paid && customAmount && paidAmount !== "" ? Number(paidAmount) : null;
+
   function performUpdate(applyToFuture: boolean) {
     if (!editing) return;
     const startsAt = new Date(`${dateStr}T${timeStr}`).toISOString();
@@ -198,6 +219,7 @@ export function LessonDialog({
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
+      paidAmount: paidAmountValue,
       notes,
       applyToFuture,
     });
@@ -246,6 +268,7 @@ export function LessonDialog({
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
+      paidAmount: paidAmountValue,
       notes,
     });
   }
@@ -351,27 +374,79 @@ export function LessonDialog({
             </Select>
           </div>
 
-          <div className="flex items-center justify-between rounded-md border p-3">
-            <Label htmlFor="paid">Opłacone</Label>
-            <Switch id="paid" checked={paid} onCheckedChange={setPaid} />
+          <div className="flex flex-col gap-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="paid">Opłacone</Label>
+              <Switch id="paid" checked={paid} onCheckedChange={setPaid} />
+            </div>
+            {editing && carry !== 0 && (
+              <p className="text-muted-foreground text-xs">
+                {carry > 0
+                  ? `Nadpłata z poprzednich zajęć: ${formatPLN(carry)}.`
+                  : `Zaległość z poprzednich zajęć: ${formatPLN(-carry)}.`}{" "}
+                Do zapłaty za te zajęcia:{" "}
+                <span className="text-foreground font-medium">
+                  {formatPLN(amountDue)}
+                </span>
+                .
+              </p>
+            )}
           </div>
 
           {paid && (
-            <div className="flex flex-col gap-2">
-              <Label>Sposób płatności</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Gotówka</SelectItem>
-                  <SelectItem value="transfer">Przelew</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="flex flex-col gap-2">
+                <Label>Sposób płatności</Label>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Gotówka</SelectItem>
+                    <SelectItem value="transfer">Przelew</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Wpłacona kwota</Label>
+                <Select
+                  value={customAmount ? "custom" : "full"}
+                  onValueChange={(v) => setCustomAmount(v === "custom")}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">
+                      {editing ? `Pełna kwota (${formatPLN(amountDue)})` : "Pełna kwota"}
+                    </SelectItem>
+                    <SelectItem value="custom">Inna kwota</SelectItem>
+                  </SelectContent>
+                </Select>
+                {customAmount && (
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="Kwota w zł"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    required
+                  />
+                )}
+                {paymentDiff !== 0 && (
+                  <p className="text-muted-foreground text-xs">
+                    {paymentDiff > 0
+                      ? `Nadpłata ${formatPLN(paymentDiff)} zostanie odliczona od kolejnych zajęć ucznia.`
+                      : `Brakujące ${formatPLN(-paymentDiff)} zostanie doliczone do kolejnych zajęć ucznia.`}
+                  </p>
+                )}
+              </div>
+            </>
           )}
 
           <div className="flex flex-col gap-2">

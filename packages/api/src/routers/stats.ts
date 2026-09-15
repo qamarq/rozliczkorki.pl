@@ -1,7 +1,7 @@
 import { lessons, students, studentRates } from "@repo/db";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
-import { lessonPrice } from "../pricing";
+import { settleLessons } from "../pricing";
 import { protectedProcedure, router } from "../trpc";
 
 export const statsRouter = router({
@@ -29,6 +29,18 @@ export const statsRouter = router({
       const studentRows = studentIds.length
         ? await ctx.db.select().from(students).where(inArray(students.id, studentIds))
         : [];
+      const history = studentIds.length
+        ? await ctx.db
+            .select()
+            .from(lessons)
+            .where(
+              and(
+                eq(lessons.userId, ctx.session.user.id),
+                inArray(lessons.studentId, studentIds),
+              ),
+            )
+        : [];
+      const settlements = settleLessons(history, rates);
       const studentById = new Map(studentRows.map((s) => [s.id, s]));
 
       let theoretical = 0;
@@ -56,13 +68,12 @@ export const statsRouter = router({
         if (lesson.status === "completed") completedCount += 1;
         else scheduledCount += 1;
 
-        const price = lessonPrice(
-          lesson,
-          rates.filter((r) => r.studentId === lesson.studentId),
-        );
-        theoretical += price;
-        if (lesson.paid) paid += price;
-        else unpaid += price;
+        const settlement = settlements.get(lesson.id);
+        if (!settlement) continue;
+
+        theoretical += settlement.price;
+        paid += settlement.received;
+        unpaid += settlement.outstanding;
 
         const student = studentById.get(lesson.studentId);
         const entry = byStudent.get(lesson.studentId) ?? {
@@ -72,9 +83,9 @@ export const statsRouter = router({
           paid: 0,
           unpaid: 0,
         };
-        entry.theoretical += price;
-        if (lesson.paid) entry.paid += price;
-        else entry.unpaid += price;
+        entry.theoretical += settlement.price;
+        entry.paid += settlement.received;
+        entry.unpaid += settlement.outstanding;
         byStudent.set(lesson.studentId, entry);
       }
 

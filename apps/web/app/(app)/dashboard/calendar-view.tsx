@@ -93,7 +93,7 @@ export function CalendarView() {
   const dueLessons = useMemo(
     () =>
       lessons
-        .filter((l) => l.status === "completed" && !l.paid)
+        .filter((l) => l.status === "completed" && !l.settled)
         .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
         .slice(0, 6),
     [lessons],
@@ -220,7 +220,7 @@ export function CalendarView() {
                             "flex flex-col rounded-md border-l-2 px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
                             lesson.status === "cancelled"
                               ? "bg-destructive/10 border-destructive/50 text-muted-foreground line-through"
-                              : lesson.paid
+                              : lesson.settled
                                 ? "bg-success/10 border-success text-foreground"
                                 : "bg-warning/10 border-warning text-foreground",
                           )}
@@ -324,7 +324,7 @@ function TodayPanel({
                 Odbyta
               </Button>
             )}
-            {lesson.status === "completed" && !lesson.paid && (
+            {lesson.status === "completed" && !lesson.settled && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" disabled={markPaid.isPending}>
@@ -359,7 +359,7 @@ function TodayPanel({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            {lesson.status === "completed" && lesson.paid && (
+            {lesson.status === "completed" && lesson.settled && (
               <Badge className="bg-success/10 text-success border-success/20">
                 Opłacone
               </Badge>
@@ -410,7 +410,7 @@ function DuePanel({
               <span className="text-sm font-medium">{lesson.student?.name}</span>
               <span className="text-muted-foreground text-xs">
                 {format(new Date(lesson.startsAt), "d MMM, HH:mm", { locale: pl })} ·{" "}
-                {formatPLN(lesson.price)}
+                {formatPLN(lesson.amountDue)}
               </span>
             </button>
             <DropdownMenu>

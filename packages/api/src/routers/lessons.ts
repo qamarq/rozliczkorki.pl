@@ -2,7 +2,7 @@ import { lessons, students, studentRates } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, gt, gte, inArray, lte, ne } from "drizzle-orm";
 import { z } from "zod";
-import { lessonPrice } from "../pricing";
+import { settleLessons } from "../pricing";
 import { protectedProcedure, router } from "../trpc";
 
 async function assertOwnsLesson(
@@ -26,21 +26,32 @@ async function withPrices(
   rows: (typeof lessons.$inferSelect)[],
 ) {
   const studentIds = [...new Set(rows.map((l) => l.studentId))];
-  if (studentIds.length === 0) return rows.map((l) => ({ ...l, price: 0 }));
+  const empty = { price: 0, carry: 0, amountDue: 0, received: 0, settled: false };
+  if (studentIds.length === 0) return rows.map((l) => ({ ...l, ...empty }));
 
-  const rates = await db
-    .select()
-    .from(studentRates)
-    .where(inArray(studentRates.studentId, studentIds));
+  const [rates, history] = await Promise.all([
+    db.select().from(studentRates).where(inArray(studentRates.studentId, studentIds)),
+    db
+      .select()
+      .from(lessons)
+      .where(and(eq(lessons.userId, userId), inArray(lessons.studentId, studentIds))),
+  ]);
+  const settlements = settleLessons(history, rates);
 
-  return rows.map((lesson) => ({
-    ...lesson,
-    price: lessonPrice(
-      lesson,
-      rates.filter((r) => r.studentId === lesson.studentId),
-    ),
-  }));
+  return rows.map((lesson) => {
+    const s = settlements.get(lesson.id);
+    return {
+      ...lesson,
+      price: s?.price ?? 0,
+      carry: s?.carry ?? 0,
+      amountDue: s?.amountDue ?? 0,
+      received: s?.received ?? 0,
+      settled: s?.settled ?? lesson.paid,
+    };
+  });
 }
+
+const paidAmountInput = z.coerce.number().nonnegative().nullable().optional();
 
 export const lessonsRouter = router({
   byId: protectedProcedure
@@ -52,7 +63,7 @@ export const lessonsRouter = router({
         .from(students)
         .where(eq(students.id, lesson.studentId));
       const [priced] = await withPrices(ctx.db, ctx.session.user.id, [lesson]);
-      return { ...priced, student };
+      return { ...priced!, student };
     }),
 
   range: protectedProcedure
@@ -90,6 +101,7 @@ export const lessonsRouter = router({
         status: z.enum(["scheduled", "completed", "cancelled"]).default("scheduled"),
         paid: z.boolean().default(false),
         paymentMethod: z.enum(["cash", "transfer"]).nullable().optional(),
+        paidAmount: paidAmountInput,
         priceOverride: z.coerce.number().positive().nullable().optional(),
         notes: z.string().optional(),
       }),
@@ -116,6 +128,7 @@ export const lessonsRouter = router({
           status: input.status,
           paid: input.paid,
           paymentMethod: input.paymentMethod ?? null,
+          paidAmount: input.paid ? (input.paidAmount?.toString() ?? null) : null,
           priceOverride: input.priceOverride?.toString() ?? null,
           notes: input.notes,
         })
@@ -133,6 +146,7 @@ export const lessonsRouter = router({
         status: z.enum(["scheduled", "completed", "cancelled"]).optional(),
         paid: z.boolean().optional(),
         paymentMethod: z.enum(["cash", "transfer"]).nullable().optional(),
+        paidAmount: paidAmountInput,
         priceOverride: z.coerce.number().positive().nullable().optional(),
         notes: z.string().nullable().optional(),
         applyToFuture: z.boolean().default(false),
@@ -140,7 +154,7 @@ export const lessonsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await assertOwnsLesson(ctx.db, ctx.session.user.id, input.id);
-      const { id, startsAt, priceOverride, applyToFuture, ...rest } = input;
+      const { id, startsAt, priceOverride, paidAmount, applyToFuture, ...rest } = input;
       const [updated] = await ctx.db
         .update(lessons)
         .set({
@@ -149,6 +163,11 @@ export const lessonsRouter = router({
           ...(priceOverride !== undefined
             ? { priceOverride: priceOverride?.toString() ?? null }
             : {}),
+          ...(rest.paid === false
+            ? { paidAmount: null }
+            : paidAmount !== undefined
+              ? { paidAmount: paidAmount?.toString() ?? null }
+              : {}),
           updatedAt: new Date(),
         })
         .where(eq(lessons.id, id))

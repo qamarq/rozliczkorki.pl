@@ -55,6 +55,8 @@ function LessonDetailsContent({
   const [status, setStatus] = useState<LessonStatus>("scheduled");
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("transfer");
+  const [customAmount, setCustomAmount] = useState(false);
+  const [paidAmount, setPaidAmount] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [prorate, setProrate] = useState(false);
   const [notes, setNotes] = useState("");
@@ -64,6 +66,8 @@ function LessonDetailsContent({
     setStatus(lesson.status);
     setPaid(lesson.paid);
     setPaymentMethod(lesson.paymentMethod ?? "transfer");
+    setCustomAmount(lesson.paidAmount != null);
+    setPaidAmount(lesson.paidAmount ?? "");
     setDurationMinutes(String(lesson.durationMinutes));
     setProrate(lesson.prorate);
     setNotes(lesson.notes ?? "");
@@ -87,6 +91,20 @@ function LessonDetailsContent({
       : prorate
         ? (hourlyRate * Number(durationMinutes || 0)) / 60
         : hourlyRate;
+
+  const carry = lesson?.carry ?? 0;
+  const currentPrice =
+    lesson &&
+    Number(durationMinutes) === lesson.durationMinutes &&
+    prorate === lesson.prorate
+      ? lesson.price
+      : previewPrice;
+  const amountDue = Math.max(0, currentPrice - carry);
+  const parsedAmount = Number(paidAmount.replace(",", "."));
+  const paymentDiff =
+    customAmount && paidAmount !== "" && !Number.isNaN(parsedAmount)
+      ? parsedAmount - amountDue
+      : 0;
 
   const invalidate = () => {
     utils.lessons.range.invalidate();
@@ -113,6 +131,10 @@ function LessonDetailsContent({
   function performUpdate(applyToFuture: boolean) {
     if (!lesson) return;
     const trimmedNotes = notes.trim();
+    if (paid && customAmount && (paidAmount === "" || Number.isNaN(parsedAmount))) {
+      alert("Podaj wpłaconą kwotę");
+      return;
+    }
     updateLesson.mutate({
       id: lesson.id,
       durationMinutes: Number(durationMinutes),
@@ -120,6 +142,7 @@ function LessonDetailsContent({
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
+      paidAmount: paid && customAmount ? parsedAmount : null,
       ...(trimmedNotes !== (lesson.notes ?? "") ? { notes: trimmedNotes || null } : {}),
       applyToFuture,
     });
@@ -220,20 +243,59 @@ function LessonDetailsContent({
         <Text style={styles.label}>Opłacone</Text>
         <Switch value={paid} onValueChange={setPaid} />
       </View>
+      {carry !== 0 && (
+        <Text style={styles.hint}>
+          {carry > 0
+            ? `Nadpłata z poprzednich zajęć: ${formatPLN(carry)}.`
+            : `Zaległość z poprzednich zajęć: ${formatPLN(-carry)}.`}{" "}
+          Do zapłaty za te zajęcia: {formatPLN(amountDue)}.
+        </Text>
+      )}
 
       {paid && (
-        <View style={styles.chipRow}>
-          <Chip
-            label="Gotówka"
-            active={paymentMethod === "cash"}
-            onPress={() => setPaymentMethod("cash")}
-          />
-          <Chip
-            label="Przelew"
-            active={paymentMethod === "transfer"}
-            onPress={() => setPaymentMethod("transfer")}
-          />
-        </View>
+        <>
+          <View style={styles.chipRow}>
+            <Chip
+              label="Gotówka"
+              active={paymentMethod === "cash"}
+              onPress={() => setPaymentMethod("cash")}
+            />
+            <Chip
+              label="Przelew"
+              active={paymentMethod === "transfer"}
+              onPress={() => setPaymentMethod("transfer")}
+            />
+          </View>
+
+          <SectionLabel>Wpłacona kwota</SectionLabel>
+          <View style={styles.chipRow}>
+            <Chip
+              label={`Pełna kwota (${formatPLN(amountDue)})`}
+              active={!customAmount}
+              onPress={() => setCustomAmount(false)}
+            />
+            <Chip
+              label="Inna kwota"
+              active={customAmount}
+              onPress={() => setCustomAmount(true)}
+            />
+          </View>
+          {customAmount && (
+            <Input
+              placeholder="Kwota w zł"
+              keyboardType="decimal-pad"
+              value={paidAmount}
+              onChangeText={setPaidAmount}
+            />
+          )}
+          {paymentDiff !== 0 && (
+            <Text style={styles.hint}>
+              {paymentDiff > 0
+                ? `Nadpłata ${formatPLN(paymentDiff)} zostanie odliczona od kolejnych zajęć ucznia.`
+                : `Brakujące ${formatPLN(-paymentDiff)} zostanie doliczone do kolejnych zajęć ucznia.`}
+            </Text>
+          )}
+        </>
       )}
 
       <Input
