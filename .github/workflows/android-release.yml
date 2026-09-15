@@ -1,14 +1,7 @@
 name: Android release
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - apps/native/**
-      - packages/**
-      - pnpm-lock.yaml
-      - .github/workflows/android-release.yml
-  workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: android-release
