@@ -20,15 +20,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   deploy:
     name: Deploy to Coolify
+    needs: check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 40
+    env:
+      COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
     steps:
       - name: Trigger Coolify deployment
+        id: trigger
         env:
-          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
-          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_RESOURCE_UUID: ${{ secrets.COOLIFY_RESOURCE_UUID }}
           FORCE: ${{ inputs.force || false }}
         run: |
@@ -39,4 +46,34 @@ jobs:
             --data-urlencode "force=$FORCE" \
             "${COOLIFY_URL%/}/api/v1/deploy")
           echo "$response" | jq .
-          echo "$response" | jq -e '.deployments | length > 0' > /dev/null
+          uuids=$(echo "$response" | jq -r '.deployments[].deployment_uuid // empty' | paste -sd, -)
+          if [ -z "$uuids" ]; then
+            echo "::error::Coolify did not start any deployment"
+            exit 1
+          fi
+          echo "uuids=$uuids" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for deployment to finish
+        env:
+          DEPLOYMENT_UUIDS: ${{ steps.trigger.outputs.uuids }}
+        run: |
+          for uuid in ${DEPLOYMENT_UUIDS//,/ }; do
+            last=""
+            while true; do
+              status=$(curl --fail-with-body --silent --show-error --retry 3 \
+                --header "Authorization: Bearer $COOLIFY_TOKEN" \
+                "${COOLIFY_URL%/}/api/v1/deployments/$uuid" | jq -r '.status')
+              if [ "$status" != "$last" ]; then
+                echo "$(date +%T) deployment $uuid: $status"
+                last=$status
+              fi
+              case "$status" in
+                finished) break ;;
+                failed | cancelled*)
+                  echo "::error::Deployment $uuid ended with status: $status"
+                  exit 1
+                  ;;
+              esac
+              sleep 10
+            done
+          done
