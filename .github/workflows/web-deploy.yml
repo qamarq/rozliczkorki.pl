@@ -1,14 +1,7 @@
 name: Web deploy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - apps/web/**
-      - packages/**
-      - pnpm-lock.yaml
-      - .github/workflows/web-deploy.yml
-  workflow_dispatch:
+  workflow_call:
     inputs:
       force:
         description: Rebuild without cache
@@ -20,13 +13,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  check:
-    name: CI
-    uses: ./.github/workflows/ci.yml
-
   deploy:
     name: Deploy to Coolify
-    needs: check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -35,7 +23,7 @@ jobs:
           COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_RESOURCE_UUID: ${{ secrets.COOLIFY_RESOURCE_UUID }}
-          FORCE: ${{ inputs.force || false }}
+          FORCE: ${{ inputs.force }}
         run: |
           response=$(curl --fail-with-body --silent --show-error --get \
             --request POST \

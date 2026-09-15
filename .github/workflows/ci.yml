@@ -4,11 +4,24 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_call:
+  workflow_dispatch:
+    inputs:
+      web:
+        description: Deploy web
+        type: boolean
+        default: false
+      web_force:
+        description: Rebuild web without cache
+        type: boolean
+        default: false
+      android:
+        description: Release Android
+        type: boolean
+        default: false
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -35,3 +48,48 @@ jobs:
 
       - name: Check formatting
         run: pnpm format:check
+
+  changes:
+    name: Detect changes
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            web:
+              - apps/web/**
+              - packages/**
+              - pnpm-lock.yaml
+              - .github/workflows/web-deploy.yml
+            android:
+              - apps/native/**
+              - packages/**
+              - pnpm-lock.yaml
+              - .github/workflows/android-release.yml
+
+  web:
+    name: Web
+    needs: [check, changes]
+    if: >-
+      always() && needs.check.result == 'success' &&
+      (needs.changes.outputs.web == 'true' || (github.event_name == 'workflow_dispatch' && inputs.web))
+    uses: ./.github/workflows/web-deploy.yml
+    with:
+      force: ${{ inputs.web_force || false }}
+    secrets: inherit
+
+  android:
+    name: Android
+    needs: [check, changes]
+    if: >-
+      always() && needs.check.result == 'success' &&
+      (needs.changes.outputs.android == 'true' || (github.event_name == 'workflow_dispatch' && inputs.android))
+    uses: ./.github/workflows/android-release.yml
+    secrets: inherit
