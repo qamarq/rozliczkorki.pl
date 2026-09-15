@@ -1,0 +1,42 @@
+name: Web deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/web/**
+      - packages/**
+      - pnpm-lock.yaml
+      - .github/workflows/web-deploy.yml
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild without cache
+        type: boolean
+        default: false
+
+concurrency:
+  group: web-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Coolify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger Coolify deployment
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_RESOURCE_UUID: ${{ secrets.COOLIFY_RESOURCE_UUID }}
+          FORCE: ${{ inputs.force || false }}
+        run: |
+          response=$(curl --fail-with-body --silent --show-error --get \
+            --request POST \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            --data-urlencode "uuid=$COOLIFY_RESOURCE_UUID" \
+            --data-urlencode "force=$FORCE" \
+            "${COOLIFY_URL%/}/api/v1/deploy")
+          echo "$response" | jq .
+          echo "$response" | jq -e '.deployments | length > 0' > /dev/null
