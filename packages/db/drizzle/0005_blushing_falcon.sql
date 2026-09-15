@@ -1,0 +1,1 @@
+ALTER TABLE "lessons" ADD COLUMN "paid_amount" numeric(10, 2);

@@ -28,6 +28,8 @@ export default function NewLessonScreen() {
   const [prorate, setProrate] = useState(false);
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("transfer");
+  const [customAmount, setCustomAmount] = useState(false);
+  const [paidAmount, setPaidAmount] = useState("");
   const [recurring, setRecurring] = useState(false);
   const [recurringEndDate, setRecurringEndDate] = useState("");
 
@@ -87,6 +89,11 @@ export default function NewLessonScreen() {
       });
       return;
     }
+    const parsedAmount = Number(paidAmount.replace(",", "."));
+    if (paid && customAmount && (paidAmount === "" || Number.isNaN(parsedAmount))) {
+      alert("Podaj wpłaconą kwotę");
+      return;
+    }
     createLesson.mutate({
       studentId,
       startsAt: new Date(`${dateStr}T${timeStr}`).toISOString(),
@@ -94,6 +101,7 @@ export default function NewLessonScreen() {
       prorate,
       paid,
       paymentMethod: paid ? paymentMethod : null,
+      paidAmount: paid && customAmount ? parsedAmount : null,
     });
   }
 
@@ -153,18 +161,42 @@ export default function NewLessonScreen() {
       </View>
 
       {paid && (
-        <View style={styles.chipRow}>
-          <Chip
-            label="Gotówka"
-            active={paymentMethod === "cash"}
-            onPress={() => setPaymentMethod("cash")}
-          />
-          <Chip
-            label="Przelew"
-            active={paymentMethod === "transfer"}
-            onPress={() => setPaymentMethod("transfer")}
-          />
-        </View>
+        <>
+          <View style={styles.chipRow}>
+            <Chip
+              label="Gotówka"
+              active={paymentMethod === "cash"}
+              onPress={() => setPaymentMethod("cash")}
+            />
+            <Chip
+              label="Przelew"
+              active={paymentMethod === "transfer"}
+              onPress={() => setPaymentMethod("transfer")}
+            />
+          </View>
+
+          <SectionLabel>Wpłacona kwota</SectionLabel>
+          <View style={styles.chipRow}>
+            <Chip
+              label="Pełna kwota"
+              active={!customAmount}
+              onPress={() => setCustomAmount(false)}
+            />
+            <Chip
+              label="Inna kwota"
+              active={customAmount}
+              onPress={() => setCustomAmount(true)}
+            />
+          </View>
+          {customAmount && (
+            <Input
+              placeholder="Kwota w zł"
+              keyboardType="decimal-pad"
+              value={paidAmount}
+              onChangeText={setPaidAmount}
+            />
+          )}
+        </>
       )}
 
       <View style={styles.switchRow}>

@@ -43,7 +43,9 @@ export default function StatsPage() {
   });
 
   const collectionRate =
-    data && data.theoretical > 0 ? Math.round((data.paid / data.theoretical) * 100) : 0;
+    data && data.theoretical > 0
+      ? Math.min(100, Math.round((data.paid / data.theoretical) * 100))
+      : 0;
 
   return (
     <div className="flex flex-col gap-5">
