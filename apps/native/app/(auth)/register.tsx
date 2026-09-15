@@ -1,5 +1,5 @@
-import { Link } from "expo-router";
-import { useState } from "react";
+import { Link, router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Linking,
@@ -14,6 +14,11 @@ import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
 import { savePasswordCredential } from "@/lib/credentials";
 import { PRIVACY_URL, TERMS_URL } from "@/lib/legal";
+import {
+  setPendingSignUp,
+  subscribeEmailVerified,
+  VERIFIED_CALLBACK,
+} from "@/lib/pending-verification";
 import { colors } from "@/lib/theme";
 
 export default function RegisterScreen() {
@@ -22,16 +27,55 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeEmailVerified(async (signUp) => {
+      const { error } = await authClient.signIn.email(signUp);
+      if (error) {
+        router.replace(VERIFIED_CALLBACK);
+        return;
+      }
+      setPendingSignUp(null);
+    });
+    return () => {
+      unsubscribe();
+      setPendingSignUp(null);
+    };
+  }, []);
 
   async function onSubmit() {
     setLoading(true);
-    const { error } = await authClient.signUp.email({ name, email, password });
+    const { error } = await authClient.signUp.email({
+      name,
+      email,
+      password,
+      callbackURL: VERIFIED_CALLBACK,
+    });
     setLoading(false);
     if (error) {
       alert("Błąd rejestracji", error.message ?? "Spróbuj ponownie");
       return;
     }
+    setPendingSignUp({ email, password });
     await savePasswordCredential(email, password);
+    setSentTo(email);
+  }
+
+  async function onResend() {
+    if (!sentTo) return;
+    setResending(true);
+    const { error } = await authClient.sendVerificationEmail({
+      email: sentTo,
+      callbackURL: VERIFIED_CALLBACK,
+    });
+    setResending(false);
+    if (error) {
+      alert("Błąd", error.message ?? "Nie udało się wysłać linku");
+      return;
+    }
+    alert("Wysłano ponownie", `Nowy link jest w drodze na ${sentTo}.`);
   }
 
   async function onGoogle() {
@@ -44,6 +88,31 @@ export default function RegisterScreen() {
     if (error) {
       alert("Błąd logowania", error.message ?? "Spróbuj ponownie");
     }
+  }
+
+  if (sentTo) {
+    return (
+      <ScreenBackground>
+        <View style={styles.container}>
+          <Text style={styles.logo}>Sprawdź skrzynkę</Text>
+          <Text style={styles.subtitle}>
+            Wysłaliśmy link aktywacyjny na {sentTo}. Otwórz go na tym telefonie, a
+            zalogujemy Cię automatycznie. Nie widzisz maila? Zajrzyj do spamu.
+          </Text>
+          <View style={styles.form}>
+            <GradientButton
+              label="Przejdź do logowania"
+              onPress={() => router.replace("/login")}
+            />
+            <OutlineButton
+              label="Wyślij link ponownie"
+              onPress={onResend}
+              disabled={resending}
+            />
+          </View>
+        </View>
+      </ScreenBackground>
+    );
   }
 
   return (

@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import { GoogleIcon } from "@/components/google-icon";
@@ -10,6 +10,10 @@ import { getGoogleIdToken } from "@/lib/google-signin";
 import { colors } from "@/lib/theme";
 
 export default function LoginEmailScreen() {
+  const { verified, error: verifyError } = useLocalSearchParams<{
+    verified?: string;
+    error?: string;
+  }>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,7 +59,13 @@ export default function LoginEmailScreen() {
         style={styles.container}
       >
         <Text style={styles.logo}>RozliczKorki</Text>
-        <Text style={styles.subtitle}>Zaloguj się e-mailem i hasłem</Text>
+        <Text style={styles.subtitle}>
+          {verifyError
+            ? "Link aktywacyjny wygasł lub jest nieprawidłowy. Zaloguj się, żeby dostać nowy."
+            : verified
+              ? "Konto aktywne! Zaloguj się e-mailem i hasłem."
+              : "Zaloguj się e-mailem i hasłem"}
+        </Text>
 
         <View style={styles.form}>
           <Input

@@ -29,6 +29,8 @@ const passkeyOrigins = [
   ...ANDROID_APK_KEY_HASHES.map((hash) => `android:apk-key-hash:${hash}`),
 ];
 
+const IOS_BUNDLE_ID = "pl.rozliczkorki.app";
+
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -116,10 +118,16 @@ export const auth = betterAuth({
       },
     },
   },
-  socialProviders:
-    googleClientId && googleClientSecret
+  socialProviders: {
+    ...(googleClientId && googleClientSecret
       ? { google: { clientId: googleClientId, clientSecret: googleClientSecret } }
-      : undefined,
+      : {}),
+    apple: {
+      clientId: process.env.APPLE_CLIENT_ID ?? IOS_BUNDLE_ID,
+      clientSecret: process.env.APPLE_CLIENT_SECRET ?? "",
+      appBundleIdentifier: IOS_BUNDLE_ID,
+    },
+  },
   trustedOrigins,
   advanced: {
     cookiePrefix: process.env.AUTH_COOKIE_PREFIX ?? "better-auth",
