@@ -22,6 +22,9 @@ jobs:
     env:
       # Play requires a unique, increasing versionCode; offset keeps it above the manually released 11.
       VERSION_CODE_OFFSET: 100
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_COMPILERCHECK: content
+      CCACHE_SLOPPINESS: file_macro,time_macros,include_file_mtime,include_file_ctime
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +46,13 @@ jobs:
           java-version: 21
 
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: android-release
+          max-size: 2G
 
       - name: Configure Gradle for CI
         run: |
@@ -92,6 +102,7 @@ jobs:
         run: |
           (while sleep 60; do echo "[resources] RAM used $(free -m | awk '/Mem/{print $3"/"$2}') MB, swap $(free -m | awk '/Swap/{print $3}') MB, disk free $(df -h / | awk 'NR==2{print $4}')"; done) &
           bash scripts/build-android-release.sh
+          ccache -s
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
