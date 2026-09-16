@@ -18,6 +18,10 @@ on:
         description: Release Android
         type: boolean
         default: false
+      ios:
+        description: Release iOS to TestFlight internal testing
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -56,6 +60,7 @@ jobs:
     outputs:
       web: ${{ steps.filter.outputs.web }}
       android: ${{ steps.filter.outputs.android }}
+      ios: ${{ steps.filter.outputs.ios }}
     steps:
       - uses: actions/checkout@v4
 
@@ -73,6 +78,11 @@ jobs:
               - packages/**
               - pnpm-lock.yaml
               - .github/workflows/android-release.yml
+            ios:
+              - apps/native/**
+              - packages/**
+              - pnpm-lock.yaml
+              - .github/workflows/ios-release.yml
 
   web:
     name: Web
@@ -92,4 +102,13 @@ jobs:
       always() && needs.check.result == 'success' &&
       (needs.changes.outputs.android == 'true' || (github.event_name == 'workflow_dispatch' && inputs.android))
     uses: ./.github/workflows/android-release.yml
+    secrets: inherit
+
+  ios:
+    name: iOS
+    needs: [check, changes]
+    if: >-
+      always() && needs.check.result == 'success' &&
+      (needs.changes.outputs.ios == 'true' || (github.event_name == 'workflow_dispatch' && inputs.ios))
+    uses: ./.github/workflows/ios-release.yml
     secrets: inherit
