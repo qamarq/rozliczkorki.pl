@@ -13,7 +13,7 @@ platform :ios do
 
     match(type: "appstore", readonly: true, api_key: api_key)
 
-    workspace = Dir["ios/*.xcworkspace"].first
+    workspace = Dir[File.expand_path("../ios/*.xcworkspace")].first
     UI.user_error!("No generated iOS workspace found") unless workspace
 
     build_app(
