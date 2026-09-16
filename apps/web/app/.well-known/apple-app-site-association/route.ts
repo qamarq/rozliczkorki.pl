@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const IOS_APP_IDS = ["VQV5GK6NHP.pl.rozliczkorki.app"];
+const IOS_APP_IDS = ["KWQW4NSRZ4.pl.rozliczkorki.app"];
 
 export function GET() {
   return NextResponse.json({
