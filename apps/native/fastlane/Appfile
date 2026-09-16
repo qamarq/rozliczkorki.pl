@@ -1,0 +1,2 @@
+app_identifier("pl.rozliczkorki.app")
+team_id(ENV["APPLE_DEVELOPER_TEAM_ID"]) if ENV["APPLE_DEVELOPER_TEAM_ID"]
