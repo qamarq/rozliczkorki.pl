@@ -11,21 +11,27 @@ platform :ios do
       key_filepath: ENV.fetch("APP_STORE_CONNECT_API_KEY_KEY_PATH")
     )
 
-    match(type: "appstore", readonly: true, api_key: api_key)
-
     workspace = Dir[File.expand_path("../ios/*.xcworkspace")].first
     UI.user_error!("No generated iOS workspace found") unless workspace
     scheme = ENV.fetch("IOS_SCHEME", File.basename(workspace, ".xcworkspace"))
     app_identifier = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+    targets = {
+      scheme => app_identifier,
+      "ExpoWidgetsTarget" => "#{app_identifier}.ExpoWidgetsTarget"
+    }
 
-    update_code_signing_settings(
-      path: workspace.sub(/\.xcworkspace\z/, ".xcodeproj"),
-      use_automatic_signing: false,
-      targets: [scheme],
-      team_id: ENV.fetch("APPLE_DEVELOPER_TEAM_ID"),
-      code_sign_identity: "Apple Distribution",
-      profile_name: ENV.fetch("sigh_#{app_identifier}_appstore_profile-name")
-    )
+    match(type: "appstore", readonly: true, api_key: api_key, app_identifier: targets.values)
+
+    targets.each do |target, identifier|
+      update_code_signing_settings(
+        path: workspace.sub(/\.xcworkspace\z/, ".xcodeproj"),
+        use_automatic_signing: false,
+        targets: [target],
+        team_id: ENV.fetch("APPLE_DEVELOPER_TEAM_ID"),
+        code_sign_identity: "Apple Distribution",
+        profile_name: ENV.fetch("sigh_#{identifier}_appstore_profile-name")
+      )
+    end
 
     build_app(
       workspace: workspace,

@@ -1,6 +1,7 @@
 import { requireOptionalNativeModule } from "expo";
 import { useCallback, useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
+import { syncLessonActivities } from "./lesson-activity";
 
 type LessonLiveModule = {
   sync(lessonsJson: string): void;
@@ -22,6 +23,7 @@ const native = requireOptionalNativeModule<LessonLiveModule>("LessonLive");
 
 export function syncLiveLessons(lessons: LiveLesson[]) {
   native?.sync(JSON.stringify(lessons));
+  if (Platform.OS === "ios") syncLessonActivities(lessons);
 }
 
 export function canPostLiveUpdates() {

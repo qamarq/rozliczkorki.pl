@@ -1,5 +1,5 @@
 git_url("git@github.com:simon-the-shark/ios-encrypted-certy-do-apki-kamilka.git")
 storage_mode("git")
 type("appstore")
-app_identifier(["pl.rozliczkorki.app"])
+app_identifier(["pl.rozliczkorki.app", "pl.rozliczkorki.app.ExpoWidgetsTarget"])
 team_id(ENV["APPLE_DEVELOPER_TEAM_ID"]) if ENV["APPLE_DEVELOPER_TEAM_ID"]
