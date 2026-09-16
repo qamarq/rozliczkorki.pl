@@ -90,7 +90,10 @@ in this directory so it survives `expo prebuild`.
 
 1. Enrol in the Apple Developer Program, create the explicit App ID
    `pl.rozliczkorki.app`, and enable Sign in with Apple, Associated Domains,
-   and Push Notifications.
+   Push Notifications, and App Groups. Create the App Group
+   `group.pl.rozliczkorki.app` and a second App ID
+   `pl.rozliczkorki.app.ExpoWidgetsTarget` (the Live Activity extension) with
+   App Groups enabled; assign the group to both App IDs.
 2. Create the App Store Connect record for the same bundle ID.
 3. Create an App Store Connect API key and retain its key ID, issuer ID, and
    downloaded `.p8` file. This is separate from the Sign in with Apple key.
@@ -99,7 +102,7 @@ in this directory so it survives `expo prebuild`.
    encryption password as `MATCH_PASSWORD`.
 5. On a Mac with your Apple Developer credentials, run the initial Match setup
    from this directory. It creates the App Store certificate and provisioning
-   profile in the signing repository. CI uses `readonly` Match and cannot
+   profiles for both App IDs in the signing repository. CI uses `readonly` Match and cannot
    create or modify signing material.
 
    ```bash

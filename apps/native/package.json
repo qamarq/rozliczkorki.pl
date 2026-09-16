@@ -44,6 +44,7 @@
     "expo-status-bar": "~57.0.0",
     "expo-system-ui": "~57.0.0",
     "expo-web-browser": "~57.0.2",
+    "expo-widgets": "57.0.19",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -62,6 +63,13 @@
     "typescript": "6.0.3"
   },
   "expo": {
+    "autolinking": {
+      "android": {
+        "exclude": [
+          "expo-widgets"
+        ]
+      }
+    },
     "doctor": {
       "reactNativeDirectoryCheck": {
         "listUnknownPackages": false

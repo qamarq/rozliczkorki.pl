@@ -1,0 +1,191 @@
+diff --git a/build/ExpoWidgets.js b/build/ExpoWidgets.js
+index aabbb41259038993305302607e0156e4d61cf4bd..a96f1aafec611866b61e0d94bb030a313d41e609 100644
+--- a/build/ExpoWidgets.js
++++ b/build/ExpoWidgets.js
+@@ -12,6 +12,9 @@ class LiveActivityStub {
+     getId() {
+         return '';
+     }
++    getProps() {
++        return null;
++    }
+     async update(_props) { }
+     async end(_dismissalPolicy, _afterDate, _state, _contentDate) { }
+     async getPushToken() {
+diff --git a/build/Widgets.d.ts b/build/Widgets.d.ts
+index d4b5aacee380c056855f68c5ca62c9af24304745..f0f57f0238c17a9bbde9031506c41797da69f47b 100644
+--- a/build/Widgets.d.ts
++++ b/build/Widgets.d.ts
+@@ -1,4 +1,11 @@
+ import type { EventSubscription } from 'expo-modules-core';
++export type LiveActivitySchedule = {
++    startDate: Date;
++    alert: {
++        title: string;
++        body: string;
++    };
++};
+ import type { ExpoWidgetsEvents, LiveActivityComponent, LiveActivityDismissalPolicy, NativeLiveActivity, PushTokenEvent, WidgetEnvironment, WidgetTimelineEntry } from './Widgets.types';
+ /**
+  * Represents a widget instance. Provides methods to manage the widget's timeline.
+@@ -55,6 +62,7 @@ export declare class LiveActivity<T extends object = object> {
+      * Returns the push token for this Live Activity, used to send push notification updates via APNs.
+      * Returns `null` if push notifications are not enabled or the token is not yet available.
+      */
++    getProps(): T | null;
+     getPushToken(): Promise<string | null>;
+     /**
+      * Adds a listener for push token update events on this Live Activity instance.
+@@ -78,7 +86,7 @@ export declare class LiveActivityFactory<T extends object = object> {
+      * @param staleDate When set, the system may de-emphasize the activity after this date if content has not been refreshed.
+      * @returns The new Live Activity instance.
+      */
+-    start(props: T, url?: string, staleDate?: Date): LiveActivity<T>;
++    start(props: T, url?: string, staleDate?: Date, schedule?: LiveActivitySchedule): LiveActivity<T>;
+     /**
+      * Returns all currently active instances of this Live Activity type.
+      */
+diff --git a/build/Widgets.js b/build/Widgets.js
+index 9099a1bb3c10eaddc41518ba5b82117284f82135..b9dd26e7e9e65c66462cb22a89448797143f06c8 100644
+--- a/build/Widgets.js
++++ b/build/Widgets.js
+@@ -81,6 +81,10 @@ export class LiveActivity {
+      * Returns the push token for this Live Activity, used to send push notification updates via APNs.
+      * Returns `null` if push notifications are not enabled or the token is not yet available.
+      */
++    getProps() {
++        const props = this.nativeLiveActivity.getProps();
++        return props ? JSON.parse(props) : null;
++    }
+     getPushToken() {
+         return this.nativeLiveActivity.getPushToken();
+     }
+@@ -110,8 +114,8 @@ export class LiveActivityFactory {
+      * @param staleDate When set, the system may de-emphasize the activity after this date if content has not been refreshed.
+      * @returns The new Live Activity instance.
+      */
+-    start(props, url, staleDate) {
+-        return new LiveActivity(this.nativeLiveActivityFactory.start(JSON.stringify(props), url, staleDate?.getTime()));
++    start(props, url, staleDate, schedule) {
++        return new LiveActivity(this.nativeLiveActivityFactory.start(JSON.stringify(props), url, staleDate?.getTime(), schedule?.startDate.getTime(), schedule?.alert.title, schedule?.alert.body));
+     }
+     /**
+      * Returns all currently active instances of this Live Activity type.
+diff --git a/build/Widgets.types.d.ts b/build/Widgets.types.d.ts
+index 15e026868625ce20a3e359e5cc8e5c7e937c4650..d9fbccdd6408ca54b90b4780bc8ff5339fa939ce 100644
+--- a/build/Widgets.types.d.ts
++++ b/build/Widgets.types.d.ts
+@@ -261,11 +261,12 @@ export declare class NativeWidgetObject extends SharedObject {
+ }
+ export declare class NativeLiveActivityFactory extends SharedObject {
+     constructor(name: string, layout: string);
+-    start(props: string, url?: string, staleDate?: number): NativeLiveActivity;
++    start(props: string, url?: string, staleDate?: number, startDate?: number, alertTitle?: string, alertBody?: string): NativeLiveActivity;
+     getInstances(): NativeLiveActivity[];
+ }
+ export declare class NativeLiveActivity extends SharedObject<LiveActivityEvents> {
+     getId(): string;
++    getProps(): string | null;
+     update(props: string, staleDate?: number): Promise<void>;
+     end(dismissalPolicy?: string, afterDate?: number, state?: string, contentDate?: number): Promise<void>;
+     getPushToken(): Promise<string | null>;
+diff --git a/ios/LiveActivity.swift b/ios/LiveActivity.swift
+index 5f34eb2b67a0c2389c8ad8e09c71aa391a0c65ef..f38f71de579f0c960cbe612dfbbe87b7b75128a1 100644
+--- a/ios/LiveActivity.swift
++++ b/ios/LiveActivity.swift
+@@ -44,6 +44,11 @@ final class LiveActivity: SharedObject {
+     await activity.end(content, dismissalPolicy: dismissalPolicy?.toDismissalPolicy(date: afterDate) ?? .default, timestamp: contentDate)
+   }
+ 
++  func getProps() throws -> String? {
++    guard #available(iOS 16.2, *) else { throw LiveActivitiesNotSupportedException() }
++    return Activity<LiveActivityAttributes>.activities.first(where: { $0.id == id })?.content.state.props
++  }
++
+   func getPushToken() throws -> String? {
+     guard #available(iOS 16.1, *) else { throw LiveActivitiesNotSupportedException() }
+ 
+diff --git a/ios/LiveActivityFactory.swift b/ios/LiveActivityFactory.swift
+index 4b8a632965ddb507aeeb54a4d8944f455e5dffd7..b9cdbb1feca8dcbb28a91596a4c7eefd3149923a 100644
+--- a/ios/LiveActivityFactory.swift
++++ b/ios/LiveActivityFactory.swift
+@@ -14,7 +14,7 @@ final class LiveActivityFactory: SharedObject {
+     WidgetsStorage.set(layout, forKey: "__expo_widgets_live_activity_\(name)_layout")
+   }
+ 
+-  func start(props: String, url: URL?, staleDate: Date?) throws -> LiveActivity {
++  func start(props: String, url: URL?, staleDate: Date?, startDate: Date?, alertTitle: String?, alertBody: String?) throws -> LiveActivity {
+     guard #available(iOS 16.2, *) else { throw LiveActivitiesNotSupportedException() }
+     guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+       throw LiveActivitiesNotSupportedException()
+@@ -22,11 +22,27 @@ final class LiveActivityFactory: SharedObject {
+ 
+     do {
+       let initialState = LiveActivityAttributes.ContentState(name: name, props: props)
+-      let activity = try Activity.request(
+-        attributes: LiveActivityAttributes(url: url?.absoluteString),
+-        content: .init(state: initialState, staleDate: staleDate),
+-        pushType: LiveActivityFactory.pushNotificationsEnabled ? .token : nil
+-      )
++      let attributes = LiveActivityAttributes(url: url?.absoluteString)
++      let content = ActivityContent(state: initialState, staleDate: staleDate)
++      let pushType: PushType? = LiveActivityFactory.pushNotificationsEnabled ? .token : nil
++      let activity: Activity<LiveActivityAttributes>
++      if let startDate, startDate > Date() {
++        guard #available(iOS 26.0, *) else { throw LiveActivitiesNotSupportedException() }
++        activity = try Activity.request(
++          attributes: attributes,
++          content: content,
++          pushType: pushType,
++          style: .standard,
++          alertConfiguration: AlertConfiguration(
++            title: LocalizedStringResource(stringLiteral: alertTitle ?? ""),
++            body: LocalizedStringResource(stringLiteral: alertBody ?? ""),
++            sound: .default
++          ),
++          startDate: startDate
++        )
++      } else {
++        activity = try Activity.request(attributes: attributes, content: content, pushType: pushType)
++      }
+ 
+       let instance = LiveActivity(id: activity.id, name: name)
+       instance.observePushTokenUpdates(for: activity, pushNotificationsEnabled: LiveActivityFactory.pushNotificationsEnabled)
+@@ -44,7 +60,10 @@ final class LiveActivityFactory: SharedObject {
+       // Filter LiveActivity instances for activities that don't match the factory's name.
+       .filter { $0.content.state.name == name }
+       // A stale activity is still visible and updatable; only ended/dismissed ones are gone.
+-      .filter { $0.activityState == .active || $0.activityState == .stale }
++      .filter { activity in
++        if #available(iOS 26.0, *), activity.activityState == .pending { return true }
++        return activity.activityState == .active || activity.activityState == .stale
++      }
+       
+     let activeIDs = Set(activities.map(\.id))
+     instances = instances.filter { activeIDs.contains($0.key) }
+diff --git a/ios/WidgetsModule.swift b/ios/WidgetsModule.swift
+index b1b4295e22726e6fe501aa5e514b56061dea57a1..97ec6bc664e2a6851cfd63d4e048006c9465601b 100644
+--- a/ios/WidgetsModule.swift
++++ b/ios/WidgetsModule.swift
+@@ -86,8 +86,8 @@ public final class WidgetsModule: Module {
+         LiveActivityFactory(name: name, layout: layout)
+       }
+ 
+-      Function("start") { (liveActivity: LiveActivityFactory, props: String, url: URL?, staleDate: Date?) in
+-        return try liveActivity.start(props: props, url: url, staleDate: staleDate)
++      Function("start") { (liveActivity: LiveActivityFactory, props: String, url: URL?, staleDate: Date?, startDate: Date?, alertTitle: String?, alertBody: String?) in
++        return try liveActivity.start(props: props, url: url, staleDate: staleDate, startDate: startDate, alertTitle: alertTitle, alertBody: alertBody)
+       }
+ 
+       Function("getInstances") { (liveActivity: LiveActivityFactory) in
+@@ -108,6 +108,10 @@ public final class WidgetsModule: Module {
+         try await instance.end(dismissalPolicy: dismissalPolicy, afterDate: afterDate, props: props, contentDate: contentDate)
+       }
+ 
++      Function("getProps") { (instance: LiveActivity) in
++        try instance.getProps()
++      }
++
+       AsyncFunction("getPushToken") { (instance: LiveActivity) in
+         try instance.getPushToken()
+       }
