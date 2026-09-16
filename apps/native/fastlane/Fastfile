@@ -13,12 +13,23 @@ platform :ios do
 
     match(type: "appstore", readonly: true, api_key: api_key)
 
-    workspace = Dir["ios/*.xcworkspace"].first
+    workspace = Dir[File.expand_path("../ios/*.xcworkspace")].first
     UI.user_error!("No generated iOS workspace found") unless workspace
+    scheme = ENV.fetch("IOS_SCHEME", File.basename(workspace, ".xcworkspace"))
+    app_identifier = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+
+    update_code_signing_settings(
+      path: workspace.sub(/\.xcworkspace\z/, ".xcodeproj"),
+      use_automatic_signing: false,
+      targets: [scheme],
+      team_id: ENV.fetch("APPLE_DEVELOPER_TEAM_ID"),
+      code_sign_identity: "Apple Distribution",
+      profile_name: ENV.fetch("sigh_#{app_identifier}_appstore_profile-name")
+    )
 
     build_app(
       workspace: workspace,
-      scheme: ENV.fetch("IOS_SCHEME", File.basename(workspace, ".xcworkspace")),
+      scheme: scheme,
       clean: true,
       export_method: "app-store",
       output_directory: "artifacts/ios",
