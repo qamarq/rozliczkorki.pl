@@ -8,6 +8,10 @@ import { Platform } from "react-native";
 import { GoogleOneTapSignIn } from "react-native-google-one-tap-signin";
 
 const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const iosUrlScheme = process.env.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME;
+const iosClientId = iosUrlScheme?.startsWith("com.googleusercontent.apps.")
+  ? `${iosUrlScheme.slice("com.googleusercontent.apps.".length)}.apps.googleusercontent.com`
+  : undefined;
 
 type GoogleCredential = { idToken: string; nonce?: string };
 
@@ -27,7 +31,7 @@ let configured = false;
 
 function configureAccountPicker() {
   if (configured) return;
-  GoogleSignin.configure({ webClientId });
+  GoogleSignin.configure({ webClientId, iosClientId });
   configured = true;
 }
 
