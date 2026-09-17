@@ -12,7 +12,18 @@ Do not write comments that only restate what the code already says. Add one only
 there is a non-obvious reason, constraint or workaround that the code cannot express by
 itself, and then keep it to a single line.
 
-Write every comment in English, even though the UI copy is in Polish.
+## Language
+
+UI copy is Polish. Everything else is English: code comments, commit messages, branch
+names, PR titles and descriptions.
+
+## Commit messages
+
+One subject line, nothing else. No body, no bullet list, no explanation paragraph.
+
+```
+feat: add school payout tracking
+```
 
 ## Before every push
 
