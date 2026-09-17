@@ -1,7 +1,8 @@
+import { Github } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { AppStoreIcon, GooglePlayIcon } from "@/components/store-icons";
-import { GOOGLE_PLAY_URL } from "@/lib/site";
+import { GITHUB_URL, GOOGLE_PLAY_URL } from "@/lib/site";
 
 const COLUMNS = [
   {
@@ -17,6 +18,7 @@ const COLUMNS = [
     title: "Zasoby",
     links: [
       { label: "Blog", href: "/blog" },
+      { label: "Kod źródłowy", href: GITHUB_URL, external: true },
       { label: "Załóż konto", href: "/register" },
       { label: "Zaloguj się", href: "/login" },
     ],
@@ -45,7 +47,25 @@ export function MarketingFooter() {
               Kalendarz, płatności i zarobki korepetytora w jednym miejscu. Zamiast
               zeszytu, arkusza i liczenia z pamięci.
             </p>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="border-border-solid text-muted-foreground hover:text-foreground flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors"
+            >
+              <Github className="size-3.5" />
+              Open source na GitHubie
+            </a>
             <div className="flex items-center gap-3">
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="GitHub"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Github className="size-5" />
+              </a>
               <a
                 href={GOOGLE_PLAY_URL}
                 target="_blank"
@@ -99,7 +119,16 @@ export function MarketingFooter() {
 
         <div className="border-border-solid text-muted-foreground mt-10 flex flex-wrap items-center justify-between gap-3 border-t pt-6 text-xs">
           <span>
-            © {new Date().getFullYear()} RozliczKorki. Wszystkie prawa zastrzeżone.
+            © {new Date().getFullYear()} RozliczKorki. Kod na licencji{" "}
+            <a
+              href={`${GITHUB_URL}/blob/main/LICENSE`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-foreground transition-colors hover:underline"
+            >
+              AGPL-3.0
+            </a>
+            .
           </span>
           <span className="font-mono-ui">
             Made with ❤️ by{" "}

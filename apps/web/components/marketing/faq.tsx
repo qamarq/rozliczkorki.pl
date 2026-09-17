@@ -4,6 +4,10 @@ const FAQ = [
     a: "Tak. Zakładasz konto i korzystasz ze wszystkich funkcji bez opłat. Nie prosimy o kartę.",
   },
   {
+    q: "Czy kod aplikacji jest otwarty?",
+    a: "Tak. RozliczKorki jest open source na licencji AGPL-3.0. Cały kod aplikacji webowej i mobilnej znajdziesz na GitHubie: github.com/qamarq/rozliczkorki.pl.",
+  },
+  {
     q: "Czy to program księgowy?",
     a: "Nie. RozliczKorki pilnuje Twojego kalendarza i płatności oraz pokazuje sumy przychodów, ale nie wysyła deklaracji do urzędu ani nie wystawia faktur.",
   },

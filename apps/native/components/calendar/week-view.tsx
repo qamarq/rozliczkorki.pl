@@ -130,9 +130,11 @@ export function WeekView({
               <View
                 style={[
                   styles.headerDay,
-                  selected && { backgroundColor: colors.accentTo },
-                  today &&
-                    !selected && { borderWidth: 1, borderColor: colors.accentFrom },
+                  selected && {
+                    backgroundColor: colors.accentTo,
+                    borderColor: colors.accentTo,
+                  },
+                  today && !selected && { borderColor: colors.accentFrom },
                 ]}
               >
                 <Text
@@ -261,6 +263,10 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: "transparent",
+    backgroundColor: "transparent",
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },

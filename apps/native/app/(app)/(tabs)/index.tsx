@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
   fabWrap: {
     position: "absolute",
     right: 20,
-    bottom: 24,
-    borderRadius: radius.full,
+    bottom: 12,
+    borderRadius: 16,
     shadowColor: colors.accentTo,
     shadowOpacity: 0.5,
     shadowRadius: 12,
@@ -120,7 +120,8 @@ const styles = StyleSheet.create({
   fab: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 16,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
