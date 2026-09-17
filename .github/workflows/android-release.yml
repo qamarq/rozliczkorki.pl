@@ -10,7 +10,7 @@ concurrency:
 jobs:
   release:
     name: Build AAB and upload to Play (internal)
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 90
     env:
       # Play requires a unique, increasing versionCode; offset keeps it above the manually released 11.
@@ -20,11 +20,6 @@ jobs:
       CCACHE_SLOPPINESS: file_macro,time_macros,include_file_mtime,include_file_ctime
     steps:
       - uses: actions/checkout@v4
-
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk/2[0-6]* /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
-          df -h /
 
       - uses: pnpm/action-setup@v4
 
@@ -93,7 +88,7 @@ jobs:
       - name: Build release AAB
         working-directory: apps/native
         run: |
-          (while sleep 60; do echo "[resources] RAM used $(free -m | awk '/Mem/{print $3"/"$2}') MB, swap $(free -m | awk '/Swap/{print $3}') MB, disk free $(df -h / | awk 'NR==2{print $4}')"; done) &
+          (while sleep 60; do echo "[resources] $(memory_pressure | tail -1), swap $(sysctl -n vm.swapusage | awk '{print $6}'), disk free $(df -h / | awk 'NR==2{print $4}')"; done) &
           bash scripts/build-android-release.sh
           ccache -s
 
