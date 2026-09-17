@@ -4,4 +4,4 @@
 
 ---
 
-- [ ] Przeczytałem/-am [CONTRIBUTING.md](../CONTRIBUTING.md) i zgadzam się na warunki licencyjne kontrybucji. / I have read [CONTRIBUTING.en.md](../CONTRIBUTING.en.md) and agree to the contribution license terms.
+- [ ] Przeczytałem/-am [CONTRIBUTING.md](../CONTRIBUTING.md) i zgadzam się na warunki licencyjne kontrybucji. / I have read [CONTRIBUTING.md](../CONTRIBUTING.md#contributing) and agree to the contribution license terms.
