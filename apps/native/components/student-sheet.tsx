@@ -10,8 +10,8 @@ import {
   SectionLabel,
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
-import { formatPLN } from "@/lib/format";
-import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
+import { formatPLN } from "@repo/shared";
+import { LESSON_MODE_LABELS, type LessonMode } from "@repo/shared";
 import { closeSheet, openSheet } from "@/lib/sheet";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";

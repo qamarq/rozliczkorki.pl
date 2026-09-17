@@ -12,7 +12,7 @@ import {
 } from "@/components/ui";
 import { openVacationSheet } from "@/components/vacation-sheet";
 import { alert } from "@/lib/alert";
-import { formatVacationRange, pluralize } from "@/lib/lessons";
+import { formatVacationRange, pluralize } from "@repo/shared";
 import { colors, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 

@@ -10,7 +10,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { formatRange, PRESETS, presetRange, type PresetId, type Range } from "./range";
+import {
+  formatRange,
+  PRESETS,
+  presetRange,
+  type PresetId,
+  type Range,
+} from "@repo/shared";
 
 export function RangePicker({
   range,

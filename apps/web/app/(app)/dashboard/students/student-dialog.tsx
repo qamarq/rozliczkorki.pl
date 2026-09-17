@@ -23,9 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
+import { LESSON_MODE_LABELS, formatPLN, type LessonMode } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
-import { formatPLN } from "@/lib/utils";
 
 type StudentType = "private" | "school";
 

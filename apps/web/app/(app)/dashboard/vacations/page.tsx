@@ -29,10 +29,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { pluralize } from "@/lib/lessons";
+import { formatVacationRange, pluralize } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
-import { formatVacationRange, useSetNotified } from "./notice-panel";
+import { useSetNotified } from "./notice-panel";
 import { type EditableVacation, VacationDialog } from "./vacation-dialog";
 
 export default function VacationsPage() {

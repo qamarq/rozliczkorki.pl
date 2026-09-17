@@ -4,10 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card } from "@/components/ui";
 import { openLessonSheet } from "@/components/lesson-details-sheet";
-import { formatPLN } from "@/lib/format";
 import { colors, radius } from "@/lib/theme";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterClient } from "@trpc/client";
+import { LESSON_STATUS_LABELS, formatPLN } from "@repo/shared";
 
 export type LessonRow = Awaited<
   ReturnType<inferRouterClient<AppRouter>["lessons"]["range"]["query"]>
@@ -83,15 +83,7 @@ export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boo
           </Text>
           <View style={styles.badgeRow}>
             <Badge
-              label={
-                item.vacationId
-                  ? "Urlop"
-                  : item.status === "cancelled"
-                    ? "Odwołane"
-                    : item.status === "completed"
-                      ? "Odbyły się"
-                      : "Zaplanowane"
-              }
+              label={item.vacationId ? "Urlop" : LESSON_STATUS_LABELS[item.status]}
               tone={
                 item.vacationId
                   ? "default"

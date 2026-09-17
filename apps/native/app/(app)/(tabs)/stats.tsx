@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { TabHeader } from "@/components/tab-header";
 import { TrendChart } from "@/components/trend-chart";
 import { Card, Chip, ScreenBackground } from "@/components/ui";
-import { formatPLN } from "@/lib/format";
+import { formatPLN } from "@repo/shared";
 import {
   buildBuckets,
   formatRange,
@@ -13,7 +13,7 @@ import {
   presetRange,
   previousRange,
   type PresetId,
-} from "@/lib/range";
+} from "@repo/shared";
 import { colors, gradients, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 

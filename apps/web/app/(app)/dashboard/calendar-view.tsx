@@ -40,8 +40,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatPLN } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
-import { cn, formatPLN } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
 import { VacationNoticesPanel } from "./vacations/notice-panel";
 

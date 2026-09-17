@@ -13,9 +13,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { pluralize } from "@/lib/lessons";
+import { formatPLN, pluralize } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
-import { cn, formatPLN } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { TrendChart } from "./charts";
 import {
   buildBuckets,
@@ -24,7 +24,7 @@ import {
   presetRange,
   previousRange,
   type Range,
-} from "./range";
+} from "@repo/shared";
 import { RangePicker } from "./range-picker";
 
 type Metric = "revenue" | "lessons" | "hours";

@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { formatPLN } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
-import { cn, formatPLN } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { StudentDialog } from "./student-dialog";
 
 type Filter = "active" | "archived" | "all";

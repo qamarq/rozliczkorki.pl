@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@repo/api", "@repo/auth", "@repo/db"],
+  transpilePackages: ["@repo/api", "@repo/auth", "@repo/db", "@repo/shared"],
   async redirects() {
     return [
       {

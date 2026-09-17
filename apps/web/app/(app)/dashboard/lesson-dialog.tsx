@@ -35,13 +35,19 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { LESSON_MODE_LABELS, type LessonMode, pluralize } from "@/lib/lessons";
+import {
+  formatPLN,
+  formatVacationRange,
+  LESSON_MODE_LABELS,
+  LESSON_STATUS_LABELS,
+  type LessonMode,
+  type LessonStatus,
+  PAYMENT_METHOD_LABELS,
+  type PaymentMethod,
+  pluralize,
+} from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
-import { formatVacationRange } from "./vacations/notice-panel";
-import { cn, formatPLN } from "@/lib/utils";
-
-type LessonStatus = "scheduled" | "completed" | "cancelled";
-type PaymentMethod = "cash" | "transfer";
+import { cn } from "@/lib/utils";
 
 function defaultRecurringEndDate() {
   const nextYear = new Date().getFullYear() + 1;
@@ -451,9 +457,11 @@ export function LessonDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="scheduled">Zaplanowane</SelectItem>
-                    <SelectItem value="completed">Odbyły się</SelectItem>
-                    <SelectItem value="cancelled">Odwołane</SelectItem>
+                    {Object.entries(LESSON_STATUS_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -616,8 +624,11 @@ export function LessonDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cash">Gotówka</SelectItem>
-                        <SelectItem value="transfer">Przelew</SelectItem>
+                        {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
