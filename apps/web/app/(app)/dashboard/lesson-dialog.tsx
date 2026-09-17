@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { LESSON_MODE_LABELS, type LessonMode, pluralize } from "@/lib/lessons";
 import { trpc } from "@/lib/trpc/client";
 import { cn, formatPLN } from "@/lib/utils";
 
@@ -46,13 +47,11 @@ function defaultRecurringEndDate() {
 }
 
 function lessonsCount(n: number) {
-  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
-  return `${n} ${n === 1 || few ? "zajęcia" : "zajęć"}`;
+  return pluralize(n, "zajęcia", "zajęcia", "zajęć");
 }
 
 function paidCount(n: number) {
-  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
-  return `${n} ${n === 1 || few ? "opłacone" : "opłaconych"}`;
+  return pluralize(n, "opłacone", "opłacone", "opłaconych");
 }
 
 type LessonRow = {
@@ -61,6 +60,7 @@ type LessonRow = {
   startsAt: Date | string;
   durationMinutes: number;
   prorate: boolean;
+  mode: LessonMode;
   status: LessonStatus;
   paid: boolean;
   paymentMethod: PaymentMethod | null;
@@ -94,6 +94,7 @@ export function LessonDialog({
   const [timeStr, setTimeStr] = useState("16:00");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [prorate, setProrate] = useState(false);
+  const [mode, setMode] = useState<LessonMode>("in_person");
 
   const { data: selectedStudent } = trpc.students.byId.useQuery(
     { id: studentId },
@@ -165,6 +166,7 @@ export function LessonDialog({
       setTimeStr(format(d, "HH:mm"));
       setDurationMinutes(editing.durationMinutes);
       setProrate(editing.prorate);
+      setMode(editing.mode);
       setStatus(editing.status);
       setPaid(editing.paid);
       setPaymentMethod(editing.paymentMethod ?? "transfer");
@@ -174,6 +176,7 @@ export function LessonDialog({
       setRecurring(false);
     } else {
       setStudentId(students[0]?.id ?? "");
+      setMode(students[0]?.defaultMode ?? "in_person");
       setDateStr(format(date ?? new Date(), "yyyy-MM-dd"));
       setTimeStr("16:00");
       setDurationMinutes(60);
@@ -192,6 +195,7 @@ export function LessonDialog({
   const invalidate = () => {
     utils.lessons.range.invalidate();
     utils.recurring.lastLesson.invalidate();
+    utils.vacations.overview.invalidate();
     utils.stats.summary.invalidate();
   };
 
@@ -274,6 +278,7 @@ export function LessonDialog({
       startsAt,
       durationMinutes,
       prorate,
+      mode,
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
@@ -318,6 +323,7 @@ export function LessonDialog({
         durationMinutes,
         startDate: dateStr,
         endDate: recurringEndDate || null,
+        mode,
       });
       return;
     }
@@ -327,6 +333,7 @@ export function LessonDialog({
       startsAt,
       durationMinutes,
       prorate,
+      mode,
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
@@ -350,7 +357,17 @@ export function LessonDialog({
 
             <div className="flex flex-col gap-2">
               <Label>Uczeń</Label>
-              <Select value={studentId} onValueChange={setStudentId}>
+              <Select
+                value={studentId}
+                onValueChange={(id) => {
+                  setStudentId(id);
+                  if (!editing) {
+                    setMode(
+                      students.find((s) => s.id === id)?.defaultMode ?? "in_person",
+                    );
+                  }
+                }}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Wybierz ucznia" />
                 </SelectTrigger>
@@ -417,6 +434,22 @@ export function LessonDialog({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Forma zajęć</Label>
+              <Select value={mode} onValueChange={(v) => setMode(v as LessonMode)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["in_person", "remote"] as const).map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {LESSON_MODE_LABELS[m]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-start gap-2">

@@ -35,6 +35,7 @@ export function groupByDay(lessons: LessonRow[]) {
 }
 
 export function lessonTone(lesson: LessonRow) {
+  if (lesson.vacationId) return { fg: colors.textFaint, bg: colors.surface };
   if (lesson.status === "cancelled") return { fg: colors.danger, bg: colors.dangerBg };
   if (lesson.settled) return { fg: colors.success, bg: colors.successBg };
   return { fg: colors.warning, bg: colors.warningBg };
@@ -78,22 +79,27 @@ export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boo
           <Text style={styles.rowTitle}>
             {showDate ? format(startsAt, "d MMM, ", { locale: pl }) : ""}
             {format(startsAt, "HH:mm")} · {item.student?.name}
+            {item.mode === "remote" ? " · online" : ""}
           </Text>
           <View style={styles.badgeRow}>
             <Badge
               label={
-                item.status === "cancelled"
-                  ? "Odwołane"
-                  : item.status === "completed"
-                    ? "Odbyły się"
-                    : "Zaplanowane"
+                item.vacationId
+                  ? "Urlop"
+                  : item.status === "cancelled"
+                    ? "Odwołane"
+                    : item.status === "completed"
+                      ? "Odbyły się"
+                      : "Zaplanowane"
               }
               tone={
-                item.status === "cancelled"
-                  ? "danger"
-                  : item.status === "completed"
-                    ? "success"
-                    : "default"
+                item.vacationId
+                  ? "default"
+                  : item.status === "cancelled"
+                    ? "danger"
+                    : item.status === "completed"
+                      ? "success"
+                      : "default"
               }
             />
             <Badge

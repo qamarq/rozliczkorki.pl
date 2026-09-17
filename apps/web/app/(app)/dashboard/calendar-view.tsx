@@ -25,6 +25,7 @@ import {
   ListChecks,
   Plus,
   Sparkles,
+  Video,
   Wallet,
 } from "lucide-react";
 import type { AppRouter } from "@repo/api";
@@ -42,6 +43,7 @@ import {
 import { trpc } from "@/lib/trpc/client";
 import { cn, formatPLN } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
+import { VacationNoticesPanel } from "./vacations/notice-panel";
 
 const WEEKDAYS = ["pon", "wt", "śr", "czw", "pt", "sob", "niedz"];
 
@@ -82,6 +84,10 @@ export function CalendarView() {
   }, [lessons]);
 
   const today = new Date();
+  const { data: vacationOverview } = trpc.vacations.overview.useQuery({
+    today: format(today, "yyyy-MM-dd"),
+  });
+  const pendingNotices = vacationOverview?.pending ?? [];
   const todayLessons = useMemo(
     () =>
       lessons
@@ -218,16 +224,21 @@ export function CalendarView() {
                           onClick={() => openEditDialog(day, lesson.id)}
                           className={cn(
                             "flex flex-col rounded-md border-l-2 px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
-                            lesson.status === "cancelled"
-                              ? "bg-destructive/10 border-destructive/50 text-muted-foreground line-through"
-                              : lesson.settled
-                                ? "bg-success/10 border-success text-foreground"
-                                : "bg-warning/10 border-warning text-foreground",
+                            lesson.vacationId
+                              ? "bg-muted border-muted-foreground/40 text-muted-foreground line-through opacity-70"
+                              : lesson.status === "cancelled"
+                                ? "bg-destructive/10 border-destructive/50 text-muted-foreground line-through"
+                                : lesson.settled
+                                  ? "bg-success/10 border-success text-foreground"
+                                  : "bg-warning/10 border-warning text-foreground",
                           )}
                         >
                           <span className="font-medium">
                             {format(new Date(lesson.startsAt), "HH:mm")}{" "}
                             {lesson.student?.name}
+                            {lesson.mode === "remote" && (
+                              <Video className="ml-1 inline size-2.5 align-baseline" />
+                            )}
                           </span>
                           <span className="flex items-center gap-1 tabular-nums">
                             {formatPLN(lesson.price)}
@@ -248,6 +259,7 @@ export function CalendarView() {
         </div>
 
         <div className="flex flex-col gap-5 lg:col-span-4">
+          {pendingNotices.length > 0 && <VacationNoticesPanel pending={pendingNotices} />}
           <TodayPanel lessons={todayLessons} onOpen={(id) => openEditDialog(today, id)} />
           <DuePanel lessons={dueLessons} onOpen={(day, id) => openEditDialog(day, id)} />
         </div>

@@ -3,6 +3,7 @@ import { Link } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { TabHeader } from "@/components/tab-header";
 import { ScreenBackground } from "@/components/ui";
 import { ListView } from "@/components/calendar/list-view";
 import { MonthView } from "@/components/calendar/month-view";
@@ -27,8 +28,8 @@ export default function CalendarScreen() {
 
   return (
     <ScreenBackground syncStatus>
-      <View style={styles.headerRow}>
-        <Text style={styles.header}>Kalendarz</Text>
+      <View style={styles.headerBlock}>
+        <TabHeader title="Kalendarz" />
         <View style={styles.segmented}>
           {CALENDAR_VIEW_OPTIONS.map((m) => {
             const active = m.value === mode;
@@ -84,21 +85,14 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  headerBlock: {
     paddingHorizontal: 20,
     paddingTop: 8,
     marginBottom: 12,
-    gap: 8,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: colors.text,
+    gap: 12,
   },
   segmented: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     backgroundColor: colors.surface,
     borderWidth: 1,

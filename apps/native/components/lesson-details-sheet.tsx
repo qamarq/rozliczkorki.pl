@@ -18,6 +18,7 @@ import {
 import { alert } from "@/lib/alert";
 import { closeSheet, openSheet } from "@/lib/sheet";
 import { formatPLN } from "@/lib/format";
+import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
 import { colors } from "@/lib/theme";
 import { queryClient, trpc } from "@/lib/trpc";
 
@@ -71,6 +72,7 @@ function LessonDetailsContent({
   const [paidAmount, setPaidAmount] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [prorate, setProrate] = useState(false);
+  const [mode, setMode] = useState<LessonMode>("in_person");
   const [notes, setNotes] = useState("");
   const [cycleEndDate, setCycleEndDate] = useState("");
 
@@ -109,6 +111,7 @@ function LessonDetailsContent({
     setPaidAmount(lesson.paidAmount ?? "");
     setDurationMinutes(String(lesson.durationMinutes));
     setProrate(lesson.prorate);
+    setMode(lesson.mode);
     setNotes(lesson.notes ?? "");
   }, [lesson]);
 
@@ -149,6 +152,7 @@ function LessonDetailsContent({
     utils.lessons.range.invalidate();
     utils.lessons.byId.invalidate({ id: lessonId });
     utils.recurring.lastLesson.invalidate();
+    utils.vacations.overview.invalidate();
     utils.stats.summary.invalidate();
   };
 
@@ -199,6 +203,7 @@ function LessonDetailsContent({
       id: lesson.id,
       durationMinutes: Number(durationMinutes),
       prorate,
+      mode,
       status,
       paid,
       paymentMethod: paid ? paymentMethod : null,
@@ -261,6 +266,18 @@ function LessonDetailsContent({
       <Text style={styles.subtitle}>
         {format(new Date(lesson.startsAt), "d MMMM, HH:mm")}
       </Text>
+
+      <SectionLabel>Forma zajęć</SectionLabel>
+      <View style={styles.chipRow}>
+        {(["in_person", "remote"] as const).map((m) => (
+          <Chip
+            key={m}
+            label={LESSON_MODE_LABELS[m]}
+            active={mode === m}
+            onPress={() => setMode(m)}
+          />
+        ))}
+      </View>
 
       <Input
         label="Czas trwania (minuty)"

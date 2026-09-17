@@ -9,6 +9,7 @@ import {
   LogOut,
   Send,
   Settings,
+  TreePalm,
   Users,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
@@ -52,6 +53,7 @@ const NAV_MAIN = [
   { title: "Kalendarz lekcji", url: "/dashboard", icon: CalendarDays },
   { title: "Uczniowie i stawki", url: "/dashboard/students", icon: Users },
   { title: "Finanse i statystyki", url: "/dashboard/stats", icon: LineChart },
+  { title: "Urlopy", url: "/dashboard/vacations", icon: TreePalm },
 ];
 
 const NAV_SECONDARY = [

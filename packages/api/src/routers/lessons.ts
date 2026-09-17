@@ -98,6 +98,7 @@ export const lessonsRouter = router({
         startsAt: z.string(),
         durationMinutes: z.number().int().positive(),
         prorate: z.boolean().default(false),
+        mode: z.enum(["in_person", "remote"]).optional(),
         status: z.enum(["scheduled", "completed", "cancelled"]).default("scheduled"),
         paid: z.boolean().default(false),
         paymentMethod: z.enum(["cash", "transfer"]).nullable().optional(),
@@ -125,6 +126,7 @@ export const lessonsRouter = router({
           startsAt: new Date(input.startsAt),
           durationMinutes: input.durationMinutes,
           prorate: input.prorate,
+          mode: input.mode ?? student.defaultMode,
           status: input.status,
           paid: input.paid,
           paymentMethod: input.paymentMethod ?? null,
@@ -143,6 +145,7 @@ export const lessonsRouter = router({
         startsAt: z.string().optional(),
         durationMinutes: z.number().int().positive().optional(),
         prorate: z.boolean().optional(),
+        mode: z.enum(["in_person", "remote"]).optional(),
         status: z.enum(["scheduled", "completed", "cancelled"]).optional(),
         paid: z.boolean().optional(),
         paymentMethod: z.enum(["cash", "transfer"]).nullable().optional(),
@@ -160,6 +163,7 @@ export const lessonsRouter = router({
         .set({
           ...rest,
           ...(startsAt ? { startsAt: new Date(startsAt) } : {}),
+          ...(rest.status && rest.status !== "cancelled" ? { vacationId: null } : {}),
           ...(priceOverride !== undefined
             ? { priceOverride: priceOverride?.toString() ?? null }
             : {}),

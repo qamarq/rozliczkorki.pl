@@ -12,6 +12,7 @@ import {
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { formatPLN } from "@/lib/format";
+import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
@@ -26,6 +27,7 @@ export default function NewLessonScreen() {
   const [timeStr, setTimeStr] = useState("16:00");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [prorate, setProrate] = useState(false);
+  const [mode, setMode] = useState<LessonMode>("in_person");
   const [paid, setPaid] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer">("transfer");
   const [customAmount, setCustomAmount] = useState(false);
@@ -86,6 +88,7 @@ export default function NewLessonScreen() {
         durationMinutes: Number(durationMinutes),
         startDate: dateStr,
         endDate: recurringEndDate || null,
+        mode,
       });
       return;
     }
@@ -99,6 +102,7 @@ export default function NewLessonScreen() {
       startsAt: new Date(`${dateStr}T${timeStr}`).toISOString(),
       durationMinutes: Number(durationMinutes),
       prorate,
+      mode,
       paid,
       paymentMethod: paid ? paymentMethod : null,
       paidAmount: paid && customAmount ? parsedAmount : null,
@@ -117,7 +121,22 @@ export default function NewLessonScreen() {
             key={s.id}
             label={s.name}
             active={studentId === s.id}
-            onPress={() => setStudentId(s.id)}
+            onPress={() => {
+              setStudentId(s.id);
+              setMode(s.defaultMode);
+            }}
+          />
+        ))}
+      </View>
+
+      <SectionLabel>Forma zajęć</SectionLabel>
+      <View style={styles.chipRow}>
+        {(["in_person", "remote"] as const).map((m) => (
+          <Chip
+            key={m}
+            label={LESSON_MODE_LABELS[m]}
+            active={mode === m}
+            onPress={() => setMode(m)}
           />
         ))}
       </View>

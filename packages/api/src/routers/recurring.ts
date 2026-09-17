@@ -148,6 +148,7 @@ export const recurringRouter = router({
         durationMinutes: z.number().int().positive(),
         startDate: z.string(),
         endDate: z.string().nullable().optional(),
+        mode: z.enum(["in_person", "remote"]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -171,6 +172,7 @@ export const recurringRouter = router({
           durationMinutes: input.durationMinutes,
           startDate: input.startDate,
           endDate: input.endDate ?? null,
+          mode: input.mode ?? student.defaultMode,
         })
         .returning();
 
@@ -190,6 +192,7 @@ export const recurringRouter = router({
             recurringRuleId: rule.id,
             startsAt,
             durationMinutes: input.durationMinutes,
+            mode: rule.mode,
           })),
         );
       }
@@ -234,6 +237,7 @@ export const recurringRouter = router({
             recurringRuleId: rule.id,
             startsAt,
             durationMinutes: rule.durationMinutes,
+            mode: rule.mode,
           })),
         );
       }
@@ -292,6 +296,7 @@ export const recurringRouter = router({
             startsAt,
             durationMinutes: template.durationMinutes,
             prorate: template.prorate,
+            mode: template.mode,
           })),
         );
       }
