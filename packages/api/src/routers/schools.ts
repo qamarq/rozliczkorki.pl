@@ -13,6 +13,12 @@ import { protectedProcedure, router } from "../trpc";
 
 type School = typeof schools.$inferSelect;
 
+function formatIsoDay(date: Date) {
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 async function assertOwnsSchool(
   db: (typeof import("@repo/db"))["db"],
   userId: string,
@@ -105,19 +111,25 @@ function buildPeriods(
     });
   }
 
-  return [...grouped.values()]
-    .map((entry) => {
-      const payout = payoutByKey.get(entry.key) ?? null;
-      const dueDate = payoutDueDate(entry, frequency, school.payoutDay);
-      return {
-        ...entry,
-        amount: Math.round(entry.amount * 100) / 100,
-        dueDate,
-        status: payoutStatus(entry, dueDate, !!payout, now),
-        payout,
-      };
-    })
-    .sort((a, b) => (a.start < b.start ? 1 : -1));
+  const today = formatIsoDay(now);
+
+  return (
+    [...grouped.values()]
+      .map((entry) => {
+        const payout = payoutByKey.get(entry.key) ?? null;
+        const dueDate = payoutDueDate(entry, frequency, school.payoutDay);
+        return {
+          ...entry,
+          amount: Math.round(entry.amount * 100) / 100,
+          dueDate,
+          status: payoutStatus(entry, dueDate, !!payout, now),
+          payout,
+        };
+      })
+      // Okresy, które jeszcze się nie zaczęły, nie mają czego rozliczać.
+      .filter((entry) => entry.start <= today || entry.payout)
+      .sort((a, b) => (a.start < b.start ? 1 : -1))
+  );
 }
 
 const schoolInput = {

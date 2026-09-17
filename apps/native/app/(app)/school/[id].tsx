@@ -6,7 +6,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   Badge,
   Card,
-  GradientButton,
   OutlineButton,
   ScreenBackground,
   ScreenHeader,
@@ -81,40 +80,6 @@ export default function SchoolDetailScreen() {
               {school.notes ? <Text style={styles.body}>{school.notes}</Text> : null}
             </Card>
 
-            <Card style={{ gap: 6 }}>
-              <View style={styles.statRow}>
-                <Text style={styles.body}>Czeka na przelew</Text>
-                <Text style={[styles.statValue, { color: colors.warning }]}>
-                  {formatPLN(school.totals.awaiting)}
-                </Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.body}>Otrzymano łącznie</Text>
-                <Text style={[styles.statValue, { color: colors.success }]}>
-                  {formatPLN(school.totals.received)}
-                </Text>
-              </View>
-              <View style={styles.statRow}>
-                <Text style={styles.body}>Zajęcia</Text>
-                <Text style={styles.statValue}>{school.totals.lessonCount}</Text>
-              </View>
-            </Card>
-
-            <SectionLabel>Uczniowie ({school.students.length})</SectionLabel>
-            {school.students.length === 0 ? (
-              <Text style={styles.hint}>
-                Przypisz ucznia do tej szkółki w zakładce „Uczniowie”.
-              </Text>
-            ) : (
-              <Card style={{ gap: 6 }}>
-                {school.students.map((student) => (
-                  <Text key={student.id} style={styles.body}>
-                    {student.name}
-                  </Text>
-                ))}
-              </Card>
-            )}
-
             <SectionLabel>Historia przelewów</SectionLabel>
             {school.periods.length === 0 ? (
               <Text style={styles.hint}>
@@ -151,17 +116,49 @@ export default function SchoolDetailScreen() {
                       disabled={unmarkPayout.isPending}
                     />
                   ) : (
-                    <GradientButton
+                    <OutlineButton
                       label="Przelew przyszedł"
                       onPress={() =>
                         markPayout.mutate({ schoolId: id, periodKey: period.key })
                       }
-                      loading={markPayout.isPending}
-                      disabled={period.lessonCount === 0}
+                      disabled={markPayout.isPending || period.lessonCount === 0}
                     />
                   )}
                 </Card>
               ))
+            )}
+            <Card style={{ gap: 6 }}>
+              <View style={styles.statRow}>
+                <Text style={styles.body}>Czeka na przelew</Text>
+                <Text style={[styles.statValue, { color: colors.warning }]}>
+                  {formatPLN(school.totals.awaiting)}
+                </Text>
+              </View>
+              <View style={styles.statRow}>
+                <Text style={styles.body}>Otrzymano łącznie</Text>
+                <Text style={[styles.statValue, { color: colors.success }]}>
+                  {formatPLN(school.totals.received)}
+                </Text>
+              </View>
+              <View style={styles.statRow}>
+                <Text style={styles.body}>Zajęcia</Text>
+                <Text style={styles.statValue}>{school.totals.lessonCount}</Text>
+              </View>
+            </Card>
+
+            <SectionLabel>Uczniowie ({school.students.length})</SectionLabel>
+            {school.students.length === 0 ? (
+              <Text style={styles.hint}>
+                Przypisz ucznia do tej szkółki w zakładce „Uczniowie”.
+              </Text>
+            ) : (
+              <Card style={{ gap: 6 }}>
+                {school.students.map((student) => (
+                  <Text key={student.id} style={styles.body}>
+                    {student.name}
+                  </Text>
+                ))}
+              </Card>
             )}
           </>
         )}

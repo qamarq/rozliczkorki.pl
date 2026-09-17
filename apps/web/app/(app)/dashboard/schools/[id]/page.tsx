@@ -117,7 +117,7 @@ export default function SchoolDetailPage() {
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-12">
-        <div className="flex flex-col gap-4 lg:col-span-4">
+        <div className="order-1 flex flex-col gap-4 lg:col-span-4">
           <Card className="gap-3 p-5">
             <span className="font-semibold">Dane szkółki</span>
             <div className="text-muted-foreground flex flex-col gap-2 text-sm">
@@ -154,7 +154,9 @@ export default function SchoolDetailPage() {
               {school.notes && <p className="whitespace-pre-wrap">{school.notes}</p>}
             </div>
           </Card>
+        </div>
 
+        <div className="order-3 flex flex-col gap-4 lg:order-2 lg:col-span-4 lg:col-start-1">
           <Card className="gap-3 p-5">
             <span className="font-semibold">Rozliczenia</span>
             <div className="flex items-baseline justify-between gap-2 text-sm">
@@ -210,7 +212,7 @@ export default function SchoolDetailPage() {
           </Button>
         </div>
 
-        <Card className="gap-0 p-0 lg:col-span-8">
+        <Card className="order-2 gap-0 p-0 lg:order-3 lg:col-span-8 lg:col-start-5 lg:row-span-2 lg:row-start-1">
           <div className="flex items-center justify-between gap-2 border-b px-5 py-4">
             <span className="font-semibold">Historia przelewów</span>
             <span className="text-muted-foreground text-xs">
@@ -263,6 +265,7 @@ export default function SchoolDetailPage() {
                   ) : (
                     <Button
                       size="sm"
+                      variant="outline"
                       disabled={markPayout.isPending || period.lessonCount === 0}
                       onClick={() =>
                         markPayout.mutate({ schoolId, periodKey: period.key })
