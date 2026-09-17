@@ -7,6 +7,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { LessonRow } from "@/components/calendar/shared";
 import {
   Chip,
+  DateTimeField,
   GradientButton,
   Input,
   OutlineButton,
@@ -60,6 +61,19 @@ function LessonDetailsContent({
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [prorate, setProrate] = useState(false);
   const [notes, setNotes] = useState("");
+  const [cycleEndDate, setCycleEndDate] = useState("");
+
+  const { data: lastRecurringLesson } = trpc.recurring.lastLesson.useQuery(
+    { id: lesson?.recurringRuleId ?? "" },
+    { enabled: !!lesson?.recurringRuleId },
+  );
+  const lastRecurringDate = lastRecurringLesson?.startsAt
+    ? format(new Date(lastRecurringLesson.startsAt), "yyyy-MM-dd")
+    : "";
+
+  useEffect(() => {
+    setCycleEndDate(lastRecurringDate);
+  }, [lastRecurringDate]);
 
   useEffect(() => {
     if (!lesson) return;
@@ -109,11 +123,29 @@ function LessonDetailsContent({
   const invalidate = () => {
     utils.lessons.range.invalidate();
     utils.lessons.byId.invalidate({ id: lessonId });
+    utils.recurring.lastLesson.invalidate();
     utils.stats.summary.invalidate();
   };
 
+  const updateCycleEnd = trpc.recurring.setEndDate.useMutation();
+
   const updateLesson = trpc.lessons.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      if (lesson?.recurringRuleId && cycleEndDate && cycleEndDate !== lastRecurringDate) {
+        try {
+          await updateCycleEnd.mutateAsync({
+            id: lesson.recurringRuleId,
+            endDate: cycleEndDate,
+            until: new Date(`${cycleEndDate}T23:59:59.999`).toISOString(),
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+          });
+        } catch (e) {
+          alert(
+            "Błąd",
+            e instanceof Error ? e.message : "Nie udało się zmienić końca cyklu",
+          );
+        }
+      }
       invalidate();
       onClose();
     },
@@ -231,6 +263,25 @@ function LessonDetailsContent({
         </Text>
       )}
 
+      {lesson.recurringRuleId && cycleEndDate !== "" && (
+        <>
+          <DateTimeField
+            label="Zajęcia cykliczne do"
+            mode="date"
+            value={new Date(`${cycleEndDate}T00:00`)}
+            onChange={(date) => {
+              const picked = format(date, "yyyy-MM-dd");
+              const lessonDate = format(new Date(lesson.startsAt), "yyyy-MM-dd");
+              setCycleEndDate(picked < lessonDate ? lessonDate : picked);
+            }}
+          />
+          <Text style={styles.hint}>
+            Data ostatnich zajęć w cyklu. Po zmianie dodamy lub usuniemy zajęcia w ten sam
+            dzień tygodnia.
+          </Text>
+        </>
+      )}
+
       <SectionLabel>Status</SectionLabel>
       <View style={styles.chipRow}>
         {(["scheduled", "completed", "cancelled"] as const).map((s) => (
@@ -321,7 +372,7 @@ function LessonDetailsContent({
         <GradientButton
           label="Zapisz"
           onPress={onSave}
-          loading={updateLesson.isPending}
+          loading={updateLesson.isPending || updateCycleEnd.isPending}
         />
         <OutlineButton
           label="Usuń zajęcia"

@@ -116,6 +116,20 @@ export function LessonDialog({
   const [recurringEndDate, setRecurringEndDate] = useState("");
   const [confirmKind, setConfirmKind] = useState<"update" | "delete" | null>(null);
 
+  const { data: lastRecurringLesson } = trpc.recurring.lastLesson.useQuery(
+    { id: editing?.recurringRuleId ?? "" },
+    { enabled: open && !!editing?.recurringRuleId },
+  );
+  const lastRecurringDate = lastRecurringLesson?.startsAt
+    ? format(new Date(lastRecurringLesson.startsAt), "yyyy-MM-dd")
+    : "";
+  const [cycleEndDate, setCycleEndDate] = useState("");
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (open) setCycleEndDate(lastRecurringDate);
+  }, [open, lastRecurringDate]);
+
   useEffect(() => {
     if (!open) return;
     if (editing) {
@@ -152,8 +166,11 @@ export function LessonDialog({
 
   const invalidate = () => {
     utils.lessons.range.invalidate();
+    utils.recurring.lastLesson.invalidate();
     utils.stats.summary.invalidate();
   };
+
+  const updateCycleEnd = trpc.recurring.setEndDate.useMutation();
 
   const createLesson = trpc.lessons.create.useMutation({
     onSuccess: () => {
@@ -174,7 +191,25 @@ export function LessonDialog({
   });
 
   const updateLesson = trpc.lessons.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      if (
+        editing?.recurringRuleId &&
+        cycleEndDate &&
+        cycleEndDate !== lastRecurringDate
+      ) {
+        try {
+          await updateCycleEnd.mutateAsync({
+            id: editing.recurringRuleId,
+            endDate: cycleEndDate,
+            until: new Date(`${cycleEndDate}T23:59:59.999`).toISOString(),
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          });
+        } catch (e) {
+          toast.error(
+            e instanceof Error ? e.message : "Nie udało się zmienić końca cyklu",
+          );
+        }
+      }
       invalidate();
       toast.success("Zapisano");
       setConfirmKind(null);
@@ -203,6 +238,7 @@ export function LessonDialog({
     createLesson.isPending ||
     createRecurring.isPending ||
     updateLesson.isPending ||
+    updateCycleEnd.isPending ||
     deleteLesson.isPending;
 
   const paidAmountValue =
@@ -383,6 +419,24 @@ export function LessonDialog({
                 </p>
               </div>
             </div>
+
+            {editing?.recurringRuleId && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="cycleEnd">Zajęcia cykliczne do</Label>
+                <Input
+                  id="cycleEnd"
+                  type="date"
+                  min={dateStr}
+                  value={cycleEndDate}
+                  disabled={!lastRecurringDate}
+                  onChange={(e) => setCycleEndDate(e.target.value)}
+                />
+                <p className="text-muted-foreground text-xs">
+                  Data ostatnich zajęć w cyklu. Po zmianie dodamy lub usuniemy zajęcia w
+                  ten sam dzień tygodnia.
+                </p>
+              </div>
+            )}
 
             {!editing && (
               <div className="flex flex-col gap-3">
