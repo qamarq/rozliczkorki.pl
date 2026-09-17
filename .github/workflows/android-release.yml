@@ -46,7 +46,9 @@ jobs:
         run: |
           mkdir -p ~/.gradle
           {
-            echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m"
+            # Runner has 16 GB; R8 and the Kotlin daemon are the only steps that ask for much.
+            echo "org.gradle.jvmargs=-Xmx8g -XX:MaxMetaspaceSize=1g"
+            echo "kotlin.daemon.jvmargs=-Xmx4g"
             echo "org.gradle.caching=true"
             echo "reactNativeArchitectures=armeabi-v7a,arm64-v8a"
           } >> ~/.gradle/gradle.properties
