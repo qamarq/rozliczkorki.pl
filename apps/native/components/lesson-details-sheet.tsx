@@ -155,7 +155,9 @@ function LessonDetailsContent({
 
   function onSave() {
     if (!lesson) return;
-    if (lesson.recurringRuleId) {
+    const recurringFieldsChanged =
+      prorate !== lesson.prorate || Number(durationMinutes) !== lesson.durationMinutes;
+    if (lesson.recurringRuleId && recurringFieldsChanged) {
       alert(
         "Zapisać zmiany?",
         "Te zajęcia są częścią cyklu. Zastosować zmiany tylko do tego wystąpienia, czy też do wszystkich przyszłych zajęć w tym cyklu?",
