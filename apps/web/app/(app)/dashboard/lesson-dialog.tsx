@@ -611,6 +611,13 @@ export function LessonDialog({
               <Switch id="paid" checked={paid} onCheckedChange={onPaidChange} />
             </div>
 
+            {selectedStudent?.schoolId && (
+              <p className="text-muted-foreground text-xs">
+                Te zajęcia rozlicza szkółka — status zmieni się sam, gdy zaznaczysz
+                przelew w zakładce „Szkółki”.
+              </p>
+            )}
+
             {paid && (
               <div className="flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-3">

@@ -7,7 +7,11 @@ import { openLessonSheet } from "@/components/lesson-details-sheet";
 import { colors, radius } from "@/lib/theme";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterClient } from "@trpc/client";
-import { LESSON_STATUS_LABELS, formatPLN } from "@repo/shared";
+import {
+  LESSON_PAYMENT_STATE_LABELS,
+  LESSON_STATUS_LABELS,
+  formatPLN,
+} from "@repo/shared";
 
 export type LessonRow = Awaited<
   ReturnType<inferRouterClient<AppRouter>["lessons"]["range"]["query"]>
@@ -37,7 +41,8 @@ export function groupByDay(lessons: LessonRow[]) {
 export function lessonTone(lesson: LessonRow) {
   if (lesson.vacationId) return { fg: colors.textFaint, bg: colors.surface };
   if (lesson.status === "cancelled") return { fg: colors.danger, bg: colors.dangerBg };
-  if (lesson.settled) return { fg: colors.success, bg: colors.successBg };
+  if (lesson.paymentState === "paid") return { fg: colors.success, bg: colors.successBg };
+  if (lesson.paymentState === "unpaid") return { fg: colors.danger, bg: colors.dangerBg };
   return { fg: colors.warning, bg: colors.warningBg };
 }
 
@@ -95,8 +100,16 @@ export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boo
               }
             />
             <Badge
-              label={item.settled ? "opłacone" : "nieopłacone"}
-              tone={item.settled ? "success" : "warning"}
+              label={LESSON_PAYMENT_STATE_LABELS[item.paymentState].toLowerCase()}
+              tone={
+                item.paymentState === "paid"
+                  ? "success"
+                  : item.paymentState === "awaiting_payout"
+                    ? "warning"
+                    : item.paymentState === "unpaid"
+                      ? "danger"
+                      : "default"
+              }
             />
           </View>
         </View>

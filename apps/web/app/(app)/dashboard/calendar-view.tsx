@@ -24,6 +24,7 @@ import {
   Landmark,
   ListChecks,
   Plus,
+  School,
   Sparkles,
   Video,
   Wallet,
@@ -40,7 +41,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatPLN } from "@repo/shared";
+import { formatPLN, LESSON_PAYMENT_STATE_LABELS } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
@@ -100,7 +101,12 @@ export function CalendarView() {
   const dueLessons = useMemo(
     () =>
       lessons
-        .filter((l) => l.status === "completed" && !l.settled)
+        .filter(
+          (l) =>
+            l.status === "completed" &&
+            !l.settled &&
+            l.paymentState !== "awaiting_payout",
+        )
         .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
         .slice(0, 6),
     [lessons],
@@ -120,7 +126,7 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard
           icon={Sparkles}
           label="Potencjał miesiąca"
@@ -138,6 +144,12 @@ export function CalendarView() {
           label="Do rozliczenia"
           value={formatPLN(summary?.unpaid ?? 0)}
           tone="warning"
+        />
+        <StatCard
+          icon={School}
+          label="Do wypłaty ze szkółek"
+          value={formatPLN(summary?.awaitingPayout ?? 0)}
+          tone="school"
         />
         <StatCard
           icon={CalendarX2}
@@ -229,9 +241,11 @@ export function CalendarView() {
                               ? "bg-muted border-muted-foreground/40 text-muted-foreground line-through opacity-70"
                               : lesson.status === "cancelled"
                                 ? "bg-destructive/10 border-destructive/50 text-muted-foreground line-through"
-                                : lesson.settled
+                                : lesson.paymentState === "paid"
                                   ? "bg-success/10 border-success text-foreground"
-                                  : "bg-warning/10 border-warning text-foreground",
+                                  : lesson.paymentState === "awaiting_payout"
+                                    ? "bg-warning/10 border-warning text-foreground"
+                                    : "bg-destructive/5 border-destructive/60 text-foreground",
                           )}
                         >
                           <span className="font-medium">
@@ -339,41 +353,48 @@ function TodayPanel({
                 Odbyta
               </Button>
             )}
-            {lesson.status === "completed" && !lesson.settled && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" disabled={markPaid.isPending}>
-                    Rozlicz
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() =>
-                      markPaid.mutate({
-                        id: lesson.id,
-                        paid: true,
-                        paymentMethod: "cash",
-                      })
-                    }
-                  >
-                    <Banknote className="size-4" />
-                    Gotówka
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      markPaid.mutate({
-                        id: lesson.id,
-                        paid: true,
-                        paymentMethod: "transfer",
-                      })
-                    }
-                  >
-                    <Landmark className="size-4" />
-                    Przelew
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {lesson.paymentState === "awaiting_payout" && (
+              <Badge className="bg-warning/10 text-warning border-warning/20">
+                {LESSON_PAYMENT_STATE_LABELS.awaiting_payout}
+              </Badge>
             )}
+            {lesson.status === "completed" &&
+              !lesson.settled &&
+              lesson.paymentState !== "awaiting_payout" && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" disabled={markPaid.isPending}>
+                      Rozlicz
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() =>
+                        markPaid.mutate({
+                          id: lesson.id,
+                          paid: true,
+                          paymentMethod: "cash",
+                        })
+                      }
+                    >
+                      <Banknote className="size-4" />
+                      Gotówka
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        markPaid.mutate({
+                          id: lesson.id,
+                          paid: true,
+                          paymentMethod: "transfer",
+                        })
+                      }
+                    >
+                      <Landmark className="size-4" />
+                      Przelew
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             {lesson.status === "completed" && lesson.settled && (
               <Badge className="bg-success/10 text-success border-success/20">
                 Opłacone
@@ -478,13 +499,14 @@ function StatCard({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  tone: "primary" | "success" | "warning" | "destructive";
+  tone: "primary" | "success" | "warning" | "destructive" | "school";
 }) {
   const toneClasses = {
     primary: "bg-primary/10 text-primary",
     success: "bg-success/10 text-success",
     warning: "bg-warning/10 text-warning",
     destructive: "bg-destructive/10 text-destructive",
+    school: "bg-warning/10 text-warning",
   }[tone];
 
   return (

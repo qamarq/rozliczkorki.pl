@@ -1,4 +1,4 @@
-import { lessons, recurringRules, students, studentRates } from "@repo/db";
+import { lessons, recurringRules, schools, students, studentRates } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
@@ -27,11 +27,13 @@ export const studentsRouter = router({
       if (!input?.includeArchived) {
         conditions.push(eq(students.archived, false));
       }
-      return ctx.db
-        .select()
+      const rows = await ctx.db
+        .select({ student: students, school: schools })
         .from(students)
+        .leftJoin(schools, eq(students.schoolId, schools.id))
         .where(and(...conditions))
         .orderBy(asc(students.name));
+      return rows.map((row) => ({ ...row.student, school: row.school }));
     }),
 
   byId: protectedProcedure
@@ -43,7 +45,10 @@ export const studentsRouter = router({
         .from(studentRates)
         .where(eq(studentRates.studentId, input.id))
         .orderBy(desc(studentRates.effectiveFrom));
-      return { ...student, rates };
+      const [school] = student.schoolId
+        ? await ctx.db.select().from(schools).where(eq(schools.id, student.schoolId))
+        : [];
+      return { ...student, rates, school: school ?? null };
     }),
 
   create: protectedProcedure
@@ -52,6 +57,7 @@ export const studentsRouter = router({
         name: z.string().min(1),
         address: z.string().optional(),
         phone: z.string().optional(),
+        schoolId: z.string().uuid().nullable().optional(),
         type: z.enum(["private", "school"]).default("private"),
         defaultMode: z.enum(["in_person", "remote"]).default("in_person"),
         hourlyRate: z.coerce.number().positive(),
@@ -67,7 +73,8 @@ export const studentsRouter = router({
           name: input.name,
           address: input.address,
           phone: input.phone,
-          type: input.type,
+          schoolId: input.schoolId ?? null,
+          type: input.schoolId ? "school" : input.type,
           defaultMode: input.defaultMode,
         })
         .returning();
@@ -93,6 +100,7 @@ export const studentsRouter = router({
         name: z.string().min(1).optional(),
         address: z.string().nullable().optional(),
         phone: z.string().nullable().optional(),
+        schoolId: z.string().uuid().nullable().optional(),
         type: z.enum(["private", "school"]).optional(),
         defaultMode: z.enum(["in_person", "remote"]).optional(),
         archived: z.boolean().optional(),
@@ -101,6 +109,9 @@ export const studentsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await assertOwnsStudent(ctx.db, ctx.session.user.id, input.id);
       const { id, ...rest } = input;
+      if (rest.schoolId !== undefined) {
+        rest.type = rest.schoolId ? "school" : "private";
+      }
       const [updated] = await ctx.db
         .update(students)
         .set({ ...rest, updatedAt: new Date() })

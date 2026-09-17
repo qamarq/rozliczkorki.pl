@@ -365,6 +365,12 @@ function LessonDetailsContent({
         <Text style={styles.label}>Opłacone</Text>
         <Switch value={paid} onValueChange={onPaidChange} />
       </View>
+      {lesson?.student?.schoolId ? (
+        <Text style={styles.hint}>
+          Te zajęcia rozlicza szkółka — status zmieni się sam, gdy zaznaczysz przelew w
+          zakładce Szkółki.
+        </Text>
+      ) : null}
       {carry !== 0 && (
         <Text style={styles.hint}>
           {carry > 0

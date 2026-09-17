@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   LineChart,
   LogOut,
+  School,
   Send,
   Settings,
   TreePalm,
@@ -52,6 +53,7 @@ import { authClient } from "@/lib/auth-client";
 const NAV_MAIN = [
   { title: "Kalendarz lekcji", url: "/dashboard", icon: CalendarDays },
   { title: "Uczniowie i stawki", url: "/dashboard/students", icon: Users },
+  { title: "Szkółki", url: "/dashboard/schools", icon: School },
   { title: "Finanse i statystyki", url: "/dashboard/stats", icon: LineChart },
   { title: "Urlopy", url: "/dashboard/vacations", icon: TreePalm },
 ];
@@ -242,7 +244,11 @@ export function AppSidebar({
 
 export function DashboardHeader() {
   const pathname = usePathname();
-  const current = NAV_MAIN.find((item) => item.url === pathname);
+  const current =
+    NAV_MAIN.find((item) => item.url === pathname) ??
+    NAV_MAIN.filter((item) => item.url !== "/dashboard").find((item) =>
+      pathname.startsWith(`${item.url}/`),
+    );
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2">

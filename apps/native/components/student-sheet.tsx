@@ -9,6 +9,7 @@ import {
   OutlineButton,
   SectionLabel,
 } from "@/components/ui";
+import { openSchoolSheet } from "@/components/school-sheet";
 import { alert } from "@/lib/alert";
 import { formatPLN } from "@repo/shared";
 import { LESSON_MODE_LABELS, type LessonMode } from "@repo/shared";
@@ -16,15 +17,28 @@ import { closeSheet, openSheet } from "@/lib/sheet";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
-export function openStudentSheet(studentId?: string) {
-  openSheet(() => <StudentForm studentId={studentId} onClose={closeSheet} />);
+type StudentDraft = {
+  name: string;
+  address: string;
+  phone: string;
+  schoolId: string | null;
+  defaultMode: LessonMode;
+  hourlyRate: string;
+};
+
+export function openStudentSheet(studentId?: string, draft?: StudentDraft) {
+  openSheet(() => (
+    <StudentForm studentId={studentId} draft={draft} onClose={closeSheet} />
+  ));
 }
 
 function StudentForm({
   studentId,
+  draft,
   onClose,
 }: {
   studentId?: string;
+  draft?: StudentDraft;
   onClose: () => void;
 }) {
   const utils = trpc.useUtils();
@@ -33,27 +47,33 @@ function StudentForm({
     { enabled: !!studentId },
   );
 
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
-  const [type, setType] = useState<"private" | "school">("private");
-  const [defaultMode, setDefaultMode] = useState<LessonMode>("in_person");
-  const [hourlyRate, setHourlyRate] = useState("80");
+  const [name, setName] = useState(draft?.name ?? "");
+  const [address, setAddress] = useState(draft?.address ?? "");
+  const [phone, setPhone] = useState(draft?.phone ?? "");
+  const [schoolId, setSchoolId] = useState<string | null>(draft?.schoolId ?? null);
+  const [defaultMode, setDefaultMode] = useState<LessonMode>(
+    draft?.defaultMode ?? "in_person",
+  );
+  const [hourlyRate, setHourlyRate] = useState(draft?.hourlyRate ?? "80");
 
   const currentRate = student?.rates[0];
+  const { data: schools = [] } = trpc.schools.list.useQuery();
+  const selectedSchool = schools.find((school) => school.id === schoolId) ?? null;
 
   useEffect(() => {
     if (!student) return;
     setName(student.name);
     setAddress(student.address ?? "");
     setPhone(student.phone ?? "");
-    setType(student.type);
+    setSchoolId(student.schoolId);
     setDefaultMode(student.defaultMode);
     if (student.rates[0]) setHourlyRate(String(Number(student.rates[0].hourlyRate)));
   }, [student]);
 
   function invalidate() {
     utils.students.list.invalidate();
+    utils.schools.list.invalidate();
+    utils.schools.byId.invalidate();
     if (studentId) utils.students.byId.invalidate({ id: studentId });
     utils.lessons.range.invalidate();
     utils.recurring.list.invalidate();
@@ -97,9 +117,9 @@ function StudentForm({
     if (!studentId) {
       createStudent.mutate({
         name: name.trim(),
-        address: address.trim() || undefined,
+        address: schoolId ? undefined : address.trim() || undefined,
         phone: phone.trim() || undefined,
-        type,
+        schoolId,
         defaultMode,
         hourlyRate: rate,
         effectiveFrom: format(new Date(), "yyyy-MM-dd"),
@@ -110,9 +130,9 @@ function StudentForm({
     await updateStudent.mutateAsync({
       id: studentId,
       name: name.trim(),
-      address: address.trim() || null,
+      address: schoolId ? null : address.trim() || null,
       phone: phone.trim() || null,
-      type,
+      schoolId,
       defaultMode,
     });
 
@@ -161,7 +181,7 @@ function StudentForm({
         ))}
       </View>
 
-      {defaultMode !== "remote" && (
+      {!selectedSchool && defaultMode !== "remote" && (
         <Input label="Adres (opcjonalnie)" value={address} onChangeText={setAddress} />
       )}
       <Input
@@ -171,19 +191,39 @@ function StudentForm({
         onChangeText={setPhone}
       />
 
-      <SectionLabel>Typ</SectionLabel>
+      <SectionLabel>Gdzie uczysz</SectionLabel>
       <View style={styles.chipRow}>
+        <Chip label="Prywatnie" active={!schoolId} onPress={() => setSchoolId(null)} />
+        {schools.map((school) => (
+          <Chip
+            key={school.id}
+            label={school.name}
+            active={schoolId === school.id}
+            onPress={() => setSchoolId(school.id)}
+          />
+        ))}
         <Chip
-          label="Korki"
-          active={type === "private"}
-          onPress={() => setType("private")}
-        />
-        <Chip
-          label="Szkółka"
-          active={type === "school"}
-          onPress={() => setType("school")}
+          label="+ Dodaj szkółkę"
+          active={false}
+          onPress={() =>
+            openSchoolSheet(undefined, (newSchoolId) =>
+              openStudentSheet(studentId, {
+                name,
+                address,
+                phone,
+                schoolId: newSchoolId,
+                defaultMode,
+                hourlyRate,
+              }),
+            )
+          }
         />
       </View>
+      {selectedSchool ? (
+        <Text style={styles.hint}>
+          Adres zajęć: {selectedSchool.address ?? "uzupełnij go w szkółce"}
+        </Text>
+      ) : null}
 
       <Input
         label="Stawka za godzinę (PLN)"

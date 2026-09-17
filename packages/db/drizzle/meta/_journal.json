@@ -50,6 +50,13 @@
       "when": 1789661480031,
       "tag": "0006_vacations_and_lesson_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789677589617,
+      "tag": "0007_schools_and_payouts",
+      "breakpoints": true
     }
   ]
 }

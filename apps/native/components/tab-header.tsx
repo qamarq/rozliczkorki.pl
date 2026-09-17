@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
@@ -33,12 +34,28 @@ export function ProfileAvatarButton() {
   );
 }
 
+function StatsButton() {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.push("/stats")}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel="Statystyki"
+      style={styles.iconButton}
+    >
+      <Ionicons name="stats-chart-outline" size={18} color={colors.textMuted} />
+    </Pressable>
+  );
+}
+
 export function TabHeader({ title, style }: { title: string; style?: object }) {
   return (
     <View style={[styles.row, style]}>
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>
+      <StatsButton />
       <ProfileAvatarButton />
     </View>
   );
@@ -49,9 +66,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 10,
   },
   title: { flex: 1, fontSize: 24, fontWeight: "800", color: colors.text },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
   avatar: {
     width: 36,
     height: 36,

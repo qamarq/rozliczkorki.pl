@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { TabHeader } from "@/components/tab-header";
 import { TrendChart } from "@/components/trend-chart";
-import { Card, Chip, ScreenBackground } from "@/components/ui";
+import { Card, Chip, ScreenBackground, ScreenHeader } from "@/components/ui";
 import { formatPLN } from "@repo/shared";
 import {
   buildBuckets,
@@ -76,10 +75,16 @@ export default function StatsScreen() {
   const segments = [
     { key: "paid", label: "Opłacone", value: totals?.paid ?? 0, color: colors.success },
     {
+      key: "awaiting",
+      label: "Do wypłaty",
+      value: totals?.awaitingPayout ?? 0,
+      color: colors.warning,
+    },
+    {
       key: "unpaid",
       label: "Zaległe",
       value: totals?.unpaid ?? 0,
-      color: colors.warning,
+      color: colors.danger,
     },
     {
       key: "planned",
@@ -94,7 +99,7 @@ export default function StatsScreen() {
   return (
     <ScreenBackground syncStatus>
       <ScrollView contentContainerStyle={styles.content}>
-        <TabHeader title="Statystyki" />
+        <ScreenHeader title="Statystyki" />
 
         <ScrollView
           horizontal
