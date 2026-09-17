@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -42,6 +43,16 @@ type PaymentMethod = "cash" | "transfer";
 function defaultRecurringEndDate() {
   const nextYear = new Date().getFullYear() + 1;
   return format(new Date(nextYear, 5, 30), "yyyy-MM-dd");
+}
+
+function lessonsCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "zajęcia" : "zajęć"}`;
+}
+
+function paidCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "opłacone" : "opłaconych"}`;
 }
 
 type LessonRow = {
@@ -130,6 +141,20 @@ export function LessonDialog({
     if (open) setCycleEndDate(lastRecurringDate);
   }, [open, lastRecurringDate]);
 
+  const cycleEndChanged =
+    !!editing?.recurringRuleId && !!cycleEndDate && cycleEndDate !== lastRecurringDate;
+  const cycleEndInput = {
+    id: editing?.recurringRuleId ?? "",
+    until: cycleEndDate ? new Date(`${cycleEndDate}T23:59:59.999`).toISOString() : "",
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+  const { data: cycleEndPreview } = trpc.recurring.previewEndDate.useQuery(
+    cycleEndInput,
+    {
+      enabled: open && cycleEndChanged,
+    },
+  );
+
   useEffect(() => {
     if (!open) return;
     if (editing) {
@@ -192,18 +217,9 @@ export function LessonDialog({
 
   const updateLesson = trpc.lessons.update.useMutation({
     onSuccess: async () => {
-      if (
-        editing?.recurringRuleId &&
-        cycleEndDate &&
-        cycleEndDate !== lastRecurringDate
-      ) {
+      if (cycleEndChanged) {
         try {
-          await updateCycleEnd.mutateAsync({
-            id: editing.recurringRuleId,
-            endDate: cycleEndDate,
-            until: new Date(`${cycleEndDate}T23:59:59.999`).toISOString(),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          });
+          await updateCycleEnd.mutateAsync({ ...cycleEndInput, endDate: cycleEndDate });
         } catch (e) {
           toast.error(
             e instanceof Error ? e.message : "Nie udało się zmienić końca cyklu",
@@ -431,9 +447,28 @@ export function LessonDialog({
                   disabled={!lastRecurringDate}
                   onChange={(e) => setCycleEndDate(e.target.value)}
                 />
+                {cycleEndChanged && cycleEndPreview && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {cycleEndPreview.added > 0 && (
+                      <Badge variant="secondary">
+                        Doda {lessonsCount(cycleEndPreview.added)}
+                      </Badge>
+                    )}
+                    {cycleEndPreview.removed > 0 && (
+                      <Badge variant="destructive">
+                        Usunie {lessonsCount(cycleEndPreview.removed)}
+                      </Badge>
+                    )}
+                    {cycleEndPreview.keptPaid > 0 && (
+                      <Badge variant="outline">
+                        Zostawi {paidCount(cycleEndPreview.keptPaid)}
+                      </Badge>
+                    )}
+                  </div>
+                )}
                 <p className="text-muted-foreground text-xs">
-                  Data ostatnich zajęć w cyklu. Po zmianie dodamy lub usuniemy zajęcia w
-                  ten sam dzień tygodnia.
+                  Data ostatnich zajęć w cyklu. Po zmianie dodamy zajęcia w ten sam dzień
+                  tygodnia albo usuniemy nieopłacone.
                 </p>
               </div>
             )}

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { LessonRow } from "@/components/calendar/shared";
 import {
+  Badge,
   Chip,
   DateTimeField,
   GradientButton,
@@ -19,6 +20,16 @@ import { closeSheet, openSheet } from "@/lib/sheet";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
 import { queryClient, trpc } from "@/lib/trpc";
+
+function lessonsCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "zajęcia" : "zajęć"}`;
+}
+
+function paidCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "opłacone" : "opłaconych"}`;
+}
 
 type LessonStatus = "scheduled" | "completed" | "cancelled";
 type LessonDetails = Awaited<
@@ -74,6 +85,20 @@ function LessonDetailsContent({
   useEffect(() => {
     setCycleEndDate(lastRecurringDate);
   }, [lastRecurringDate]);
+
+  const cycleEndChanged =
+    !!lesson?.recurringRuleId && !!cycleEndDate && cycleEndDate !== lastRecurringDate;
+  const cycleEndInput = {
+    id: lesson?.recurringRuleId ?? "",
+    until: cycleEndDate ? new Date(`${cycleEndDate}T23:59:59.999`).toISOString() : "",
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+  };
+  const { data: cycleEndPreview } = trpc.recurring.previewEndDate.useQuery(
+    cycleEndInput,
+    {
+      enabled: cycleEndChanged,
+    },
+  );
 
   useEffect(() => {
     if (!lesson) return;
@@ -131,14 +156,9 @@ function LessonDetailsContent({
 
   const updateLesson = trpc.lessons.update.useMutation({
     onSuccess: async () => {
-      if (lesson?.recurringRuleId && cycleEndDate && cycleEndDate !== lastRecurringDate) {
+      if (cycleEndChanged) {
         try {
-          await updateCycleEnd.mutateAsync({
-            id: lesson.recurringRuleId,
-            endDate: cycleEndDate,
-            until: new Date(`${cycleEndDate}T23:59:59.999`).toISOString(),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
-          });
+          await updateCycleEnd.mutateAsync({ ...cycleEndInput, endDate: cycleEndDate });
         } catch (e) {
           alert(
             "Błąd",
@@ -275,9 +295,31 @@ function LessonDetailsContent({
               setCycleEndDate(picked < lessonDate ? lessonDate : picked);
             }}
           />
+          {cycleEndChanged && cycleEndPreview && (
+            <View style={styles.chipRow}>
+              {cycleEndPreview.added > 0 && (
+                <Badge
+                  label={`Doda ${lessonsCount(cycleEndPreview.added)}`}
+                  tone="success"
+                />
+              )}
+              {cycleEndPreview.removed > 0 && (
+                <Badge
+                  label={`Usunie ${lessonsCount(cycleEndPreview.removed)}`}
+                  tone="danger"
+                />
+              )}
+              {cycleEndPreview.keptPaid > 0 && (
+                <Badge
+                  label={`Zostawi ${paidCount(cycleEndPreview.keptPaid)}`}
+                  tone="warning"
+                />
+              )}
+            </View>
+          )}
           <Text style={styles.hint}>
-            Data ostatnich zajęć w cyklu. Po zmianie dodamy lub usuniemy zajęcia w ten sam
-            dzień tygodnia.
+            Data ostatnich zajęć w cyklu. Po zmianie dodamy zajęcia w ten sam dzień
+            tygodnia albo usuniemy nieopłacone.
           </Text>
         </>
       )}
