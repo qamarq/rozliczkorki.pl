@@ -36,3 +36,23 @@ Web wystartuje na `http://localhost:3000`. Aplikacja mobilna (`pnpm --filter nat
 - `pnpm typecheck` — `tsc --noEmit` we wszystkich pakietach
 - `pnpm format` / `pnpm format:check` — Prettier
 - `pnpm --filter @repo/db db:generate|db:push|db:studio` — migracje Drizzle
+
+## Kontrybucje
+
+Pull requesty są mile widziane. Przed otwarciem przeczytaj [CONTRIBUTING.md](CONTRIBUTING.md),
+bo każda kontrybucja wymaga zgody na opisane tam warunki licencyjne.
+
+## Licencja
+
+Kod jest udostępniany na licencji [GNU Affero General Public License v3.0](LICENSE).
+Jeśli uruchamiasz zmodyfikowaną wersję jako usługę sieciową, musisz udostępnić jej kod
+źródłowy użytkownikom tej usługi.
+
+Copyright © 2026 Kamil Marczak
+
+### Znaki towarowe
+
+Licencja obejmuje tylko kod. Nazwa „RozliczKorki”, logo i inne materiały z katalogu
+`brand/`, domena `rozliczkorki.pl` oraz identyfikatory aplikacji `pl.rozliczkorki.app`
+nie są nią objęte. Jeśli publikujesz własną wersję aplikacji, użyj innej nazwy, logo
+i identyfikatorów.
