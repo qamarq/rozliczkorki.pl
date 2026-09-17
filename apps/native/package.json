@@ -2,6 +2,7 @@
   "name": "native",
   "version": "1.0.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "main": "expo-router/entry",
   "scripts": {
     "dev": "expo start",

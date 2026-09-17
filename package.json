@@ -19,5 +19,6 @@
     "node": ">=18"
   },
   "name": "rozliczkorki",
+  "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.18.0"
 }
