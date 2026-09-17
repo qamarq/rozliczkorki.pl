@@ -1,6 +1,6 @@
 import { lessons, recurringRules, students } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, max } from "drizzle-orm";
+import { and, asc, eq, inArray, max } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 
@@ -42,6 +42,93 @@ function nextOccurrences(
     cursor.setDate(cursor.getDate() + 1);
   }
   return results;
+}
+
+function timeZoneOffsetMinutes(timeZone: string, date: Date) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+    })
+      .formatToParts(date)
+      .map((p) => [p.type, Number(p.value)]),
+  );
+  const asUtc = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  );
+  return Math.round((asUtc - date.getTime()) / 60_000);
+}
+
+// Moves a date by whole weeks while keeping its wall-clock time in the given zone across DST changes.
+function addWeeksInTimeZone(date: Date, weeks: number, timeZone: string) {
+  const shifted = new Date(date.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
+  const drift =
+    timeZoneOffsetMinutes(timeZone, date) - timeZoneOffsetMinutes(timeZone, shifted);
+  return new Date(shifted.getTime() + drift * 60_000);
+}
+
+const endDateChangeInput = z.object({
+  id: z.string().uuid(),
+  // End of the chosen day in the user's time zone.
+  until: z.string().datetime(),
+  timeZone: z.string().refine((tz) => {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: tz });
+      return true;
+    } catch {
+      return false;
+    }
+  }),
+});
+
+async function planEndDateChange(
+  db: (typeof import("@repo/db"))["db"],
+  userId: string,
+  input: z.infer<typeof endDateChangeInput>,
+) {
+  const [rule] = await db
+    .select()
+    .from(recurringRules)
+    .where(and(eq(recurringRules.id, input.id), eq(recurringRules.userId, userId)));
+  if (!rule) {
+    throw new TRPCError({ code: "NOT_FOUND" });
+  }
+
+  const until = new Date(input.until);
+  const ruleLessons = await db
+    .select()
+    .from(lessons)
+    .where(and(eq(lessons.recurringRuleId, rule.id), eq(lessons.userId, userId)))
+    .orderBy(asc(lessons.startsAt));
+
+  const afterEnd = ruleLessons.filter((l) => l.startsAt > until);
+  const toRemove = afterEnd.filter((l) => !l.paid).map((l) => l.id);
+  const keptPaid = afterEnd.length - toRemove.length;
+  const template = ruleLessons.filter((l) => !toRemove.includes(l.id)).at(-1);
+
+  const occurrences: Date[] = [];
+  if (template) {
+    let week = 1;
+    let next = addWeeksInTimeZone(template.startsAt, week, input.timeZone);
+    while (next <= until && occurrences.length < MAX_OCCURRENCES) {
+      occurrences.push(next);
+      week += 1;
+      next = addWeeksInTimeZone(template.startsAt, week, input.timeZone);
+    }
+  }
+
+  return { rule, toRemove, keptPaid, template, occurrences };
 }
 
 export const recurringRouter = router({
@@ -152,6 +239,69 @@ export const recurringRouter = router({
       }
 
       return { created: occurrences.length };
+    }),
+
+  lastLesson: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [latest] = await ctx.db
+        .select({ startsAt: max(lessons.startsAt) })
+        .from(lessons)
+        .where(
+          and(
+            eq(lessons.recurringRuleId, input.id),
+            eq(lessons.userId, ctx.session.user.id),
+          ),
+        );
+      return { startsAt: latest?.startsAt ?? null };
+    }),
+
+  previewEndDate: protectedProcedure
+    .input(endDateChangeInput)
+    .query(async ({ ctx, input }) => {
+      const plan = await planEndDateChange(ctx.db, ctx.session.user.id, input);
+      return {
+        added: plan.occurrences.length,
+        removed: plan.toRemove.length,
+        keptPaid: plan.keptPaid,
+      };
+    }),
+
+  setEndDate: protectedProcedure
+    .input(
+      endDateChangeInput.extend({ endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const { rule, toRemove, occurrences, template } = await planEndDateChange(
+        ctx.db,
+        userId,
+        input,
+      );
+
+      if (toRemove.length > 0) {
+        await ctx.db.delete(lessons).where(inArray(lessons.id, toRemove));
+      }
+
+      if (template && occurrences.length > 0) {
+        await ctx.db.insert(lessons).values(
+          occurrences.map((startsAt) => ({
+            userId,
+            studentId: rule.studentId,
+            recurringRuleId: rule.id,
+            startsAt,
+            durationMinutes: template.durationMinutes,
+            prorate: template.prorate,
+          })),
+        );
+      }
+
+      await ctx.db
+        .update(recurringRules)
+        .set({ endDate: input.endDate })
+        .where(eq(recurringRules.id, rule.id));
+
+      return { created: occurrences.length, removed: toRemove.length };
     }),
 
   deactivate: protectedProcedure

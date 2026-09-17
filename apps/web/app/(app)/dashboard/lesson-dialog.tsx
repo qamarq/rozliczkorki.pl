@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -42,6 +43,16 @@ type PaymentMethod = "cash" | "transfer";
 function defaultRecurringEndDate() {
   const nextYear = new Date().getFullYear() + 1;
   return format(new Date(nextYear, 5, 30), "yyyy-MM-dd");
+}
+
+function lessonsCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "zajęcia" : "zajęć"}`;
+}
+
+function paidCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "opłacone" : "opłaconych"}`;
 }
 
 type LessonRow = {
@@ -116,6 +127,34 @@ export function LessonDialog({
   const [recurringEndDate, setRecurringEndDate] = useState("");
   const [confirmKind, setConfirmKind] = useState<"update" | "delete" | null>(null);
 
+  const { data: lastRecurringLesson } = trpc.recurring.lastLesson.useQuery(
+    { id: editing?.recurringRuleId ?? "" },
+    { enabled: open && !!editing?.recurringRuleId },
+  );
+  const lastRecurringDate = lastRecurringLesson?.startsAt
+    ? format(new Date(lastRecurringLesson.startsAt), "yyyy-MM-dd")
+    : "";
+  const [cycleEndDate, setCycleEndDate] = useState("");
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (open) setCycleEndDate(lastRecurringDate);
+  }, [open, lastRecurringDate]);
+
+  const cycleEndChanged =
+    !!editing?.recurringRuleId && !!cycleEndDate && cycleEndDate !== lastRecurringDate;
+  const cycleEndInput = {
+    id: editing?.recurringRuleId ?? "",
+    until: cycleEndDate ? new Date(`${cycleEndDate}T23:59:59.999`).toISOString() : "",
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+  const { data: cycleEndPreview } = trpc.recurring.previewEndDate.useQuery(
+    cycleEndInput,
+    {
+      enabled: open && cycleEndChanged,
+    },
+  );
+
   useEffect(() => {
     if (!open) return;
     if (editing) {
@@ -152,8 +191,11 @@ export function LessonDialog({
 
   const invalidate = () => {
     utils.lessons.range.invalidate();
+    utils.recurring.lastLesson.invalidate();
     utils.stats.summary.invalidate();
   };
+
+  const updateCycleEnd = trpc.recurring.setEndDate.useMutation();
 
   const createLesson = trpc.lessons.create.useMutation({
     onSuccess: () => {
@@ -174,7 +216,16 @@ export function LessonDialog({
   });
 
   const updateLesson = trpc.lessons.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      if (cycleEndChanged) {
+        try {
+          await updateCycleEnd.mutateAsync({ ...cycleEndInput, endDate: cycleEndDate });
+        } catch (e) {
+          toast.error(
+            e instanceof Error ? e.message : "Nie udało się zmienić końca cyklu",
+          );
+        }
+      }
       invalidate();
       toast.success("Zapisano");
       setConfirmKind(null);
@@ -203,10 +254,17 @@ export function LessonDialog({
     createLesson.isPending ||
     createRecurring.isPending ||
     updateLesson.isPending ||
+    updateCycleEnd.isPending ||
     deleteLesson.isPending;
 
   const paidAmountValue =
     paid && customAmount && paidAmount !== "" ? Number(paidAmount) : null;
+
+  function onPaidChange(value: boolean) {
+    setPaid(value);
+    const endsAt = new Date(`${dateStr}T${timeStr}`).getTime() + durationMinutes * 60_000;
+    if (value && status === "scheduled" && endsAt <= Date.now()) setStatus("completed");
+  }
 
   function performUpdate(applyToFuture: boolean) {
     if (!editing) return;
@@ -238,7 +296,11 @@ export function LessonDialog({
     }
 
     if (editing) {
-      if (editing.recurringRuleId) {
+      const recurringFieldsChanged =
+        prorate !== editing.prorate ||
+        durationMinutes !== editing.durationMinutes ||
+        timeStr !== format(new Date(editing.startsAt), "HH:mm");
+      if (editing.recurringRuleId && recurringFieldsChanged) {
         setConfirmKind("update");
         return;
       }
@@ -374,6 +436,43 @@ export function LessonDialog({
               </div>
             </div>
 
+            {editing?.recurringRuleId && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="cycleEnd">Zajęcia cykliczne do</Label>
+                <Input
+                  id="cycleEnd"
+                  type="date"
+                  min={dateStr}
+                  value={cycleEndDate}
+                  disabled={!lastRecurringDate}
+                  onChange={(e) => setCycleEndDate(e.target.value)}
+                />
+                {cycleEndChanged && cycleEndPreview && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {cycleEndPreview.added > 0 && (
+                      <Badge variant="secondary">
+                        Doda {lessonsCount(cycleEndPreview.added)}
+                      </Badge>
+                    )}
+                    {cycleEndPreview.removed > 0 && (
+                      <Badge variant="destructive">
+                        Usunie {lessonsCount(cycleEndPreview.removed)}
+                      </Badge>
+                    )}
+                    {cycleEndPreview.keptPaid > 0 && (
+                      <Badge variant="outline">
+                        Zostawi {paidCount(cycleEndPreview.keptPaid)}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                <p className="text-muted-foreground text-xs">
+                  Data ostatnich zajęć w cyklu. Po zmianie dodamy zajęcia w ten sam dzień
+                  tygodnia albo usuniemy nieopłacone.
+                </p>
+              </div>
+            )}
+
             {!editing && (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
@@ -445,7 +544,7 @@ export function LessonDialog({
 
             <div className="flex items-center justify-between rounded-lg border p-3">
               <Label htmlFor="paid">Opłacone</Label>
-              <Switch id="paid" checked={paid} onCheckedChange={setPaid} />
+              <Switch id="paid" checked={paid} onCheckedChange={onPaidChange} />
             </div>
 
             {paid && (

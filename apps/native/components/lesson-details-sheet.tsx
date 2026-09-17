@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { LessonRow } from "@/components/calendar/shared";
 import {
+  Badge,
   Chip,
+  DateTimeField,
   GradientButton,
   Input,
   OutlineButton,
@@ -18,6 +20,16 @@ import { closeSheet, openSheet } from "@/lib/sheet";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
 import { queryClient, trpc } from "@/lib/trpc";
+
+function lessonsCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "zajęcia" : "zajęć"}`;
+}
+
+function paidCount(n: number) {
+  const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
+  return `${n} ${n === 1 || few ? "opłacone" : "opłaconych"}`;
+}
 
 type LessonStatus = "scheduled" | "completed" | "cancelled";
 type LessonDetails = Awaited<
@@ -60,6 +72,33 @@ function LessonDetailsContent({
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [prorate, setProrate] = useState(false);
   const [notes, setNotes] = useState("");
+  const [cycleEndDate, setCycleEndDate] = useState("");
+
+  const { data: lastRecurringLesson } = trpc.recurring.lastLesson.useQuery(
+    { id: lesson?.recurringRuleId ?? "" },
+    { enabled: !!lesson?.recurringRuleId },
+  );
+  const lastRecurringDate = lastRecurringLesson?.startsAt
+    ? format(new Date(lastRecurringLesson.startsAt), "yyyy-MM-dd")
+    : "";
+
+  useEffect(() => {
+    setCycleEndDate(lastRecurringDate);
+  }, [lastRecurringDate]);
+
+  const cycleEndChanged =
+    !!lesson?.recurringRuleId && !!cycleEndDate && cycleEndDate !== lastRecurringDate;
+  const cycleEndInput = {
+    id: lesson?.recurringRuleId ?? "",
+    until: cycleEndDate ? new Date(`${cycleEndDate}T23:59:59.999`).toISOString() : "",
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
+  };
+  const { data: cycleEndPreview } = trpc.recurring.previewEndDate.useQuery(
+    cycleEndInput,
+    {
+      enabled: cycleEndChanged,
+    },
+  );
 
   useEffect(() => {
     if (!lesson) return;
@@ -109,11 +148,24 @@ function LessonDetailsContent({
   const invalidate = () => {
     utils.lessons.range.invalidate();
     utils.lessons.byId.invalidate({ id: lessonId });
+    utils.recurring.lastLesson.invalidate();
     utils.stats.summary.invalidate();
   };
 
+  const updateCycleEnd = trpc.recurring.setEndDate.useMutation();
+
   const updateLesson = trpc.lessons.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      if (cycleEndChanged) {
+        try {
+          await updateCycleEnd.mutateAsync({ ...cycleEndInput, endDate: cycleEndDate });
+        } catch (e) {
+          alert(
+            "Błąd",
+            e instanceof Error ? e.message : "Nie udało się zmienić końca cyklu",
+          );
+        }
+      }
       invalidate();
       onClose();
     },
@@ -127,6 +179,14 @@ function LessonDetailsContent({
     },
     onError: (e) => alert("Błąd", e.message),
   });
+
+  function onPaidChange(value: boolean) {
+    setPaid(value);
+    if (!lesson) return;
+    const endsAt =
+      new Date(lesson.startsAt).getTime() + Number(durationMinutes || 0) * 60_000;
+    if (value && status === "scheduled" && endsAt <= Date.now()) setStatus("completed");
+  }
 
   function performUpdate(applyToFuture: boolean) {
     if (!lesson) return;
@@ -155,7 +215,9 @@ function LessonDetailsContent({
 
   function onSave() {
     if (!lesson) return;
-    if (lesson.recurringRuleId) {
+    const recurringFieldsChanged =
+      prorate !== lesson.prorate || Number(durationMinutes) !== lesson.durationMinutes;
+    if (lesson.recurringRuleId && recurringFieldsChanged) {
       alert(
         "Zapisać zmiany?",
         "Te zajęcia są częścią cyklu. Zastosować zmiany tylko do tego wystąpienia, czy też do wszystkich przyszłych zajęć w tym cyklu?",
@@ -221,6 +283,47 @@ function LessonDetailsContent({
         </Text>
       )}
 
+      {lesson.recurringRuleId && cycleEndDate !== "" && (
+        <>
+          <DateTimeField
+            label="Zajęcia cykliczne do"
+            mode="date"
+            value={new Date(`${cycleEndDate}T00:00`)}
+            onChange={(date) => {
+              const picked = format(date, "yyyy-MM-dd");
+              const lessonDate = format(new Date(lesson.startsAt), "yyyy-MM-dd");
+              setCycleEndDate(picked < lessonDate ? lessonDate : picked);
+            }}
+          />
+          {cycleEndChanged && cycleEndPreview && (
+            <View style={styles.chipRow}>
+              {cycleEndPreview.added > 0 && (
+                <Badge
+                  label={`Doda ${lessonsCount(cycleEndPreview.added)}`}
+                  tone="success"
+                />
+              )}
+              {cycleEndPreview.removed > 0 && (
+                <Badge
+                  label={`Usunie ${lessonsCount(cycleEndPreview.removed)}`}
+                  tone="danger"
+                />
+              )}
+              {cycleEndPreview.keptPaid > 0 && (
+                <Badge
+                  label={`Zostawi ${paidCount(cycleEndPreview.keptPaid)}`}
+                  tone="warning"
+                />
+              )}
+            </View>
+          )}
+          <Text style={styles.hint}>
+            Data ostatnich zajęć w cyklu. Po zmianie dodamy zajęcia w ten sam dzień
+            tygodnia albo usuniemy nieopłacone.
+          </Text>
+        </>
+      )}
+
       <SectionLabel>Status</SectionLabel>
       <View style={styles.chipRow}>
         {(["scheduled", "completed", "cancelled"] as const).map((s) => (
@@ -241,7 +344,7 @@ function LessonDetailsContent({
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Opłacone</Text>
-        <Switch value={paid} onValueChange={setPaid} />
+        <Switch value={paid} onValueChange={onPaidChange} />
       </View>
       {carry !== 0 && (
         <Text style={styles.hint}>
@@ -311,7 +414,7 @@ function LessonDetailsContent({
         <GradientButton
           label="Zapisz"
           onPress={onSave}
-          loading={updateLesson.isPending}
+          loading={updateLesson.isPending || updateCycleEnd.isPending}
         />
         <OutlineButton
           label="Usuń zajęcia"
