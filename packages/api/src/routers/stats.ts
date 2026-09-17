@@ -3,8 +3,11 @@ import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
 import { settleLessons } from "../pricing";
 import { protectedProcedure, router } from "../trpc";
+import { analyticsProcedure } from "./analytics";
 
 export const statsRouter = router({
+  analytics: analyticsProcedure,
+
   summary: protectedProcedure
     .input(z.object({ from: z.string(), to: z.string() }))
     .query(async ({ ctx, input }) => {

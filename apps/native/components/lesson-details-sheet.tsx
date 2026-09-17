@@ -17,10 +17,15 @@ import {
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { closeSheet, openSheet } from "@/lib/sheet";
-import { formatPLN } from "@/lib/format";
-import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
 import { colors } from "@/lib/theme";
 import { queryClient, trpc } from "@/lib/trpc";
+import {
+  LESSON_MODE_LABELS,
+  LESSON_STATUS_LABELS,
+  type LessonMode,
+  PAYMENT_METHOD_LABELS,
+  formatPLN,
+} from "@repo/shared";
 
 function lessonsCount(n: number) {
   const few = n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14);
@@ -154,6 +159,7 @@ function LessonDetailsContent({
     utils.recurring.lastLesson.invalidate();
     utils.vacations.overview.invalidate();
     utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
   };
 
   const updateCycleEnd = trpc.recurring.setEndDate.useMutation();
@@ -221,7 +227,9 @@ function LessonDetailsContent({
   function onSave() {
     if (!lesson) return;
     const recurringFieldsChanged =
-      prorate !== lesson.prorate || Number(durationMinutes) !== lesson.durationMinutes;
+      prorate !== lesson.prorate ||
+      mode !== lesson.mode ||
+      Number(durationMinutes) !== lesson.durationMinutes;
     if (lesson.recurringRuleId && recurringFieldsChanged) {
       alert(
         "Zapisać zmiany?",
@@ -346,13 +354,7 @@ function LessonDetailsContent({
         {(["scheduled", "completed", "cancelled"] as const).map((s) => (
           <Chip
             key={s}
-            label={
-              s === "scheduled"
-                ? "Zaplanowane"
-                : s === "completed"
-                  ? "Odbyły się"
-                  : "Odwołane"
-            }
+            label={LESSON_STATUS_LABELS[s]}
             active={status === s}
             onPress={() => setStatus(s)}
           />
@@ -375,16 +377,14 @@ function LessonDetailsContent({
       {paid && (
         <>
           <View style={styles.chipRow}>
-            <Chip
-              label="Gotówka"
-              active={paymentMethod === "cash"}
-              onPress={() => setPaymentMethod("cash")}
-            />
-            <Chip
-              label="Przelew"
-              active={paymentMethod === "transfer"}
-              onPress={() => setPaymentMethod("transfer")}
-            />
+            {(["cash", "transfer"] as const).map((method) => (
+              <Chip
+                key={method}
+                label={PAYMENT_METHOD_LABELS[method]}
+                active={paymentMethod === method}
+                onPress={() => setPaymentMethod(method)}
+              />
+            ))}
           </View>
 
           <SectionLabel>Wpłacona kwota</SectionLabel>

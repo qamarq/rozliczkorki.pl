@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { localDayRange, pluralize } from "@/lib/lessons";
+import { localDayRange, pluralize } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 
 export type EditableVacation = {
@@ -72,6 +72,7 @@ export function VacationDialog({
     utils.vacations.overview.invalidate();
     utils.lessons.range.invalidate();
     utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
     toast.success(
       cancelledCount > 0
         ? `${message} i odwołano ${pluralize(cancelledCount, "zajęcia", "zajęcia", "zajęć")}`

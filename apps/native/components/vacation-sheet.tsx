@@ -11,7 +11,7 @@ import {
   SectionLabel,
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
-import { localDayRange, pluralize } from "@/lib/lessons";
+import { localDayRange, pluralize } from "@repo/shared";
 import { closeSheet, openSheet } from "@/lib/sheet";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
@@ -55,6 +55,7 @@ function VacationForm({
     utils.vacations.overview.invalidate();
     utils.lessons.range.invalidate();
     utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
     onClose();
   };
 

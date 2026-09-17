@@ -23,9 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
+import { LESSON_MODE_LABELS, formatPLN, type LessonMode } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
-import { formatPLN } from "@/lib/utils";
 
 type StudentType = "private" | "school";
 
@@ -82,6 +81,10 @@ export function StudentDialog({
   const invalidate = () => {
     utils.students.list.invalidate();
     utils.students.byId.invalidate();
+    utils.lessons.range.invalidate();
+    utils.recurring.list.invalidate();
+    utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
   };
 
   const createStudent = trpc.students.create.useMutation({

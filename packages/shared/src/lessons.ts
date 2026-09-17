@@ -2,10 +2,23 @@ import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
 export type LessonMode = "in_person" | "remote";
+export type LessonStatus = "scheduled" | "completed" | "cancelled";
+export type PaymentMethod = "cash" | "transfer";
 
 export const LESSON_MODE_LABELS: Record<LessonMode, string> = {
   in_person: "Stacjonarnie",
   remote: "Online",
+};
+
+export const LESSON_STATUS_LABELS: Record<LessonStatus, string> = {
+  scheduled: "Zaplanowane",
+  completed: "Odbyły się",
+  cancelled: "Odwołane",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: "Gotówka",
+  transfer: "Przelew",
 };
 
 export function pluralize(n: number, one: string, few: string, many: string) {

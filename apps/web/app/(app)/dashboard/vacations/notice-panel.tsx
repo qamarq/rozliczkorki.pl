@@ -8,18 +8,11 @@ import { Check, Phone, PhoneOff, TreePalm } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { pluralize } from "@/lib/lessons";
+import { pluralize } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 
 type PendingNotice =
   inferRouterOutputs<AppRouter>["vacations"]["overview"]["pending"][number];
-
-export function formatVacationRange(startDate: string, endDate: string) {
-  const start = new Date(`${startDate}T00:00`);
-  const end = new Date(`${endDate}T00:00`);
-  if (startDate === endDate) return format(start, "d MMM yyyy", { locale: pl });
-  return `${format(start, "d MMM", { locale: pl })} – ${format(end, "d MMM yyyy", { locale: pl })}`;
-}
 
 export function useSetNotified() {
   const utils = trpc.useUtils();

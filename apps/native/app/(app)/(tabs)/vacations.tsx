@@ -12,7 +12,7 @@ import {
 } from "@/components/ui";
 import { openVacationSheet } from "@/components/vacation-sheet";
 import { alert } from "@/lib/alert";
-import { formatVacationRange, pluralize } from "@/lib/lessons";
+import { formatVacationRange, pluralize } from "@repo/shared";
 import { colors, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
@@ -38,6 +38,7 @@ export default function VacationsScreen() {
       utils.vacations.overview.invalidate();
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
     },
     onError: (e) => alert("Błąd", e.message),
   });

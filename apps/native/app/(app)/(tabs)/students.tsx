@@ -4,7 +4,7 @@ import { Badge, Card, OutlineButton, ScreenBackground } from "@/components/ui";
 import { RefreshableList } from "@/components/refreshable-list";
 import { openStudentSheet } from "@/components/student-sheet";
 import { TabHeader } from "@/components/tab-header";
-import { formatPLN } from "@/lib/format";
+import { formatPLN } from "@repo/shared";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 

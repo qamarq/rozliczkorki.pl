@@ -1,6 +1,6 @@
-import { students, studentRates } from "@repo/db";
+import { lessons, recurringRules, students, studentRates } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 
@@ -99,13 +99,39 @@ export const studentsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertOwnsStudent(ctx.db, ctx.session.user.id, input.id);
+      const existing = await assertOwnsStudent(ctx.db, ctx.session.user.id, input.id);
       const { id, ...rest } = input;
       const [updated] = await ctx.db
         .update(students)
         .set({ ...rest, updatedAt: new Date() })
         .where(eq(students.id, id))
         .returning();
+
+      // Zmiana domyślnego trybu ma od razu przestawić plan: przyszłe zajęcia i cykle.
+      if (rest.defaultMode && rest.defaultMode !== existing.defaultMode) {
+        await ctx.db
+          .update(lessons)
+          .set({ mode: rest.defaultMode, updatedAt: new Date() })
+          .where(
+            and(
+              eq(lessons.userId, ctx.session.user.id),
+              eq(lessons.studentId, id),
+              eq(lessons.status, "scheduled"),
+              gt(lessons.startsAt, new Date()),
+            ),
+          );
+        await ctx.db
+          .update(recurringRules)
+          .set({ mode: rest.defaultMode })
+          .where(
+            and(
+              eq(recurringRules.userId, ctx.session.user.id),
+              eq(recurringRules.studentId, id),
+              eq(recurringRules.active, true),
+            ),
+          );
+      }
+
       return updated;
     }),
 

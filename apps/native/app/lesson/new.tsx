@@ -12,10 +12,15 @@ import {
   Switch,
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
-import { formatPLN } from "@/lib/format";
-import { formatVacationRange, LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
+import {
+  LESSON_MODE_LABELS,
+  type LessonMode,
+  PAYMENT_METHOD_LABELS,
+  formatPLN,
+  formatVacationRange,
+} from "@repo/shared";
 
 export default function NewLessonScreen() {
   const router = useRouter();
@@ -64,6 +69,7 @@ export default function NewLessonScreen() {
     onSuccess: () => {
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
       router.back();
     },
     onError: (e) => alert("Błąd", e.message),
@@ -73,6 +79,7 @@ export default function NewLessonScreen() {
     onSuccess: () => {
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
       router.back();
     },
     onError: (e) => alert("Błąd", e.message),
@@ -201,16 +208,14 @@ export default function NewLessonScreen() {
       {paid && (
         <>
           <View style={styles.chipRow}>
-            <Chip
-              label="Gotówka"
-              active={paymentMethod === "cash"}
-              onPress={() => setPaymentMethod("cash")}
-            />
-            <Chip
-              label="Przelew"
-              active={paymentMethod === "transfer"}
-              onPress={() => setPaymentMethod("transfer")}
-            />
+            {(["cash", "transfer"] as const).map((method) => (
+              <Chip
+                key={method}
+                label={PAYMENT_METHOD_LABELS[method]}
+                active={paymentMethod === method}
+                onPress={() => setPaymentMethod(method)}
+              />
+            ))}
           </View>
 
           <SectionLabel>Wpłacona kwota</SectionLabel>
