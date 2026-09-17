@@ -1,5 +1,7 @@
 # Kontrybucje
 
+🇵🇱 Polski · [🇬🇧 English](CONTRIBUTING.en.md)
+
 Dzięki, że chcesz pomóc przy RozliczKorki! Zanim otworzysz pull request, przeczytaj
 poniższe zasady.
 
@@ -53,3 +55,6 @@ inne materiały („Kontrybucja”) do tego repozytorium, oświadczasz i zgadzas
 
 Zachowujesz prawa autorskie do swojej Kontrybucji i możesz z niej korzystać w dowolny
 sposób. Jeśli nie zgadzasz się z tymi warunkami, nie otwieraj pull requesta.
+
+W razie rozbieżności między wersją polską a [angielską](CONTRIBUTING.en.md) wiążąca jest
+wersja polska.
