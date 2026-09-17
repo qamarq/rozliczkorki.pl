@@ -245,7 +245,9 @@ export function LessonDialog({
 
     if (editing) {
       const recurringFieldsChanged =
-        prorate !== editing.prorate || durationMinutes !== editing.durationMinutes;
+        prorate !== editing.prorate ||
+        durationMinutes !== editing.durationMinutes ||
+        timeStr !== format(new Date(editing.startsAt), "HH:mm");
       if (editing.recurringRuleId && recurringFieldsChanged) {
         setConfirmKind("update");
         return;
