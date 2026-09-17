@@ -118,7 +118,7 @@ export const studentsRouter = router({
         .where(eq(students.id, id))
         .returning();
 
-      // Zmiana domyślnego trybu ma od razu przestawić plan: przyszłe zajęcia i cykle.
+      // Changing the default mode must re-plan right away: future lessons and rules.
       if (rest.defaultMode && rest.defaultMode !== existing.defaultMode) {
         await ctx.db
           .update(lessons)

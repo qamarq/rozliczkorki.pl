@@ -60,7 +60,7 @@ function StudentForm({
   const currentRate = student?.rates[0];
   const { data: schools = [] } = trpc.schools.list.useQuery();
   const selectedSchool = schools.find((school) => school.id === schoolId) ?? null;
-  // Uczeń sprzed szkółek: ma type "school", ale nie wskazuje jeszcze placówki.
+  // Pre-schools student: typed as "school" but not pointing at a school yet.
   const unassignedSchool = !schoolId && student?.type === "school";
 
   useEffect(() => {
@@ -135,7 +135,7 @@ function StudentForm({
       name: name.trim(),
       address: schoolId ? null : address.trim() || null,
       phone: phone.trim() || null,
-      // Bez świadomego wyboru nie zdejmujemy staremu uczniowi oznaczenia szkółki.
+      // Keep the legacy school flag until the user actually picks a chip.
       ...(unassignedSchool && !schoolTouched ? {} : { schoolId }),
       defaultMode,
     });

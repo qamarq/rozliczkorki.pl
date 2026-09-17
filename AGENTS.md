@@ -6,6 +6,14 @@
   building, installing on a device or releasing (APK/AAB scripts, signing, `.env` gotcha).
 - Web app (`apps/web`): see [apps/web/AGENTS.md](apps/web/AGENTS.md).
 
+## Code comments
+
+Do not write comments that only restate what the code already says. Add one only when
+there is a non-obvious reason, constraint or workaround that the code cannot express by
+itself, and then keep it to a single line.
+
+Write every comment in English, even though the UI copy is in Polish.
+
 ## Before every push
 
 Run the same checks as CI (`.github/workflows/ci.yml`) from the repo root and make sure

@@ -126,7 +126,7 @@ function buildPeriods(
           payout,
         };
       })
-      // Okresy, które jeszcze się nie zaczęły, nie mają czego rozliczać.
+      // Periods that have not started yet settle nothing, unless already paid out.
       .filter((entry) => entry.start <= today || entry.payout)
       .sort((a, b) => (a.start < b.start ? 1 : -1))
   );

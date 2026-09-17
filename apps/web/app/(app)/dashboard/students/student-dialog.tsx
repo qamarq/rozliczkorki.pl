@@ -88,7 +88,7 @@ export function StudentDialog({
     enabled: open,
   });
   const selectedSchool = schools.find((school) => school.id === schoolId) ?? null;
-  // Uczeń sprzed szkółek: ma type "school", ale nie wskazuje jeszcze placówki.
+  // Pre-schools student: typed as "school" but not pointing at a school yet.
   const unassignedSchool = !schoolId && student?.type === "school";
 
   const invalidate = () => {
@@ -145,7 +145,7 @@ export function StudentDialog({
         name,
         address: schoolId ? null : address,
         phone,
-        // Bez świadomego wyboru nie zdejmujemy staremu uczniowi oznaczenia szkółki.
+        // Keep the legacy school flag until the user actually picks from the select.
         ...(unassignedSchool && !schoolTouched ? {} : { schoolId }),
         defaultMode,
         archived,

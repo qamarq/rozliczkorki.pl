@@ -40,7 +40,7 @@ export const PRESETS: { id: PresetId; label: string }[] = [
   { id: "next-6-months", label: "Przyszłe 6 miesięcy" },
 ];
 
-// Semestry szkolne: zimowy 1.09–31.01, letni 1.02–30.06. W wakacje liczy się nadchodzący zimowy.
+// School terms: winter 1 Sep-31 Jan, summer 1 Feb-30 Jun. Summer break points at the next winter term.
 function semester(now: Date, offset: number): Range {
   const month = now.getMonth();
   const year = now.getFullYear();
