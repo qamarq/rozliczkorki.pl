@@ -17,13 +17,13 @@ import { pl } from "date-fns/locale";
 import {
   Banknote,
   CalendarClock,
-  CalendarX2,
   Check,
   ChevronLeft,
   ChevronRight,
   Landmark,
   ListChecks,
   Plus,
+  School,
   Sparkles,
   Video,
   Wallet,
@@ -138,15 +138,17 @@ export function CalendarView() {
           value={formatPLN(summary?.paid ?? 0)}
           tone="success"
         />
-        <OutstandingCard
-          fromStudents={summary?.unpaid ?? 0}
-          fromSchools={summary?.awaitingPayout ?? 0}
+        <StatCard
+          icon={CalendarClock}
+          label="Do rozliczenia"
+          value={formatPLN(summary?.unpaid ?? 0)}
+          tone="warning"
         />
         <StatCard
-          icon={CalendarX2}
-          label="Odwołane zajęcia"
-          value={String(summary?.cancelledCount ?? 0)}
-          tone="destructive"
+          icon={School}
+          label="Do wypłaty ze szkółek"
+          value={formatPLN(summary?.awaitingPayout ?? 0)}
+          tone="school"
         />
       </div>
 
@@ -481,49 +483,6 @@ function DuePanel({
   );
 }
 
-function OutstandingCard({
-  fromStudents,
-  fromSchools,
-}: {
-  fromStudents: number;
-  fromSchools: number;
-}) {
-  const parts = [
-    { key: "students", label: "Od uczniów", value: fromStudents, dot: "bg-destructive" },
-    { key: "schools", label: "Ze szkółek", value: fromSchools, dot: "bg-warning" },
-  ];
-
-  return (
-    <Card className="gap-2 p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-          Do rozliczenia
-        </span>
-        <span className="bg-warning/10 text-warning flex size-7 items-center justify-center rounded-md">
-          <CalendarClock className="size-3.5" />
-        </span>
-      </div>
-      <span className="text-2xl font-semibold tabular-nums">
-        {formatPLN(fromStudents + fromSchools)}
-      </span>
-      <div className="flex flex-col gap-0.5">
-        {parts.map((part) => (
-          <span
-            key={part.key}
-            className="text-muted-foreground flex items-center gap-1.5 text-xs"
-          >
-            <span className={cn("size-1.5 shrink-0 rounded-full", part.dot)} />
-            {part.label}
-            <span className="text-foreground ml-auto font-medium tabular-nums">
-              {formatPLN(part.value)}
-            </span>
-          </span>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
 function StatCard({
   icon: Icon,
   label,
@@ -533,13 +492,14 @@ function StatCard({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  tone: "primary" | "success" | "warning" | "destructive";
+  tone: "primary" | "success" | "warning" | "destructive" | "school";
 }) {
   const toneClasses = {
     primary: "bg-primary/10 text-primary",
     success: "bg-success/10 text-success",
     warning: "bg-warning/10 text-warning",
     destructive: "bg-destructive/10 text-destructive",
+    school: "bg-warning/10 text-warning",
   }[tone];
 
   return (
