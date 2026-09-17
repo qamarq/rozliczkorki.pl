@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -97,10 +98,16 @@ export default function StatsPage() {
   const bar = [
     { key: "paid", label: "Opłacone", value: totals?.paid ?? 0, className: "bg-success" },
     {
+      key: "awaiting",
+      label: "Do wypłaty",
+      value: totals?.awaitingPayout ?? 0,
+      className: "bg-warning",
+    },
+    {
       key: "unpaid",
       label: "Zaległe",
       value: totals?.unpaid ?? 0,
-      className: "bg-warning",
+      className: "bg-destructive",
     },
     {
       key: "planned",
@@ -118,7 +125,7 @@ export default function StatsPage() {
         <div>
           <h1 className="text-lg font-semibold">Statystyki</h1>
           <p className="text-muted-foreground text-sm">
-            Przychody, obłożenie i prognoza — dla dowolnego zakresu dat.
+            Przychody, obłożenie i prognoza dla dowolnego zakresu dat.
           </p>
         </div>
         <RangePicker
@@ -325,14 +332,14 @@ export default function StatsPage() {
         <div className="flex flex-col gap-4 lg:col-span-5">
           <Card className="gap-3 p-5">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-semibold">Zaległości</span>
+              <span className="font-semibold">Zaległości uczniów</span>
               <span className="text-warning font-semibold tabular-nums">
                 {formatPLN(data?.debt.outstanding ?? 0)}
               </span>
             </div>
             {(data?.debt.debtors ?? []).length === 0 ? (
               <p className="text-muted-foreground text-sm">
-                Wszystko rozliczone — brak długów.
+                Wszystko rozliczone, brak długów.
               </p>
             ) : (
               <div className="flex flex-col">
@@ -351,7 +358,40 @@ export default function StatsPage() {
             )}
             <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
               <Info className="size-3.5 shrink-0" />
-              Ze wszystkich zajęć, które już się odbyły — nie tylko z tego zakresu.
+              Ze wszystkich zajęć, które już się odbyły, nie tylko z tego zakresu.
+            </p>
+          </Card>
+
+          <Card className="gap-3 p-5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="font-semibold">Do wypłaty ze szkółek</span>
+              <span className="text-warning font-semibold tabular-nums">
+                {formatPLN(data?.payouts.awaiting ?? 0)}
+              </span>
+            </div>
+            {(data?.payouts.schools ?? []).length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                Brak zajęć czekających na przelew ze szkółki.
+              </p>
+            ) : (
+              <div className="flex flex-col">
+                {(data?.payouts.schools ?? []).map((school) => (
+                  <Link
+                    key={school.schoolId}
+                    href={`/dashboard/schools/${school.schoolId}`}
+                    className="hover:bg-accent/40 flex items-center justify-between gap-2 border-b py-2 text-sm last:border-0"
+                  >
+                    <span>{school.name}</span>
+                    <span className="font-medium tabular-nums">
+                      {formatPLN(school.amount)}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+            <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+              <Info className="size-3.5 shrink-0" />
+              Zajęcia już się odbyły, ale przelew ze szkółki jeszcze nie przyszedł.
             </p>
           </Card>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { MapPin, Pencil, Phone, Plus, Search, Users, Video } from "lucide-react";
+import { MapPin, Pencil, Phone, Plus, School, Search, Users, Video } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ export default function StudentsPage() {
       return (
         s.name.toLowerCase().includes(q) ||
         s.address?.toLowerCase().includes(q) ||
+        s.school?.name.toLowerCase().includes(q) ||
         s.phone?.toLowerCase().includes(q)
       );
     });
@@ -71,7 +72,7 @@ export default function StudentsPage() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Szukaj po imieniu, adresie, telefonie…"
+            placeholder="Szukaj po imieniu, szkółce, adresie…"
             className="pl-9"
           />
         </div>
@@ -111,12 +112,18 @@ export default function StudentsPage() {
                 <div className="flex items-center gap-1.5">
                   <Badge
                     className={
-                      student.type === "private"
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-accent text-accent-foreground"
+                      student.school
+                        ? "bg-accent text-accent-foreground"
+                        : student.type === "school"
+                          ? "bg-warning/10 text-warning border-warning/20"
+                          : "bg-primary/10 text-primary border-primary/20"
                     }
                   >
-                    {student.type === "private" ? "korki" : "szkółka"}
+                    {student.school
+                      ? student.school.name
+                      : student.type === "school"
+                        ? "przypisz szkółkę"
+                        : "korki"}
                   </Badge>
                   <Button
                     size="icon-sm"
@@ -136,7 +143,13 @@ export default function StudentsPage() {
                   Online
                 </span>
               )}
-              {student.defaultMode !== "remote" && student.address && (
+              {student.school?.address && (
+                <span className="flex items-center gap-1.5">
+                  <School className="size-3.5 shrink-0" />
+                  {student.school.address}
+                </span>
+              )}
+              {!student.school && student.defaultMode !== "remote" && student.address && (
                 <span className="flex items-center gap-1.5">
                   <MapPin className="size-3.5 shrink-0" />
                   {student.address}

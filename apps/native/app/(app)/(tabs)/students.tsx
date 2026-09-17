@@ -32,14 +32,30 @@ export default function StudentsScreen() {
               >
                 <Card style={styles.card}>
                   <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>{item.name}</Text>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {item.name}
+                    </Text>
                     <Badge
-                      label={item.type === "private" ? "korki" : "szkółka"}
-                      tone={item.type === "private" ? "default" : "success"}
+                      label={
+                        item.school
+                          ? item.school.name
+                          : item.type === "school"
+                            ? "przypisz szkółkę"
+                            : "korki"
+                      }
+                      tone={
+                        item.school
+                          ? "success"
+                          : item.type === "school"
+                            ? "warning"
+                            : "default"
+                      }
                     />
                   </View>
-                  {item.address ? (
-                    <Text style={styles.cardSubtitle}>{item.address}</Text>
+                  {(item.school?.address ?? item.address) ? (
+                    <Text style={styles.cardSubtitle}>
+                      {item.school?.address ?? item.address}
+                    </Text>
                   ) : null}
                   {item.phone ? (
                     <Text style={styles.cardSubtitle}>{item.phone}</Text>
@@ -76,8 +92,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
   },
-  cardTitle: { fontSize: 15, fontWeight: "700", color: colors.text },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: colors.text },
   cardSubtitle: { fontSize: 13, color: colors.textMuted },
   rateText: { fontSize: 13, color: colors.textFaint, marginTop: 2 },
   empty: { textAlign: "center", color: colors.textFaint, marginTop: 40 },

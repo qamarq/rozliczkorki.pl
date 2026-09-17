@@ -606,12 +606,21 @@ export function LessonDialog({
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <Label htmlFor="paid">Opłacone</Label>
-              <Switch id="paid" checked={paid} onCheckedChange={onPaidChange} />
-            </div>
+            {selectedStudent?.schoolId ? (
+              <div className="bg-muted/40 flex flex-col gap-1 rounded-lg border p-3">
+                <span className="text-sm font-medium">Rozlicza szkółka</span>
+                <span className="text-muted-foreground text-xs">
+                  Status zmieni się sam, gdy zaznaczysz przelew w zakładce „Szkółki”.
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <Label htmlFor="paid">Opłacone</Label>
+                <Switch id="paid" checked={paid} onCheckedChange={onPaidChange} />
+              </div>
+            )}
 
-            {paid && (
+            {paid && !selectedStudent?.schoolId && (
               <div className="flex flex-col gap-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-2">

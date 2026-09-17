@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
                       <MailCheck className="text-success mt-0.5 size-4 shrink-0" />
                       <p className="text-balance">
                         Jeśli konto o tym adresie istnieje, link do zmiany hasła jest już
-                        w drodze. Sprawdź skrzynkę — także spam.
+                        w drodze. Sprawdź skrzynkę, także spam.
                       </p>
                     </div>
                     <Field>

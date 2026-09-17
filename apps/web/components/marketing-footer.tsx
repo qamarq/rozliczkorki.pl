@@ -76,8 +76,8 @@ export function MarketingFooter() {
                 <GooglePlayIcon className="size-5" />
               </a>
               <span
-                aria-label="App Store — wkrótce"
-                title="App Store — wkrótce"
+                aria-label="App Store · wkrótce"
+                title="App Store · wkrótce"
                 className="text-muted-foreground/40 cursor-default"
               >
                 <AppStoreIcon className="size-5 rounded-[22%]" />

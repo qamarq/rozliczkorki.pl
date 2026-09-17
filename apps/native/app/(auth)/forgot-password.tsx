@@ -39,7 +39,7 @@ export default function ForgotPasswordScreen() {
         <Text style={styles.logo}>Nie pamiętasz hasła?</Text>
         <Text style={styles.subtitle}>
           {sent
-            ? "Jeśli konto o tym adresie istnieje, link do zmiany hasła jest już w drodze. Sprawdź skrzynkę — także spam."
+            ? "Jeśli konto o tym adresie istnieje, link do zmiany hasła jest już w drodze. Sprawdź skrzynkę, także spam."
             : "Podaj adres e-mail, a wyślemy link do ustawienia nowego hasła."}
         </Text>
 

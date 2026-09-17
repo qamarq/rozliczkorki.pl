@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Regulamin — RozliczKorki",
+  title: "Regulamin | RozliczKorki",
 };
 
 export default function TermsPage() {
@@ -47,7 +47,7 @@ export default function TermsPage() {
           <p>
             Aplikacja umożliwia planowanie zajęć, oznaczanie ich statusu i płatności,
             zarządzanie listą uczniów i stawek oraz podgląd statystyk zarobków. Aplikacja
-            jest narzędziem organizacyjnym — nie pośredniczy w płatnościach między Tobą a
+            jest narzędziem organizacyjnym. Nie pośredniczy w płatnościach między Tobą a
             Twoimi uczniami/rodzicami i nie ponosi odpowiedzialności za rozliczenia
             dokonywane poza Aplikacją (gotówka, przelew, BLIK itp.).
           </p>
@@ -107,7 +107,7 @@ export default function TermsPage() {
 
         <Section title="9. Kontakt i reklamacje">
           <p>
-            Reklamacje dotyczące działania Aplikacji możesz zgłaszać mailowo — adres
+            Reklamacje dotyczące działania Aplikacji możesz zgłaszać mailowo. Adres
             kontaktowy znajdziesz w ustawieniach Aplikacji. Odpowiadamy na reklamacje w
             terminie 14 dni od zgłoszenia.
           </p>

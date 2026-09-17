@@ -16,7 +16,7 @@ import { getServerSession } from "@/lib/auth-server";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata = {
-  title: "RozliczKorki — kalendarz i rozliczenia korepetycji",
+  title: "RozliczKorki: kalendarz i rozliczenia korepetycji",
   description:
     "Prowadź korki bez zeszytu: kalendarz zajęć, odznaczanie płatności i podgląd zarobków na żywo. Za darmo, po polsku, na telefon i w przeglądarce.",
   alternates: { canonical: SITE_URL },
@@ -131,7 +131,7 @@ export default async function MarketingPage() {
           />
           <div className="flex max-w-lg flex-col gap-3">
             <span className="font-mono-ui text-muted-foreground text-xs">
-              III — na telefon
+              III · na telefon
             </span>
             <h2 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
               Miej korki w kieszeni.

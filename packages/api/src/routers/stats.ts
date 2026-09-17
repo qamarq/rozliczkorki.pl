@@ -49,6 +49,7 @@ export const statsRouter = router({
       let theoretical = 0;
       let paid = 0;
       let unpaid = 0;
+      let awaitingPayout = 0;
       let completedCount = 0;
       let scheduledCount = 0;
       let cancelledCount = 0;
@@ -74,11 +75,13 @@ export const statsRouter = router({
         const settlement = settlements.get(lesson.id);
         if (!settlement) continue;
 
+        const student = studentById.get(lesson.studentId);
+
         theoretical += settlement.price;
         paid += settlement.received;
-        unpaid += settlement.outstanding;
+        if (student?.schoolId) awaitingPayout += settlement.outstanding;
+        else unpaid += settlement.outstanding;
 
-        const student = studentById.get(lesson.studentId);
         const entry = byStudent.get(lesson.studentId) ?? {
           studentId: lesson.studentId,
           name: student?.name ?? "?",
@@ -96,6 +99,7 @@ export const statsRouter = router({
         theoretical,
         paid,
         unpaid,
+        awaitingPayout,
         completedCount,
         scheduledCount,
         cancelledCount,

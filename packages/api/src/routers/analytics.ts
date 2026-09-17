@@ -1,6 +1,7 @@
 import {
   lessons,
   recurringRules,
+  schools,
   students,
   studentRates,
   vacations,
@@ -55,12 +56,14 @@ export const analyticsProcedure = protectedProcedure
     const userId = ctx.session.user.id;
     const now = new Date(input.now);
 
-    const [lessonRows, studentRows, ruleRows, vacationRows] = await Promise.all([
-      ctx.db.select().from(lessons).where(eq(lessons.userId, userId)),
-      ctx.db.select().from(students).where(eq(students.userId, userId)),
-      ctx.db.select().from(recurringRules).where(eq(recurringRules.userId, userId)),
-      ctx.db.select().from(vacations).where(eq(vacations.userId, userId)),
-    ]);
+    const [lessonRows, studentRows, ruleRows, vacationRows, schoolRows] =
+      await Promise.all([
+        ctx.db.select().from(lessons).where(eq(lessons.userId, userId)),
+        ctx.db.select().from(students).where(eq(students.userId, userId)),
+        ctx.db.select().from(recurringRules).where(eq(recurringRules.userId, userId)),
+        ctx.db.select().from(vacations).where(eq(vacations.userId, userId)),
+        ctx.db.select().from(schools).where(eq(schools.userId, userId)),
+      ]);
 
     const studentIds = studentRows.map((s) => s.id);
     const rates = studentIds.length
@@ -72,6 +75,7 @@ export const analyticsProcedure = protectedProcedure
 
     const settlements = settleLessons(lessonRows, rates);
     const studentById = new Map(studentRows.map((s) => [s.id, s]));
+    const schoolById = new Map(schoolRows.map((s) => [s.id, s]));
     const ratesByStudent = new Map<string, typeof rates>();
     for (const rate of rates) {
       const list = ratesByStudent.get(rate.studentId) ?? [];
@@ -119,6 +123,7 @@ export const analyticsProcedure = protectedProcedure
       unpaid: 0,
       planned: 0,
       projected: 0,
+      awaitingPayout: 0,
       lessonCount: 0,
       projectedLessons: 0,
       completed: 0,
@@ -148,13 +153,15 @@ export const analyticsProcedure = protectedProcedure
 
     let outstandingTotal = 0;
     const outstandingByStudent = new Map<string, number>();
+    let awaitingTotal = 0;
+    const awaitingBySchool = new Map<string, number>();
 
     const addStudent = (lesson: Lesson, price: number, received: number, due: number) => {
       const student = studentById.get(lesson.studentId);
       const entry = byStudent.get(lesson.studentId) ?? {
         studentId: lesson.studentId,
         name: student?.name ?? "?",
-        type: student?.type ?? "private",
+        type: student?.schoolId ? ("school" as const) : ("private" as const),
         lessonCount: 0,
         hours: 0,
         billed: 0,
@@ -169,7 +176,7 @@ export const analyticsProcedure = protectedProcedure
       byStudent.set(lesson.studentId, entry);
 
       modeSplit[lesson.mode] += 1;
-      typeSplit[student?.type ?? "private"] += price;
+      typeSplit[student?.schoolId ? "school" : "private"] += price;
       if (received > 0) paymentSplit[lesson.paymentMethod ?? "unknown"] += received;
     };
 
@@ -180,12 +187,19 @@ export const analyticsProcedure = protectedProcedure
       const due = settlement?.outstanding ?? 0;
       const past = lesson.startsAt <= now;
 
+      const schoolId = studentById.get(lesson.studentId)?.schoolId ?? null;
+
       if (past && lesson.status !== "cancelled" && due > 0) {
-        outstandingTotal += due;
-        outstandingByStudent.set(
-          lesson.studentId,
-          (outstandingByStudent.get(lesson.studentId) ?? 0) + due,
-        );
+        if (schoolId) {
+          awaitingTotal += due;
+          awaitingBySchool.set(schoolId, (awaitingBySchool.get(schoolId) ?? 0) + due);
+        } else {
+          outstandingTotal += due;
+          outstandingByStudent.set(
+            lesson.studentId,
+            (outstandingByStudent.get(lesson.studentId) ?? 0) + due,
+          );
+        }
       }
 
       if (
@@ -226,8 +240,9 @@ export const analyticsProcedure = protectedProcedure
       totals.hours += lesson.durationMinutes / 60;
       if (lesson.status === "completed") totals.completed += 1;
       else totals.scheduled += 1;
-      if (past) totals.unpaid += due;
-      else totals.planned += due;
+      if (!past) totals.planned += due;
+      else if (schoolId) totals.awaitingPayout += due;
+      else totals.unpaid += due;
 
       addStudent(lesson, price, received, due);
     }
@@ -309,6 +324,7 @@ export const analyticsProcedure = protectedProcedure
         billed: round(totals.billed),
         paid: round(totals.paid),
         unpaid: round(totals.unpaid),
+        awaitingPayout: round(totals.awaitingPayout),
         planned: round(totals.planned),
         projected: round(totals.projected),
         hours: totalHours,
@@ -342,6 +358,16 @@ export const analyticsProcedure = protectedProcedure
           transfer: round(paymentSplit.transfer),
           unknown: round(paymentSplit.unknown),
         },
+      },
+      payouts: {
+        awaiting: round(awaitingTotal),
+        schools: [...awaitingBySchool.entries()]
+          .map(([schoolId, amount]) => ({
+            schoolId,
+            name: schoolById.get(schoolId)?.name ?? "?",
+            amount: round(amount),
+          }))
+          .sort((a, b) => b.amount - a.amount),
       },
       debt: {
         outstanding: round(outstandingTotal),

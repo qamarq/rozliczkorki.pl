@@ -35,6 +35,8 @@ export default function AppLayout() {
     >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="stats" />
+      <Stack.Screen name="school/[id]" />
     </Stack>
   );
 }

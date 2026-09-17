@@ -2,6 +2,7 @@ import { lessons, recurringRules, students, studentRates } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, gt, gte, inArray, lte, ne } from "drizzle-orm";
 import { z } from "zod";
+import { lessonPaymentState } from "@repo/shared";
 import { settleLessons } from "../pricing";
 import { protectedProcedure, router } from "../trpc";
 
@@ -26,27 +27,44 @@ async function withPrices(
   rows: (typeof lessons.$inferSelect)[],
 ) {
   const studentIds = [...new Set(rows.map((l) => l.studentId))];
-  const empty = { price: 0, carry: 0, amountDue: 0, received: 0, settled: false };
+  const empty = {
+    price: 0,
+    carry: 0,
+    amountDue: 0,
+    received: 0,
+    settled: false,
+    paymentState: "unpaid" as const,
+  };
   if (studentIds.length === 0) return rows.map((l) => ({ ...l, ...empty }));
 
-  const [rates, history] = await Promise.all([
+  const [rates, history, studentRows] = await Promise.all([
     db.select().from(studentRates).where(inArray(studentRates.studentId, studentIds)),
     db
       .select()
       .from(lessons)
       .where(and(eq(lessons.userId, userId), inArray(lessons.studentId, studentIds))),
+    db.select().from(students).where(inArray(students.id, studentIds)),
   ]);
   const settlements = settleLessons(history, rates);
+  const schoolOf = new Map(studentRows.map((s) => [s.id, s.schoolId]));
+  const now = new Date();
 
   return rows.map((lesson) => {
     const s = settlements.get(lesson.id);
+    const settled = s?.settled ?? lesson.paid;
     return {
       ...lesson,
       price: s?.price ?? 0,
       carry: s?.carry ?? 0,
       amountDue: s?.amountDue ?? 0,
       received: s?.received ?? 0,
-      settled: s?.settled ?? lesson.paid,
+      settled,
+      paymentState: lessonPaymentState({
+        settled,
+        startsAt: lesson.startsAt,
+        hasSchool: !!schoolOf.get(lesson.studentId),
+        now,
+      }),
     };
   });
 }

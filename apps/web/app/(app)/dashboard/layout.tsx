@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/auth-server";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -13,8 +14,11 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Read on the server so a collapsed sidebar does not flash open on first paint.
+  const sidebarState = (await cookies()).get("sidebar_state")?.value;
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={sidebarState !== "false"}>
       <AppSidebar
         userName={session.user.name}
         userEmail={session.user.email}

@@ -25,8 +25,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { LESSON_MODE_LABELS, formatPLN, type LessonMode } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
+import { SchoolDialog } from "../schools/school-dialog";
 
-type StudentType = "private" | "school";
+const PRIVATE = "private";
+const ADD_SCHOOL = "__add_school__";
 
 export function StudentDialog({
   open,
@@ -46,7 +48,9 @@ export function StudentDialog({
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
-  const [type, setType] = useState<StudentType>("private");
+  const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [schoolTouched, setSchoolTouched] = useState(false);
+  const [schoolDialogOpen, setSchoolDialogOpen] = useState(false);
   const [defaultMode, setDefaultMode] = useState<LessonMode>("in_person");
   const [archived, setArchived] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(80);
@@ -61,14 +65,16 @@ export function StudentDialog({
       setName(student.name);
       setAddress(student.address ?? "");
       setPhone(student.phone ?? "");
-      setType(student.type);
+      setSchoolId(student.schoolId);
+      setSchoolTouched(false);
       setDefaultMode(student.defaultMode);
       setArchived(student.archived);
     } else {
       setName("");
       setAddress("");
       setPhone("");
-      setType("private");
+      setSchoolId(null);
+      setSchoolTouched(false);
       setDefaultMode("in_person");
       setArchived(false);
       setHourlyRate(80);
@@ -78,8 +84,17 @@ export function StudentDialog({
     setNewRateDate(format(new Date(), "yyyy-MM-dd"));
   }, [open, student]);
 
+  const { data: schools = [] } = trpc.schools.list.useQuery(undefined, {
+    enabled: open,
+  });
+  const selectedSchool = schools.find((school) => school.id === schoolId) ?? null;
+  // Pre-schools student: typed as "school" but not pointing at a school yet.
+  const unassignedSchool = !schoolId && student?.type === "school";
+
   const invalidate = () => {
     utils.students.list.invalidate();
+    utils.schools.list.invalidate();
+    utils.schools.byId.invalidate();
     utils.students.byId.invalidate();
     utils.lessons.range.invalidate();
     utils.recurring.list.invalidate();
@@ -128,9 +143,10 @@ export function StudentDialog({
       updateStudent.mutate({
         id: studentId,
         name,
-        address,
+        address: schoolId ? null : address,
         phone,
-        type,
+        // Keep the legacy school flag until the user actually picks from the select.
+        ...(unassignedSchool && !schoolTouched ? {} : { schoolId }),
         defaultMode,
         archived,
       });
@@ -139,9 +155,9 @@ export function StudentDialog({
     }
     createStudent.mutate({
       name,
-      address,
+      address: schoolId ? undefined : address,
       phone,
-      type,
+      schoolId,
       defaultMode,
       hourlyRate,
       effectiveFrom,
@@ -175,46 +191,75 @@ export function StudentDialog({
             />
           </div>
 
-          <div
-            className={
-              defaultMode === "remote" ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"
-            }
-          >
-            {defaultMode !== "remote" && (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="address">Adres</Label>
-                <Input
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="np. ul. Kwiatowa 5, Warszawa"
-                />
+          {(() => {
+            const showAddress = !selectedSchool && defaultMode !== "remote";
+            return (
+              <div
+                className={showAddress ? "grid grid-cols-2 gap-3" : "flex flex-col gap-3"}
+              >
+                {showAddress && (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="address">Adres</Label>
+                    <Input
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="np. ul. Kwiatowa 5, Warszawa"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="phone">Telefon (opcjonalnie)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="np. 601 234 567"
+                  />
+                </div>
               </div>
-            )}
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="phone">Telefon (opcjonalnie)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="np. 601 234 567"
-              />
-            </div>
-          </div>
+            );
+          })()}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
-              <Label>Typ zajęć</Label>
-              <Select value={type} onValueChange={(v) => setType(v as StudentType)}>
+              <Label>Gdzie uczysz</Label>
+              <Select
+                value={schoolId ?? PRIVATE}
+                onValueChange={(value) => {
+                  if (value === ADD_SCHOOL) {
+                    setSchoolDialogOpen(true);
+                    return;
+                  }
+                  setSchoolTouched(true);
+                  setSchoolId(value === PRIVATE ? null : value);
+                }}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="private">Korki prywatne</SelectItem>
-                  <SelectItem value="school">Zajęcia w szkółce</SelectItem>
+                  <SelectItem value={PRIVATE}>Prywatnie</SelectItem>
+                  {schools.map((school) => (
+                    <SelectItem key={school.id} value={school.id}>
+                      {school.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={ADD_SCHOOL}>+ Dodaj nową szkółkę</SelectItem>
                 </SelectContent>
               </Select>
+              {selectedSchool && (
+                <p className="text-muted-foreground text-xs">
+                  Adres zajęć: {selectedSchool.address ?? "uzupełnij go w szkółce"}
+                </p>
+              )}
+              {unassignedSchool && !schoolTouched && (
+                <p className="text-warning text-xs">
+                  Ten uczeń był oznaczony jako zajęcia w szkółce. Wybierz placówkę, żeby
+                  śledzić przelewy, albo zostaw prywatnie.
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label>Domyślna forma</Label>
@@ -342,6 +387,16 @@ export function StudentDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <SchoolDialog
+        open={schoolDialogOpen}
+        onOpenChange={setSchoolDialogOpen}
+        schoolId={null}
+        onCreated={(id) => {
+          setSchoolTouched(true);
+          setSchoolId(id);
+        }}
+      />
     </Dialog>
   );
 }
