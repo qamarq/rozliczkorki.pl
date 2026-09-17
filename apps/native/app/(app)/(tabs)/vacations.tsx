@@ -38,6 +38,7 @@ export default function VacationsScreen() {
       utils.vacations.overview.invalidate();
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
     },
     onError: (e) => alert("Błąd", e.message),
   });

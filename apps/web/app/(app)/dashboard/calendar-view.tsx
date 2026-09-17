@@ -288,12 +288,14 @@ function TodayPanel({
     onSuccess: () => {
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
     },
   });
   const markPaid = trpc.lessons.update.useMutation({
     onSuccess: () => {
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
     },
   });
 
@@ -395,6 +397,7 @@ function DuePanel({
     onSuccess: () => {
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
     },
   });
 

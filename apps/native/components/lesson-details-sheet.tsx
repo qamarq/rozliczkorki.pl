@@ -154,6 +154,7 @@ function LessonDetailsContent({
     utils.recurring.lastLesson.invalidate();
     utils.vacations.overview.invalidate();
     utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
   };
 
   const updateCycleEnd = trpc.recurring.setEndDate.useMutation();

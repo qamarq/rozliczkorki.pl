@@ -50,6 +50,7 @@ export default function VacationsPage() {
       utils.vacations.overview.invalidate();
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
       toast.success("Usunięto urlop i przywrócono zajęcia");
       setDeletingId(null);
     },

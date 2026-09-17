@@ -55,6 +55,7 @@ function VacationForm({
     utils.vacations.overview.invalidate();
     utils.lessons.range.invalidate();
     utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
     onClose();
   };
 

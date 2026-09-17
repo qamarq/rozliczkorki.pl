@@ -64,6 +64,7 @@ export default function NewLessonScreen() {
     onSuccess: () => {
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
       router.back();
     },
     onError: (e) => alert("Błąd", e.message),
@@ -73,6 +74,7 @@ export default function NewLessonScreen() {
     onSuccess: () => {
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
+      utils.stats.analytics.invalidate();
       router.back();
     },
     onError: (e) => alert("Błąd", e.message),
