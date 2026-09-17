@@ -242,7 +242,7 @@ export default function StatsScreen() {
             </Text>
           </View>
           {(data?.debt.debtors ?? []).length === 0 ? (
-            <Text style={styles.muted}>Wszystko rozliczone — brak długów.</Text>
+            <Text style={styles.muted}>Wszystko rozliczone, brak długów.</Text>
           ) : (
             (data?.debt.debtors ?? []).slice(0, 6).map((debtor) => (
               <View key={debtor.studentId} style={styles.rowBetween}>
@@ -252,7 +252,7 @@ export default function StatsScreen() {
             ))
           )}
           <Text style={styles.muted}>
-            Ze wszystkich zajęć, które już się odbyły — nie tylko z tego zakresu.
+            Ze wszystkich zajęć, które już się odbyły, nie tylko z tego zakresu.
           </Text>
         </Card>
 

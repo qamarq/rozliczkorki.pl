@@ -8,7 +8,7 @@ import { formatDate, getAllPosts } from "@/lib/blog";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata = {
-  title: "Blog — RozliczKorki",
+  title: "Blog | RozliczKorki",
   description:
     "Podatki, rozliczenia i organizacja pracy korepetytora. Konkretnie, z podstawą prawną i bez lania wody.",
   alternates: { canonical: `${SITE_URL}/blog` },
@@ -24,7 +24,7 @@ export default async function BlogIndexPage() {
       <div className="flex flex-col gap-3">
         <h1 className="text-4xl font-bold tracking-tight">Blog</h1>
         <p className="text-muted-foreground max-w-2xl text-pretty text-lg">
-          Podatki, rozliczenia i organizacja pracy korepetytora — konkretnie, z podstawą
+          Podatki, rozliczenia i organizacja pracy korepetytora. Konkretnie, z podstawą
           prawną i linkami do źródeł.
         </p>
       </div>

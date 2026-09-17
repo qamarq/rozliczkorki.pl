@@ -85,7 +85,7 @@ export default function RegisterPage() {
                       <MailCheck className="text-success mt-0.5 size-4 shrink-0" />
                       <p className="text-balance">
                         Wysłaliśmy link potwierdzający na <strong>{email}</strong>.
-                        Kliknij go, żeby aktywować konto — zalogujemy Cię automatycznie.
+                        Kliknij go, żeby aktywować konto, a zalogujemy Cię automatycznie.
                       </p>
                     </div>
                     <Field>

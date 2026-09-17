@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props) {
 
   const url = `${SITE_URL}/blog/${post.slug}`;
   return {
-    title: `${post.title} — RozliczKorki`,
+    title: `${post.title} | RozliczKorki`,
     description: post.description,
     alternates: { canonical: url },
     openGraph: {
@@ -97,7 +97,7 @@ export default async function BlogPostPage({ params }: Props) {
         <aside className="border-border-solid bg-card/60 flex flex-col items-start gap-3 rounded-xl border p-6">
           <h2 className="text-lg font-semibold">Pilnuj limitu bez zeszytu</h2>
           <p className="text-muted-foreground text-pretty text-sm">
-            RozliczKorki liczy Twoje przychody na bieżąco — widzisz, ile zarobiłaś w tym
+            RozliczKorki liczy Twoje przychody na bieżąco. Widzisz, ile zarobiłaś w tym
             kwartale, kto jeszcze nie zapłacił i jak blisko progu jesteś.
           </p>
           <Button asChild>

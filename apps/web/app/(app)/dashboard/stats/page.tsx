@@ -125,7 +125,7 @@ export default function StatsPage() {
         <div>
           <h1 className="text-lg font-semibold">Statystyki</h1>
           <p className="text-muted-foreground text-sm">
-            Przychody, obłożenie i prognoza — dla dowolnego zakresu dat.
+            Przychody, obłożenie i prognoza dla dowolnego zakresu dat.
           </p>
         </div>
         <RangePicker
@@ -339,7 +339,7 @@ export default function StatsPage() {
             </div>
             {(data?.debt.debtors ?? []).length === 0 ? (
               <p className="text-muted-foreground text-sm">
-                Wszystko rozliczone — brak długów.
+                Wszystko rozliczone, brak długów.
               </p>
             ) : (
               <div className="flex flex-col">
@@ -358,7 +358,7 @@ export default function StatsPage() {
             )}
             <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
               <Info className="size-3.5 shrink-0" />
-              Ze wszystkich zajęć, które już się odbyły — nie tylko z tego zakresu.
+              Ze wszystkich zajęć, które już się odbyły, nie tylko z tego zakresu.
             </p>
           </Card>
 
@@ -391,7 +391,7 @@ export default function StatsPage() {
             )}
             <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
               <Info className="size-3.5 shrink-0" />
-              Zajęcia już się odbyły — przelew ze szkółki jeszcze nie przyszedł.
+              Zajęcia już się odbyły, ale przelew ze szkółki jeszcze nie przyszedł.
             </p>
           </Card>
 

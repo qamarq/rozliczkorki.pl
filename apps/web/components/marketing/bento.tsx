@@ -22,7 +22,7 @@ export function Bento() {
         className="md:col-span-2"
         eyebrow="02"
         title="Odbyło się / opłacone"
-        description="Dwa kliknięcia po lekcji. Gotówka czy przelew — Ty wiesz, aplikacja pamięta."
+        description="Dwa kliknięcia po lekcji. Gotówka czy przelew: Ty wiesz, aplikacja pamięta."
       >
         <ToggleVisual />
       </Cell>
@@ -67,7 +67,7 @@ export function Bento() {
         className="md:col-span-3"
         eyebrow="07"
         title="Uczniowie i stawki"
-        description="Adres, typ zajęć, historia stawek. Podnosisz cenę w marcu — luty dalej liczy się po staremu."
+        description="Adres, typ zajęć, historia stawek. Podnosisz cenę w marcu, a luty dalej liczy się po staremu."
       >
         <StudentsVisual />
       </Cell>

@@ -50,7 +50,7 @@ export function StoreButtons({ className }: { className?: string }) {
             <AppStoreIcon className="size-6 rounded-[22%]" />
           )}
           <span className="flex flex-col items-start leading-tight">
-            <span className="text-muted-foreground text-[10px]">iOS — wkrótce</span>
+            <span className="text-muted-foreground text-[10px]">iOS · wkrótce</span>
             <span className="text-sm font-semibold">
               {data?.hasVoted ? "Głos oddany" : "Czekam na iOS"}
             </span>

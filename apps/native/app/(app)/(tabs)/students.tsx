@@ -36,8 +36,20 @@ export default function StudentsScreen() {
                       {item.name}
                     </Text>
                     <Badge
-                      label={item.school ? item.school.name : "korki"}
-                      tone={item.school ? "success" : "default"}
+                      label={
+                        item.school
+                          ? item.school.name
+                          : item.type === "school"
+                            ? "przypisz szkółkę"
+                            : "korki"
+                      }
+                      tone={
+                        item.school
+                          ? "success"
+                          : item.type === "school"
+                            ? "warning"
+                            : "default"
+                      }
                     />
                   </View>
                   {(item.school?.address ?? item.address) ? (

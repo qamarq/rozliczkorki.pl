@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     default: "Rozlicz Korki",
     template: "%s",
   },
-  description: "Prosty tracker korepetycji — kalendarz, płatności, zarobki.",
+  description: "Prosty tracker korepetycji: kalendarz, płatności, zarobki.",
   openGraph: {
     siteName: "Rozlicz Korki",
     locale: "pl_PL",

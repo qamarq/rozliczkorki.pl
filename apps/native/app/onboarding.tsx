@@ -37,7 +37,7 @@ const FEATURES = [
   { icon: "calendar-outline" as const, text: "Kalendarz zajęć zawsze pod ręką" },
   {
     icon: "checkmark-done-outline" as const,
-    text: "Odbyte i opłacone — jednym dotknięciem",
+    text: "Odbyte i opłacone jednym dotknięciem",
   },
   {
     icon: "trending-up-outline" as const,
@@ -143,7 +143,7 @@ export default function OnboardingScreen() {
         await SecureStore.setItemAsync(EXACT_ALARMS_PROMPTED_KEY, "1");
         askToOpenSettings(
           "Przypomnienia na czas",
-          "Zezwól na ustawianie alarmów i przypomnień — dzięki temu powiadomienia przyjdą dokładnie o czasie.",
+          "Zezwól na ustawianie alarmów i przypomnień, dzięki temu powiadomienia przyjdą dokładnie o czasie.",
           () => {
             if (!openExactAlarmSettings()) Linking.openSettings();
           },
@@ -187,7 +187,7 @@ export default function OnboardingScreen() {
             </Animated.View>
             <Text style={styles.title}>Witaj w RozliczKorki</Text>
             <Text style={styles.subtitle}>
-              Prosty kalendarz korepetycji, rozliczenia i zarobki — wszystko w jednym
+              Prosty kalendarz korepetycji, rozliczenia i zarobki, wszystko w jednym
               miejscu, bez zeszytu i karteczek.
             </Text>
           </>
@@ -245,7 +245,7 @@ export default function OnboardingScreen() {
             </View>
             {anySelected && (
               <Text style={styles.permissionHint}>
-                Poprosimy o zgodę na powiadomienia i dokładne alarmy — bez nich wybrane
+                Poprosimy o zgodę na powiadomienia i dokładne alarmy. Bez nich wybrane
                 powiadomienia nie zadziałają.
               </Text>
             )}

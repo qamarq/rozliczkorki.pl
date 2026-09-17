@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = {
-  title: "Usunięcie konta — RozliczKorki",
+  title: "Usunięcie konta | RozliczKorki",
 };
 
 const SUPPORT_EMAIL = "me@kamilmarczak.pl";
 
 export default function DeleteAccountPage() {
   const mailtoHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-    "Prośba o usunięcie konta — RozliczKorki",
+    "Prośba o usunięcie konta | RozliczKorki",
   )}&body=${encodeURIComponent(
     "Cześć,\n\nProszę o usunięcie mojego konta w RozliczKorki.\n\nAdres e-mail konta: \n\nPozdrawiam",
   )}`;
@@ -43,13 +43,12 @@ export default function DeleteAccountPage() {
           samodzielnie w aplikacji: zaloguj się, kliknij swoje imię w lewym dolnym rogu,
           wybierz <strong>Ustawienia</strong>, a następnie sekcję{" "}
           <strong>Usuwanie konta</strong>. Wyślemy link potwierdzający na Twój adres
-          e-mail — po kliknięciu w niego konto i dane znikają natychmiast i
-          nieodwracalnie.
+          e-mail. Po kliknięciu w niego konto i dane znikają natychmiast i nieodwracalnie.
         </p>
 
         <p className="text-muted-foreground text-sm leading-relaxed">
           Jeśli nie możesz zalogować się do aplikacji, napisz do nas na adres poniżej z
-          tego samego adresu e-mail, którego używasz do logowania — pozwala nam to
+          tego samego adresu e-mail, którego używasz do logowania. Pozwala nam to
           zweryfikować, że to Ty składasz wniosek.
         </p>
 
@@ -92,7 +91,7 @@ export default function DeleteAccountPage() {
           <h2 className="text-lg font-semibold">Uwaga</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Jeśli korzystałeś(-aś) z RozliczKorki jako korepetytor(ka) i wprowadzałeś(-aś)
-            dane swoich uczniów, usunięcie konta usuwa też te dane z naszej bazy — nie
+            dane swoich uczniów, usunięcie konta usuwa też te dane z naszej bazy. Nie
             przechowujemy ich osobno. Więcej informacji znajdziesz w{" "}
             <Link href="/privacy" className="text-primary underline">
               Polityce prywatności

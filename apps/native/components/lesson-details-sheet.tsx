@@ -17,7 +17,7 @@ import {
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { closeSheet, openSheet } from "@/lib/sheet";
-import { colors } from "@/lib/theme";
+import { colors, radius } from "@/lib/theme";
 import { queryClient, trpc } from "@/lib/trpc";
 import {
   LESSON_MODE_LABELS,
@@ -139,6 +139,7 @@ function LessonDetailsContent({
         ? (hourlyRate * Number(durationMinutes || 0)) / 60
         : hourlyRate;
 
+  const bySchool = !!lesson?.student?.schoolId;
   const carry = lesson?.carry ?? 0;
   const currentPrice =
     lesson &&
@@ -361,16 +362,19 @@ function LessonDetailsContent({
         ))}
       </View>
 
-      <View style={styles.switchRow}>
-        <Text style={styles.label}>Opłacone</Text>
-        <Switch value={paid} onValueChange={onPaidChange} />
-      </View>
-      {lesson?.student?.schoolId ? (
-        <Text style={styles.hint}>
-          Te zajęcia rozlicza szkółka — status zmieni się sam, gdy zaznaczysz przelew w
-          zakładce Szkółki.
-        </Text>
-      ) : null}
+      {bySchool ? (
+        <View style={styles.noticeBox}>
+          <Text style={styles.label}>Rozlicza szkółka</Text>
+          <Text style={styles.hint}>
+            Status zmieni się sam, gdy zaznaczysz przelew w zakładce Szkółki.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Opłacone</Text>
+          <Switch value={paid} onValueChange={onPaidChange} />
+        </View>
+      )}
       {carry !== 0 && (
         <Text style={styles.hint}>
           {carry > 0
@@ -380,7 +384,7 @@ function LessonDetailsContent({
         </Text>
       )}
 
-      {paid && (
+      {paid && !bySchool && (
         <>
           <View style={styles.chipRow}>
             {(["cash", "transfer"] as const).map((method) => (
@@ -458,6 +462,14 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, color: colors.textFaint, marginTop: -6 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   notes: { minHeight: 80, textAlignVertical: "top" },
+  noticeBox: {
+    gap: 4,
+    padding: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",

@@ -49,6 +49,7 @@ export function StudentDialog({
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [schoolTouched, setSchoolTouched] = useState(false);
   const [schoolDialogOpen, setSchoolDialogOpen] = useState(false);
   const [defaultMode, setDefaultMode] = useState<LessonMode>("in_person");
   const [archived, setArchived] = useState(false);
@@ -65,6 +66,7 @@ export function StudentDialog({
       setAddress(student.address ?? "");
       setPhone(student.phone ?? "");
       setSchoolId(student.schoolId);
+      setSchoolTouched(false);
       setDefaultMode(student.defaultMode);
       setArchived(student.archived);
     } else {
@@ -72,6 +74,7 @@ export function StudentDialog({
       setAddress("");
       setPhone("");
       setSchoolId(null);
+      setSchoolTouched(false);
       setDefaultMode("in_person");
       setArchived(false);
       setHourlyRate(80);
@@ -85,6 +88,8 @@ export function StudentDialog({
     enabled: open,
   });
   const selectedSchool = schools.find((school) => school.id === schoolId) ?? null;
+  // Uczeń sprzed szkółek: ma type "school", ale nie wskazuje jeszcze placówki.
+  const unassignedSchool = !schoolId && student?.type === "school";
 
   const invalidate = () => {
     utils.students.list.invalidate();
@@ -140,7 +145,8 @@ export function StudentDialog({
         name,
         address: schoolId ? null : address,
         phone,
-        schoolId,
+        // Bez świadomego wyboru nie zdejmujemy staremu uczniowi oznaczenia szkółki.
+        ...(unassignedSchool && !schoolTouched ? {} : { schoolId }),
         defaultMode,
         archived,
       });
@@ -226,6 +232,7 @@ export function StudentDialog({
                     setSchoolDialogOpen(true);
                     return;
                   }
+                  setSchoolTouched(true);
                   setSchoolId(value === PRIVATE ? null : value);
                 }}
               >
@@ -245,6 +252,12 @@ export function StudentDialog({
               {selectedSchool && (
                 <p className="text-muted-foreground text-xs">
                   Adres zajęć: {selectedSchool.address ?? "uzupełnij go w szkółce"}
+                </p>
+              )}
+              {unassignedSchool && !schoolTouched && (
+                <p className="text-warning text-xs">
+                  Ten uczeń był oznaczony jako zajęcia w szkółce. Wybierz placówkę, żeby
+                  śledzić przelewy, albo zostaw prywatnie.
                 </p>
               )}
             </div>
@@ -379,7 +392,10 @@ export function StudentDialog({
         open={schoolDialogOpen}
         onOpenChange={setSchoolDialogOpen}
         schoolId={null}
-        onCreated={(id) => setSchoolId(id)}
+        onCreated={(id) => {
+          setSchoolTouched(true);
+          setSchoolId(id);
+        }}
       />
     </Dialog>
   );

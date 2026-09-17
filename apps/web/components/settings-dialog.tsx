@@ -543,7 +543,7 @@ function AccountsSection() {
               disabled={accounts.length < 2}
               title={
                 accounts.length < 2
-                  ? "To jedyny sposób logowania — najpierw ustaw hasło"
+                  ? "To jedyny sposób logowania, najpierw ustaw hasło"
                   : undefined
               }
             >

@@ -118,7 +118,7 @@ export default function SchoolDetailScreen() {
             <SectionLabel>Historia przelewów</SectionLabel>
             {school.periods.length === 0 ? (
               <Text style={styles.hint}>
-                Brak zajęć — okresy rozliczeniowe pojawią się automatycznie.
+                Brak zajęć. Okresy rozliczeniowe pojawią się automatycznie.
               </Text>
             ) : (
               school.periods.map((period) => (

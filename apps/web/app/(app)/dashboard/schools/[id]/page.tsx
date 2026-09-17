@@ -68,7 +68,7 @@ export default function SchoolDetailPage() {
   const markPayout = trpc.schools.markPayout.useMutation({
     onSuccess: () => {
       invalidate();
-      toast.success("Zapisano przelew — zajęcia z tego okresu są opłacone");
+      toast.success("Zapisano przelew. Zajęcia z tego okresu są opłacone");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -220,7 +220,7 @@ export default function SchoolDetailPage() {
 
           {school.periods.length === 0 && (
             <p className="text-muted-foreground px-5 py-10 text-center text-sm">
-              Brak zajęć w tej szkółce — okresy rozliczeniowe pojawią się automatycznie.
+              Brak zajęć w tej szkółce. Okresy rozliczeniowe pojawią się automatycznie.
             </p>
           )}
 

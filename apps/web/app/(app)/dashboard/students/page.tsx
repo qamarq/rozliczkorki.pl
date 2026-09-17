@@ -112,12 +112,18 @@ export default function StudentsPage() {
                 <div className="flex items-center gap-1.5">
                   <Badge
                     className={
-                      student.type === "private"
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-accent text-accent-foreground"
+                      student.school
+                        ? "bg-accent text-accent-foreground"
+                        : student.type === "school"
+                          ? "bg-warning/10 text-warning border-warning/20"
+                          : "bg-primary/10 text-primary border-primary/20"
                     }
                   >
-                    {student.school ? student.school.name : "korki"}
+                    {student.school
+                      ? student.school.name
+                      : student.type === "school"
+                        ? "przypisz szkółkę"
+                        : "korki"}
                   </Badge>
                   <Button
                     size="icon-sm"

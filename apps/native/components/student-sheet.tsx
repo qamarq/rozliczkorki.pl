@@ -51,6 +51,7 @@ function StudentForm({
   const [address, setAddress] = useState(draft?.address ?? "");
   const [phone, setPhone] = useState(draft?.phone ?? "");
   const [schoolId, setSchoolId] = useState<string | null>(draft?.schoolId ?? null);
+  const [schoolTouched, setSchoolTouched] = useState(!!draft);
   const [defaultMode, setDefaultMode] = useState<LessonMode>(
     draft?.defaultMode ?? "in_person",
   );
@@ -59,6 +60,8 @@ function StudentForm({
   const currentRate = student?.rates[0];
   const { data: schools = [] } = trpc.schools.list.useQuery();
   const selectedSchool = schools.find((school) => school.id === schoolId) ?? null;
+  // Uczeń sprzed szkółek: ma type "school", ale nie wskazuje jeszcze placówki.
+  const unassignedSchool = !schoolId && student?.type === "school";
 
   useEffect(() => {
     if (!student) return;
@@ -132,7 +135,8 @@ function StudentForm({
       name: name.trim(),
       address: schoolId ? null : address.trim() || null,
       phone: phone.trim() || null,
-      schoolId,
+      // Bez świadomego wyboru nie zdejmujemy staremu uczniowi oznaczenia szkółki.
+      ...(unassignedSchool && !schoolTouched ? {} : { schoolId }),
       defaultMode,
     });
 
@@ -193,13 +197,23 @@ function StudentForm({
 
       <SectionLabel>Gdzie uczysz</SectionLabel>
       <View style={styles.chipRow}>
-        <Chip label="Prywatnie" active={!schoolId} onPress={() => setSchoolId(null)} />
+        <Chip
+          label="Prywatnie"
+          active={!schoolId && !unassignedSchool}
+          onPress={() => {
+            setSchoolTouched(true);
+            setSchoolId(null);
+          }}
+        />
         {schools.map((school) => (
           <Chip
             key={school.id}
             label={school.name}
             active={schoolId === school.id}
-            onPress={() => setSchoolId(school.id)}
+            onPress={() => {
+              setSchoolTouched(true);
+              setSchoolId(school.id);
+            }}
           />
         ))}
         <Chip
@@ -222,6 +236,12 @@ function StudentForm({
       {selectedSchool ? (
         <Text style={styles.hint}>
           Adres zajęć: {selectedSchool.address ?? "uzupełnij go w szkółce"}
+        </Text>
+      ) : null}
+      {unassignedSchool && !schoolTouched ? (
+        <Text style={styles.warnHint}>
+          Ten uczeń był oznaczony jako zajęcia w szkółce. Wybierz placówkę, żeby śledzić
+          przelewy, albo zostaw prywatnie.
         </Text>
       ) : null}
 
@@ -267,6 +287,7 @@ const styles = StyleSheet.create({
   content: { gap: 14 },
   title: { fontSize: 20, fontWeight: "800", color: colors.text },
   hint: { fontSize: 12, color: colors.textFaint, marginTop: -6 },
+  warnHint: { fontSize: 12, color: colors.warning, marginTop: -6 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   infoPill: {
     flexDirection: "row",

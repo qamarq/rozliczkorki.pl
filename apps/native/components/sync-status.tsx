@@ -46,7 +46,7 @@ export function OfflineBanner() {
     <View style={styles.banner}>
       <Ionicons name="cloud-offline-outline" size={16} color={colors.warning} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.bannerText}>Jesteś offline — dane mogą być nieaktualne</Text>
+        <Text style={styles.bannerText}>Jesteś offline, dane mogą być nieaktualne</Text>
         {lastSyncedAt > 0 && (
           <Text style={styles.bannerHint}>
             Ostatnia aktualizacja: {formatSyncTime(lastSyncedAt)}

@@ -161,7 +161,7 @@ export const analyticsProcedure = protectedProcedure
       const entry = byStudent.get(lesson.studentId) ?? {
         studentId: lesson.studentId,
         name: student?.name ?? "?",
-        type: student?.type ?? "private",
+        type: student?.schoolId ? ("school" as const) : ("private" as const),
         lessonCount: 0,
         hours: 0,
         billed: 0,
@@ -176,7 +176,7 @@ export const analyticsProcedure = protectedProcedure
       byStudent.set(lesson.studentId, entry);
 
       modeSplit[lesson.mode] += 1;
-      typeSplit[student?.type ?? "private"] += price;
+      typeSplit[student?.schoolId ? "school" : "private"] += price;
       if (received > 0) paymentSplit[lesson.paymentMethod ?? "unknown"] += received;
     };
 

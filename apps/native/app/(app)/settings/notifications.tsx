@@ -116,8 +116,8 @@ export default function NotificationSettingsScreen() {
               label="Przypomnienia na czas"
               description={
                 exactAlarmsAllowed
-                  ? "Włączone — przypomnienia przychodzą o ustawionej porze"
-                  : "Wyłączone — przypomnienia mogą się spóźniać. Dotknij, aby zezwolić"
+                  ? "Włączone, przypomnienia przychodzą o ustawionej porze"
+                  : "Wyłączone, przypomnienia mogą się spóźniać. Dotknij, aby zezwolić"
               }
               trailing={
                 <Ionicons

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Polityka prywatności — RozliczKorki",
+  title: "Polityka prywatności | RozliczKorki",
 };
 
 export default function PrivacyPage() {
@@ -38,10 +38,10 @@ export default function PrivacyPage() {
           <p>Aby aplikacja mogła działać, przetwarzamy:</p>
           <List
             items={[
-              "Dane konta: imię, adres e-mail, hasło (zahaszowane) lub identyfikator logowania Google, oraz — jeśli włączysz logowanie kluczem dostępu — dane techniczne passkey (klucz publiczny, nie masz dostępu do klucza prywatnego, ten zostaje na Twoim urządzeniu).",
+              "Dane konta: imię, adres e-mail, hasło (zahaszowane) lub identyfikator logowania Google, oraz (jeśli włączysz logowanie kluczem dostępu) dane techniczne passkey (klucz publiczny, nie masz dostępu do klucza prywatnego, ten zostaje na Twoim urządzeniu).",
               "Dane Twoich uczniów, które sam(a) wprowadzasz: imię i nazwisko, adres, opcjonalny numer telefonu, typ zajęć i stawki godzinowe.",
               "Dane o zajęciach: terminy, czas trwania, status (zaplanowane/odbyte/odwołane), status i sposób płatności, notatki, które sam(a) dodajesz.",
-              "Dane techniczne: adres IP, informacje o urządzeniu i przeglądarce, identyfikator sesji — potrzebne do zalogowania i utrzymania bezpieczeństwa konta.",
+              "Dane techniczne: adres IP, informacje o urządzeniu i przeglądarce, identyfikator sesji, potrzebne do zalogowania i utrzymania bezpieczeństwa konta.",
               "Token powiadomień push (jeśli włączysz powiadomienia w aplikacji mobilnej), potrzebny wyłącznie do wysyłki przypomnień o zajęciach i płatnościach.",
             ]}
           />
@@ -50,8 +50,8 @@ export default function PrivacyPage() {
         <Section title="3. W jakim celu przetwarzamy dane">
           <List
             items={[
-              "Świadczenie usługi: prowadzenie kalendarza zajęć, rozliczeń i statystyk zarobków (podstawa: wykonanie umowy — art. 6 ust. 1 lit. b RODO).",
-              "Logowanie i bezpieczeństwo konta, w tym logowanie przez Google i kluczem dostępu (podstawa: wykonanie umowy oraz prawnie uzasadniony interes — art. 6 ust. 1 lit. f RODO).",
+              "Świadczenie usługi: prowadzenie kalendarza zajęć, rozliczeń i statystyk zarobków (podstawa: wykonanie umowy, art. 6 ust. 1 lit. b RODO).",
+              "Logowanie i bezpieczeństwo konta, w tym logowanie przez Google i kluczem dostępu (podstawa: wykonanie umowy oraz prawnie uzasadniony interes, art. 6 ust. 1 lit. f RODO).",
               "Wysyłka przypomnień push i e-mail o zbliżających się zajęciach lub zaległych płatnościach (podstawa: wykonanie umowy).",
               "Utrzymanie i rozwój aplikacji, w tym wykrywanie i naprawa błędów (podstawa: prawnie uzasadniony interes).",
             ]}
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         <Section title="4. Dane Twoich uczniów">
           <p>
             Dane uczniów (i ewentualnie ich rodziców/opiekunów) wprowadzasz Ty jako
-            korepetytor — w tym zakresie to Ty jesteś administratorem tych danych, a
+            korepetytor. W tym zakresie to Ty jesteś administratorem tych danych, a
             RozliczKorki pełni rolę podmiotu przetwarzającego, który przechowuje te dane
             wyłącznie po to, żeby wyświetlić Ci je z powrotem w aplikacji. Nie
             wykorzystujemy tych danych do żadnych własnych celów (marketingu, sprzedaży,
@@ -81,10 +81,10 @@ export default function PrivacyPage() {
         <Section title="6. Podmioty, którym powierzamy przetwarzanie danych">
           <List
             items={[
-              "Dostawca hostingu aplikacji webowej (Vercel) — przechowywanie i udostępnianie aplikacji.",
-              "Dostawca bazy danych (Neon, PostgreSQL) — przechowywanie danych konta, uczniów i zajęć.",
-              "Google — jeśli zdecydujesz się na logowanie przez Google (weryfikacja tożsamości).",
-              "Dostawca powiadomień push (Expo/Apple/Google) — wyłącznie w celu doręczenia powiadomień, jeśli je włączysz.",
+              "Dostawca hostingu aplikacji webowej (Vercel): przechowywanie i udostępnianie aplikacji.",
+              "Dostawca bazy danych (Neon, PostgreSQL): przechowywanie danych konta, uczniów i zajęć.",
+              "Google: jeśli zdecydujesz się na logowanie przez Google (weryfikacja tożsamości).",
+              "Dostawca powiadomień push (Expo/Apple/Google): wyłącznie w celu doręczenia powiadomień, jeśli je włączysz.",
             ]}
           />
         </Section>
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             Hasła przechowujemy w postaci zahaszowanej, połączenia z aplikacją są
             szyfrowane (HTTPS/TLS), a dostęp do bazy danych jest ograniczony wyłącznie do
             infrastruktury aplikacji. Logowanie kluczem dostępu (passkey) opiera się o
-            standard WebAuthn — Twój klucz prywatny nigdy nie opuszcza urządzenia.
+            standard WebAuthn. Twój klucz prywatny nigdy nie opuszcza urządzenia.
           </p>
         </Section>
 

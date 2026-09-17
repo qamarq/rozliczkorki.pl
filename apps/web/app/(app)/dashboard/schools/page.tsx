@@ -57,7 +57,7 @@ export default function SchoolsPage() {
           <School className="text-muted-foreground size-8" />
           <p className="font-medium">Nie masz jeszcze żadnej szkółki</p>
           <p className="text-muted-foreground text-sm">
-            Dodaj placówkę, a potem przypisz do niej uczniów — adres i rozliczenia pobiorą
+            Dodaj placówkę, a potem przypisz do niej uczniów. Adres i rozliczenia pobiorą
             się automatycznie.
           </p>
         </Card>
