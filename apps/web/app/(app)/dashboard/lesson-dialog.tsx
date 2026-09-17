@@ -208,6 +208,12 @@ export function LessonDialog({
   const paidAmountValue =
     paid && customAmount && paidAmount !== "" ? Number(paidAmount) : null;
 
+  function onPaidChange(value: boolean) {
+    setPaid(value);
+    const endsAt = new Date(`${dateStr}T${timeStr}`).getTime() + durationMinutes * 60_000;
+    if (value && status === "scheduled" && endsAt <= Date.now()) setStatus("completed");
+  }
+
   function performUpdate(applyToFuture: boolean) {
     if (!editing) return;
     const startsAt = new Date(`${dateStr}T${timeStr}`).toISOString();
@@ -238,7 +244,9 @@ export function LessonDialog({
     }
 
     if (editing) {
-      if (editing.recurringRuleId) {
+      const recurringFieldsChanged =
+        prorate !== editing.prorate || durationMinutes !== editing.durationMinutes;
+      if (editing.recurringRuleId && recurringFieldsChanged) {
         setConfirmKind("update");
         return;
       }
@@ -445,7 +453,7 @@ export function LessonDialog({
 
             <div className="flex items-center justify-between rounded-lg border p-3">
               <Label htmlFor="paid">Opłacone</Label>
-              <Switch id="paid" checked={paid} onCheckedChange={setPaid} />
+              <Switch id="paid" checked={paid} onCheckedChange={onPaidChange} />
             </div>
 
             {paid && (

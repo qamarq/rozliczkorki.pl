@@ -128,6 +128,14 @@ function LessonDetailsContent({
     onError: (e) => alert("Błąd", e.message),
   });
 
+  function onPaidChange(value: boolean) {
+    setPaid(value);
+    if (!lesson) return;
+    const endsAt =
+      new Date(lesson.startsAt).getTime() + Number(durationMinutes || 0) * 60_000;
+    if (value && status === "scheduled" && endsAt <= Date.now()) setStatus("completed");
+  }
+
   function performUpdate(applyToFuture: boolean) {
     if (!lesson) return;
     const trimmedNotes = notes.trim();
@@ -243,7 +251,7 @@ function LessonDetailsContent({
 
       <View style={styles.switchRow}>
         <Text style={styles.label}>Opłacone</Text>
-        <Switch value={paid} onValueChange={setPaid} />
+        <Switch value={paid} onValueChange={onPaidChange} />
       </View>
       {carry !== 0 && (
         <Text style={styles.hint}>
