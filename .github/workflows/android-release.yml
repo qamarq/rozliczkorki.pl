@@ -10,7 +10,7 @@ concurrency:
 jobs:
   release:
     name: Build AAB and upload to Play (internal)
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
       # Play requires a unique, increasing versionCode; offset keeps it above the manually released 11.
@@ -88,7 +88,7 @@ jobs:
       - name: Build release AAB
         working-directory: apps/native
         run: |
-          (while sleep 60; do echo "[resources] $(memory_pressure | tail -1), swap $(sysctl -n vm.swapusage | awk '{print $6}'), disk free $(df -h / | awk 'NR==2{print $4}')"; done) &
+          (while sleep 60; do echo "[resources] $(free -h | awk 'NR==2{print "mem used "$3" of "$2}'), disk free $(df -h / | awk 'NR==2{print $4}')"; done) &
           bash scripts/build-android-release.sh
           ccache -s
 
