@@ -53,6 +53,57 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+  migrations:
+    name: Migrations and web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: rozliczkorki
+          POSTGRES_PASSWORD: rozliczkorki
+          POSTGRES_DB: rozliczkorki
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rozliczkorki"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://rozliczkorki:rozliczkorki@localhost:5432/rozliczkorki
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations to an empty database
+        run: pnpm --filter @repo/db db:migrate:deploy
+
+      - name: Apply migrations again to prove they are idempotent
+        run: pnpm --filter @repo/db db:migrate:deploy
+
+      - name: Check the schema matches the migrations
+        run: |
+          pnpm --filter @repo/db exec drizzle-kit generate
+          if [ -n "$(git status --porcelain packages/db/drizzle)" ]; then
+            echo "::error::schema.ts drifted from the migrations. Run 'pnpm --filter @repo/db db:generate' and commit the result."
+            git status --porcelain packages/db/drizzle
+            exit 1
+          fi
+
+      - name: Build web
+        run: pnpm --filter web build
+
   changes:
     name: Detect changes
     if: github.event_name == 'push'
@@ -86,9 +137,9 @@ jobs:
 
   web:
     name: Web
-    needs: [check, changes]
+    needs: [check, migrations, changes]
     if: >-
-      always() && needs.check.result == 'success' &&
+      always() && needs.check.result == 'success' && needs.migrations.result == 'success' &&
       (needs.changes.outputs.web == 'true' || (github.event_name == 'workflow_dispatch' && inputs.web))
     uses: ./.github/workflows/web-deploy.yml
     with:
