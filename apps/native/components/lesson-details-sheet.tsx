@@ -221,7 +221,9 @@ function LessonDetailsContent({
   function onSave() {
     if (!lesson) return;
     const recurringFieldsChanged =
-      prorate !== lesson.prorate || Number(durationMinutes) !== lesson.durationMinutes;
+      prorate !== lesson.prorate ||
+      mode !== lesson.mode ||
+      Number(durationMinutes) !== lesson.durationMinutes;
     if (lesson.recurringRuleId && recurringFieldsChanged) {
       alert(
         "Zapisać zmiany?",

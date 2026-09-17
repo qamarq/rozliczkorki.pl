@@ -56,6 +56,7 @@ function StudentForm({
     utils.students.list.invalidate();
     if (studentId) utils.students.byId.invalidate({ id: studentId });
     utils.lessons.range.invalidate();
+    utils.recurring.list.invalidate();
     utils.stats.summary.invalidate();
   }
 

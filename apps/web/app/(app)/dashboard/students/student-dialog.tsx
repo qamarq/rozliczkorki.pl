@@ -82,6 +82,10 @@ export function StudentDialog({
   const invalidate = () => {
     utils.students.list.invalidate();
     utils.students.byId.invalidate();
+    utils.lessons.range.invalidate();
+    utils.recurring.list.invalidate();
+    utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
   };
 
   const createStudent = trpc.students.create.useMutation({

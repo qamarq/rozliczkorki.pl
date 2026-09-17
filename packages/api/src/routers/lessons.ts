@@ -1,4 +1,4 @@
-import { lessons, students, studentRates } from "@repo/db";
+import { lessons, recurringRules, students, studentRates } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, gt, gte, inArray, lte, ne } from "drizzle-orm";
 import { z } from "zod";
@@ -178,6 +178,13 @@ export const lessonsRouter = router({
         .returning();
 
       if (applyToFuture && existing.recurringRuleId) {
+        if (rest.mode !== undefined && rest.mode !== existing.mode) {
+          await ctx.db
+            .update(recurringRules)
+            .set({ mode: rest.mode })
+            .where(eq(recurringRules.id, existing.recurringRuleId));
+        }
+
         const futureLessons = await ctx.db
           .select()
           .from(lessons)
@@ -208,6 +215,7 @@ export const lessonsRouter = router({
                 ? { durationMinutes: rest.durationMinutes }
                 : {}),
               ...(rest.prorate !== undefined ? { prorate: rest.prorate } : {}),
+              ...(rest.mode !== undefined ? { mode: rest.mode } : {}),
               ...(rest.paymentMethod !== undefined
                 ? { paymentMethod: rest.paymentMethod }
                 : {}),

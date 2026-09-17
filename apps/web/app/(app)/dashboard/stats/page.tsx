@@ -1,17 +1,9 @@
 "use client";
 
-import { endOfMonth, format, startOfMonth, subMonths } from "date-fns";
-import { pl } from "date-fns/locale";
-import { CalendarCheck2, CircleSlash2, PiggyBank, Wallet } from "lucide-react";
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ArrowDownRight, ArrowUpRight, Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -20,184 +12,471 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { pluralize } from "@/lib/lessons";
 import { trpc } from "@/lib/trpc/client";
 import { cn, formatPLN } from "@/lib/utils";
+import { TrendChart } from "./charts";
+import {
+  buildBuckets,
+  granularityFor,
+  type PresetId,
+  presetRange,
+  previousRange,
+  type Range,
+} from "./range";
+import { RangePicker } from "./range-picker";
 
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => {
-  const date = subMonths(new Date(), i);
-  return {
-    value: format(date, "yyyy-MM"),
-    label: format(date, "LLLL yyyy", { locale: pl }),
-  };
-});
+type Metric = "revenue" | "lessons" | "hours";
+
+const METRICS: { id: Metric; label: string }[] = [
+  { id: "revenue", label: "Przychód" },
+  { id: "lessons", label: "Zajęcia" },
+  { id: "hours", label: "Godziny" },
+];
+
+const GRANULARITY_LABEL = {
+  day: "dziennie",
+  week: "tygodniowo",
+  month: "miesięcznie",
+} as const;
+
+const shortPLN = (value: number) =>
+  Math.abs(value) >= 1000
+    ? `${Math.round(value / 100) / 10} tys.`
+    : String(Math.round(value));
 
 export default function StatsPage() {
-  const [month, setMonth] = useState(MONTH_OPTIONS[0]!.value);
-  const monthDate = new Date(`${month}-01`);
-  const from = startOfMonth(monthDate);
-  const to = endOfMonth(monthDate);
+  const now = useMemo(() => new Date(), []);
+  const [preset, setPreset] = useState<PresetId | null>("this-month");
+  const [range, setRange] = useState<Range>(() => presetRange("this-month", now));
+  const [metric, setMetric] = useState<Metric>("revenue");
 
-  const { data } = trpc.stats.summary.useQuery({
-    from: from.toISOString(),
-    to: to.toISOString(),
+  const granularity = granularityFor(range);
+  const buckets = useMemo(() => buildBuckets(range, granularity), [range, granularity]);
+  const compare = useMemo(() => {
+    const previous = previousRange(range);
+    return { from: previous.from.toISOString(), to: previous.to.toISOString() };
+  }, [range]);
+
+  const { data, isLoading } = trpc.stats.analytics.useQuery({
+    buckets,
+    compare,
+    now: now.toISOString(),
   });
 
-  const collectionRate =
-    data && data.theoretical > 0
-      ? Math.min(100, Math.round((data.paid / data.theoretical) * 100))
-      : 0;
+  const totals = data?.totals;
+  const series = data?.series ?? [];
+  const hasForecast = series.some((s) => !s.isPast);
+  const lastPast = series.reduce((acc, s, i) => (s.isPast ? i : acc), -1);
+
+  const metricValue = (bucket: (typeof series)[number]) =>
+    metric === "revenue"
+      ? bucket.revenue
+      : metric === "lessons"
+        ? bucket.lessons
+        : bucket.hours;
+
+  const points = series.map((bucket, i) => ({
+    label: bucket.label,
+    actual: bucket.isPast ? metricValue(bucket) : null,
+    forecast:
+      hasForecast && (!bucket.isPast || i === lastPast) ? metricValue(bucket) : null,
+  }));
+
+  const formatMetric = (value: number) =>
+    metric === "revenue"
+      ? formatPLN(value)
+      : metric === "hours"
+        ? `${Math.round(value * 10) / 10} h`
+        : String(value);
+  const formatAxis = (value: number) =>
+    metric === "revenue" ? shortPLN(value) : String(Math.round(value));
+
+  const revenueDelta = delta(totals?.billed, data?.compare?.billed);
+  const bar = [
+    { key: "paid", label: "Opłacone", value: totals?.paid ?? 0, className: "bg-success" },
+    {
+      key: "unpaid",
+      label: "Zaległe",
+      value: totals?.unpaid ?? 0,
+      className: "bg-warning",
+    },
+    {
+      key: "planned",
+      label: "Zaplanowane",
+      value: (totals?.planned ?? 0) + (totals?.projected ?? 0),
+      className: "bg-primary-foreground/40",
+    },
+  ];
+  const barTotal = bar.reduce((sum, part) => sum + part.value, 0) || 1;
+  const lessonsTotal = (totals?.lessonCount ?? 0) + (totals?.projectedLessons ?? 0);
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold">Finanse i rozliczenia</h1>
+          <h1 className="text-lg font-semibold">Statystyki</h1>
           <p className="text-muted-foreground text-sm">
-            Przychody, zaległości i podsumowanie miesiąca.
+            Przychody, obłożenie i prognoza — dla dowolnego zakresu dat.
           </p>
         </div>
-        <Select value={month} onValueChange={setMonth}>
-          <SelectTrigger className="w-48 capitalize">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTH_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="capitalize">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <FinanceCard
-          icon={PiggyBank}
-          label="Potencjalny przychód"
-          value={formatPLN(data?.theoretical ?? 0)}
-          tone="primary"
-        />
-        <FinanceCard
-          icon={Wallet}
-          label="Zrealizowany przychód"
-          value={formatPLN(data?.paid ?? 0)}
-          tone="success"
-          sub={`Skuteczność ściągalności ${collectionRate}%`}
-        />
-        <FinanceCard
-          icon={CalendarCheck2}
-          label="Do zapłaty"
-          value={formatPLN(data?.unpaid ?? 0)}
-          tone="warning"
-        />
-        <FinanceCard
-          icon={CircleSlash2}
-          label="Odwołane zajęcia"
-          value={String(data?.cancelledCount ?? 0)}
-          tone="destructive"
+        <RangePicker
+          range={range}
+          preset={preset}
+          now={now}
+          onChange={(next, nextPreset) => {
+            setRange(next);
+            setPreset(nextPreset);
+          }}
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-muted-foreground text-sm font-medium">
-            Zajęcia w miesiącu
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-6 text-sm">
-          <span>
-            Odbyte <b className="tabular-nums">{data?.completedCount ?? 0}</b>
-          </span>
-          <span>
-            Zaplanowane <b className="tabular-nums">{data?.scheduledCount ?? 0}</b>
-          </span>
-          <span>
-            Odwołane <b className="tabular-nums">{data?.cancelledCount ?? 0}</b>
-          </span>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-muted-foreground text-sm font-medium">
-            Rozliczenia wg ucznia
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="pl-4">Uczeń</TableHead>
-                <TableHead className="text-right">Teoretycznie</TableHead>
-                <TableHead className="text-right">Opłacone</TableHead>
-                <TableHead className="pr-4 text-right">Do zapłaty</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.byStudent.map((row) => (
-                <TableRow key={row.studentId}>
-                  <TableCell className="pl-4 font-medium">{row.name}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatPLN(row.theoretical)}
-                  </TableCell>
-                  <TableCell className="text-success text-right tabular-nums">
-                    {formatPLN(row.paid)}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "pr-4 text-right tabular-nums",
-                      row.unpaid > 0 && "text-warning",
+      <div className="grid items-stretch gap-4 lg:grid-cols-12">
+        <Card className="bg-primary text-primary-foreground justify-between gap-6 p-5 lg:col-span-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-primary-foreground/70 text-xs font-semibold uppercase tracking-wide">
+              Przychód w okresie
+            </span>
+            {isLoading ? (
+              <Skeleton className="bg-primary-foreground/20 h-9 w-40" />
+            ) : (
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="text-3xl font-semibold tabular-nums">
+                  {formatPLN(totals?.expected ?? 0)}
+                </span>
+                {revenueDelta !== null && (
+                  <span className="flex items-center gap-0.5 text-sm font-medium">
+                    {revenueDelta >= 0 ? (
+                      <ArrowUpRight className="size-4" />
+                    ) : (
+                      <ArrowDownRight className="size-4" />
                     )}
-                  >
-                    {formatPLN(row.unpaid)}
-                  </TableCell>
-                </TableRow>
+                    {Math.abs(revenueDelta)}%
+                  </span>
+                )}
+              </div>
+            )}
+            <span className="text-primary-foreground/70 text-xs">
+              {(totals?.projected ?? 0) > 0
+                ? `w tym ${formatPLN(totals?.projected ?? 0)} prognozy z zajęć cyklicznych`
+                : "w porównaniu z poprzednim okresem tej samej długości"}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="bg-primary-foreground/15 flex h-2 gap-0.5 overflow-hidden rounded-full">
+              {bar.map((part) => (
+                <span
+                  key={part.key}
+                  className={cn(
+                    "first:rounded-l-full last:rounded-r-full",
+                    part.className,
+                  )}
+                  style={{ width: `${(part.value / barTotal) * 100}%` }}
+                />
               ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {bar.map((part) => (
+                <div key={part.key} className="flex items-center gap-2 text-sm">
+                  <span className={cn("size-2 rounded-full", part.className)} />
+                  <span className="text-primary-foreground/70">{part.label}</span>
+                  <span className="ml-auto font-medium tabular-nums">
+                    {formatPLN(part.value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <Card className="gap-4 p-5 lg:col-span-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col">
+              <span className="font-semibold">Trend</span>
+              <span className="text-muted-foreground text-xs">
+                {GRANULARITY_LABEL[granularity]}
+                {hasForecast && " · przerywana linia to prognoza"}
+              </span>
+            </div>
+            <Tabs value={metric} onValueChange={(value) => setMetric(value as Metric)}>
+              <TabsList>
+                {METRICS.map((item) => (
+                  <TabsTrigger key={item.id} value={item.id}>
+                    {item.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+          {isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <TrendChart
+              data={points}
+              formatValue={formatMetric}
+              formatAxis={formatAxis}
+            />
+          )}
+        </Card>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Tile
+          label="Zajęcia"
+          value={String(lessonsTotal)}
+          delta={delta(totals?.lessonCount, data?.compare?.lessonCount)}
+          sub={`${totals?.completed ?? 0} odbytych · ${totals?.cancelled ?? 0} odwołanych (${totals?.cancellationRate ?? 0}%)`}
+        />
+        <Tile
+          label="Godziny"
+          value={`${totals?.hours ?? 0} h`}
+          delta={delta(totals?.hours, data?.compare?.hours)}
+          sub={`${pluralize(totals?.activeStudents ?? 0, "uczeń", "uczniów", "uczniów")} w okresie`}
+        />
+        <Tile
+          label="Stawka efektywna"
+          value={`${formatPLN(totals?.effectiveHourlyRate ?? 0)}/h`}
+          delta={delta(totals?.effectiveHourlyRate, data?.compare?.effectiveHourlyRate)}
+          sub="Przychód podzielony przez godziny"
+        />
+        <Tile
+          label="Ściągalność"
+          value={`${totals?.collectionRate ?? 0}%`}
+          sub={`Zaległości ogółem ${formatPLN(data?.debt.outstanding ?? 0)}`}
+        />
+      </div>
+
+      <div className="grid items-start gap-4 lg:grid-cols-12">
+        <Card className="gap-0 p-0 lg:col-span-7">
+          <div className="flex items-center justify-between gap-2 px-5 py-4">
+            <span className="font-semibold">Uczniowie</span>
+            <span className="text-muted-foreground text-xs">
+              Rozliczenie w wybranym okresie
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-5">Uczeń</TableHead>
+                  <TableHead className="text-right">Zajęcia</TableHead>
+                  <TableHead className="text-right">Przychód</TableHead>
+                  <TableHead className="w-40 pr-5">Rozliczenie</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(data?.byStudent ?? []).map((student) => {
+                  const ratio =
+                    student.billed > 0
+                      ? Math.min(100, Math.round((student.paid / student.billed) * 100))
+                      : 0;
+                  return (
+                    <TableRow key={student.studentId}>
+                      <TableCell className="pl-5">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{student.name}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {student.hours} h{student.type === "school" && " · szkoła"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {student.lessonCount}
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {formatPLN(student.billed)}
+                      </TableCell>
+                      <TableCell className="pr-5">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
+                            <div
+                              className={cn(
+                                "h-full rounded-full",
+                                ratio === 100 ? "bg-success" : "bg-warning",
+                              )}
+                              style={{ width: `${ratio}%` }}
+                            />
+                          </div>
+                          <span className="text-muted-foreground w-9 text-right text-xs tabular-nums">
+                            {ratio}%
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {!isLoading && (data?.byStudent ?? []).length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-muted-foreground py-10 text-center"
+                    >
+                      Brak zajęć w tym zakresie
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+
+        <div className="flex flex-col gap-4 lg:col-span-5">
+          <Card className="gap-3 p-5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="font-semibold">Zaległości</span>
+              <span className="text-warning font-semibold tabular-nums">
+                {formatPLN(data?.debt.outstanding ?? 0)}
+              </span>
+            </div>
+            {(data?.debt.debtors ?? []).length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                Wszystko rozliczone — brak długów.
+              </p>
+            ) : (
+              <div className="flex flex-col">
+                {(data?.debt.debtors ?? []).slice(0, 6).map((debtor) => (
+                  <div
+                    key={debtor.studentId}
+                    className="flex items-center justify-between gap-2 border-b py-2 text-sm last:border-0"
+                  >
+                    <span>{debtor.name}</span>
+                    <span className="font-medium tabular-nums">
+                      {formatPLN(debtor.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+              <Info className="size-3.5 shrink-0" />
+              Ze wszystkich zajęć, które już się odbyły — nie tylko z tego zakresu.
+            </p>
+          </Card>
+
+          <Card className="gap-4 p-5">
+            <span className="font-semibold">Struktura okresu</span>
+            <Meter
+              title="Tryb zajęć"
+              label="Stacjonarne"
+              secondaryLabel="Online"
+              value={data?.splits.mode.in_person ?? 0}
+              secondary={data?.splits.mode.remote ?? 0}
+              format={(v) => pluralize(v, "zajęcie", "zajęcia", "zajęć")}
+            />
+            <Meter
+              title="Płatności"
+              label="Gotówka"
+              secondaryLabel="Przelew"
+              value={data?.splits.payment.cash ?? 0}
+              secondary={data?.splits.payment.transfer ?? 0}
+              format={formatPLN}
+              note={
+                (data?.splits.payment.unknown ?? 0) > 0
+                  ? `Bez formy płatności: ${formatPLN(data?.splits.payment.unknown ?? 0)}`
+                  : undefined
+              }
+            />
+            <Meter
+              title="Typ ucznia"
+              label="Prywatni"
+              secondaryLabel="Szkoła"
+              value={data?.splits.type.private ?? 0}
+              secondary={data?.splits.type.school ?? 0}
+              format={formatPLN}
+            />
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
-function FinanceCard({
-  icon: Icon,
+function delta(current?: number, previous?: number) {
+  if (current == null || previous == null || previous === 0) return null;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+function Tile({
   label,
   value,
-  tone,
   sub,
+  delta: change,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  tone: "primary" | "success" | "warning" | "destructive";
-  sub?: string;
+  sub: string;
+  delta?: number | null;
 }) {
-  const toneClasses = {
-    primary: "bg-primary/10 text-primary",
-    success: "bg-success/10 text-success",
-    warning: "bg-warning/10 text-warning",
-    destructive: "bg-destructive/10 text-destructive",
-  }[tone];
-
   return (
-    <Card className="gap-2 p-4">
-      <div className="flex items-center justify-between">
+    <Card className="gap-1 p-4">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
           {label}
         </span>
-        <span
-          className={cn(
-            "flex size-7 items-center justify-center rounded-md",
-            toneClasses,
-          )}
-        >
-          <Icon className="size-3.5" />
-        </span>
+        {change != null && (
+          <span
+            className={cn(
+              "flex items-center gap-0.5 text-xs font-medium",
+              change >= 0 ? "text-success" : "text-destructive",
+            )}
+          >
+            {change >= 0 ? (
+              <ArrowUpRight className="size-3.5" />
+            ) : (
+              <ArrowDownRight className="size-3.5" />
+            )}
+            {Math.abs(change)}%
+          </span>
+        )}
       </div>
       <span className="text-2xl font-semibold tabular-nums">{value}</span>
-      {sub && <span className="text-muted-foreground text-xs">{sub}</span>}
+      <span className="text-muted-foreground truncate text-xs">{sub}</span>
     </Card>
+  );
+}
+
+function Meter({
+  title,
+  label,
+  secondaryLabel,
+  value,
+  secondary,
+  format,
+  note,
+}: {
+  title: string;
+  label: string;
+  secondaryLabel: string;
+  value: number;
+  secondary: number;
+  format: (value: number) => string;
+  note?: string;
+}) {
+  const total = value + secondary;
+  const ratio = total > 0 ? Math.round((value / total) * 100) : 0;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-muted-foreground text-xs font-medium">{title}</span>
+      <div className="flex h-1.5 overflow-hidden rounded-full">
+        <span className="bg-chart-1 h-full" style={{ width: `${ratio}%` }} />
+        <span className="bg-chart-5/30 h-full flex-1" />
+      </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+        <span className="flex items-center gap-1.5">
+          <span className="bg-chart-1 size-2 rounded-full" />
+          {label}
+          <span className="text-muted-foreground">{format(value)}</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="bg-chart-5/40 size-2 rounded-full" />
+          {secondaryLabel}
+          <span className="text-muted-foreground">{format(secondary)}</span>
+        </span>
+      </div>
+      {note && <span className="text-muted-foreground text-xs">{note}</span>}
+    </div>
   );
 }
