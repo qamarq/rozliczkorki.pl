@@ -53,6 +53,7 @@ export const studentsRouter = router({
         address: z.string().optional(),
         phone: z.string().optional(),
         type: z.enum(["private", "school"]).default("private"),
+        defaultMode: z.enum(["in_person", "remote"]).default("in_person"),
         hourlyRate: z.coerce.number().positive(),
         currency: z.string().default("PLN"),
         effectiveFrom: z.string(),
@@ -67,6 +68,7 @@ export const studentsRouter = router({
           address: input.address,
           phone: input.phone,
           type: input.type,
+          defaultMode: input.defaultMode,
         })
         .returning();
 
@@ -92,6 +94,7 @@ export const studentsRouter = router({
         address: z.string().nullable().optional(),
         phone: z.string().nullable().optional(),
         type: z.enum(["private", "school"]).optional(),
+        defaultMode: z.enum(["in_person", "remote"]).optional(),
         archived: z.boolean().optional(),
       }),
     )

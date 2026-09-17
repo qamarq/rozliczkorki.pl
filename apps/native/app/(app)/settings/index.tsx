@@ -8,6 +8,7 @@ import {
   MenuRow,
   OutlineButton,
   ScreenBackground,
+  ScreenHeader,
   SectionLabel,
 } from "@/components/ui";
 import { authClient, useSession } from "@/lib/auth-client";
@@ -35,9 +36,8 @@ export default function SettingsScreen() {
 
   return (
     <ScreenBackground syncStatus>
+      <ScreenHeader title="Ustawienia" />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Ustawienia</Text>
-
         <Card style={styles.profileCard}>
           {session?.user?.image ? (
             <Image source={{ uri: session.user.image }} style={styles.avatar} />
@@ -133,7 +133,6 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: 20, gap: 18, paddingBottom: 40 },
-  title: { fontSize: 24, fontWeight: "800", color: colors.text },
   profileCard: { flexDirection: "row", alignItems: "center", gap: 14 },
   avatar: { width: 52, height: 52, borderRadius: 26 },
   avatarFallback: {

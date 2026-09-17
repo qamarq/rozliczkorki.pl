@@ -208,6 +208,7 @@ export function WeekView({
                             backgroundColor: tone.bg,
                             borderLeftColor: tone.fg,
                           },
+                          !!lesson.vacationId && { opacity: 0.6 },
                         ]}
                       >
                         <Text style={styles.blockTime} numberOfLines={1}>

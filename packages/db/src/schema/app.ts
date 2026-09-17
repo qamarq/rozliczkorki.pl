@@ -18,6 +18,7 @@ export const lessonStatusEnum = pgEnum("lesson_status", [
   "cancelled",
 ]);
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "transfer"]);
+export const lessonModeEnum = pgEnum("lesson_mode", ["in_person", "remote"]);
 
 export const students = pgTable("students", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -28,6 +29,7 @@ export const students = pgTable("students", {
   address: text("address"),
   phone: text("phone"),
   type: studentTypeEnum("type").notNull().default("private"),
+  defaultMode: lessonModeEnum("default_mode").notNull().default("in_person"),
   archived: boolean("archived").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -57,7 +59,21 @@ export const recurringRules = pgTable("recurring_rules", {
   durationMinutes: integer("duration_minutes").notNull(),
   startDate: date("start_date", { mode: "string" }).notNull(),
   endDate: date("end_date", { mode: "string" }),
+  mode: lessonModeEnum("mode").notNull().default("in_person"),
   active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const vacations = pgTable("vacations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  startDate: date("start_date", { mode: "string" }).notNull(),
+  endDate: date("end_date", { mode: "string" }).notNull(),
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at").notNull(),
+  note: text("note"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -74,6 +90,11 @@ export const lessons = pgTable("lessons", {
   }),
   startsAt: timestamp("starts_at").notNull(),
   durationMinutes: integer("duration_minutes").notNull(),
+  mode: lessonModeEnum("mode").notNull().default("in_person"),
+  vacationId: uuid("vacation_id").references(() => vacations.id, {
+    onDelete: "set null",
+  }),
+  studentNotified: boolean("student_notified").notNull().default(false),
   prorate: boolean("prorate").notNull().default(false),
   status: lessonStatusEnum("status").notNull().default("scheduled"),
   paid: boolean("paid").notNull().default(false),

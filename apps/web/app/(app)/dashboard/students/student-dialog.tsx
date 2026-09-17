@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { CalendarRange } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
 import { trpc } from "@/lib/trpc/client";
 import { formatPLN } from "@/lib/utils";
 
@@ -46,6 +48,7 @@ export function StudentDialog({
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [type, setType] = useState<StudentType>("private");
+  const [defaultMode, setDefaultMode] = useState<LessonMode>("in_person");
   const [archived, setArchived] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(80);
   const [effectiveFrom, setEffectiveFrom] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -60,12 +63,14 @@ export function StudentDialog({
       setAddress(student.address ?? "");
       setPhone(student.phone ?? "");
       setType(student.type);
+      setDefaultMode(student.defaultMode);
       setArchived(student.archived);
     } else {
       setName("");
       setAddress("");
       setPhone("");
       setType("private");
+      setDefaultMode("in_person");
       setArchived(false);
       setHourlyRate(80);
       setEffectiveFrom(format(new Date(), "yyyy-MM-dd"));
@@ -117,7 +122,15 @@ export function StudentDialog({
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (studentId) {
-      updateStudent.mutate({ id: studentId, name, address, phone, type, archived });
+      updateStudent.mutate({
+        id: studentId,
+        name,
+        address,
+        phone,
+        type,
+        defaultMode,
+        archived,
+      });
       onOpenChange(false);
       return;
     }
@@ -126,6 +139,7 @@ export function StudentDialog({
       address,
       phone,
       type,
+      defaultMode,
       hourlyRate,
       effectiveFrom,
     });
@@ -158,16 +172,22 @@ export function StudentDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="address">Adres</Label>
-              <Input
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="np. ul. Kwiatowa 5, Warszawa"
-              />
-            </div>
+          <div
+            className={
+              defaultMode === "remote" ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"
+            }
+          >
+            {defaultMode !== "remote" && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="address">Adres</Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="np. ul. Kwiatowa 5, Warszawa"
+                />
+              </div>
+            )}
             <div className="flex flex-col gap-2">
               <Label htmlFor="phone">Telefon (opcjonalnie)</Label>
               <Input
@@ -180,18 +200,45 @@ export function StudentDialog({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>Typ zajęć</Label>
-            <Select value={type} onValueChange={(v) => setType(v as StudentType)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="private">Korki prywatne</SelectItem>
-                <SelectItem value="school">Zajęcia w szkółce</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <Label>Typ zajęć</Label>
+              <Select value={type} onValueChange={(v) => setType(v as StudentType)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="private">Korki prywatne</SelectItem>
+                  <SelectItem value="school">Zajęcia w szkółce</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Domyślna forma</Label>
+              <Select
+                value={defaultMode}
+                onValueChange={(v) => setDefaultMode(v as LessonMode)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["in_person", "remote"] as const).map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {LESSON_MODE_LABELS[m]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {studentId && (
+            <div className="bg-primary/10 text-primary flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
+              <CalendarRange className="size-3.5" />
+              Wydłużenie lub skrócenie cyklu zajęć: kliknij zajęcia w kalendarzu
+            </div>
+          )}
 
           {!studentId && (
             <div className="grid grid-cols-2 gap-3">

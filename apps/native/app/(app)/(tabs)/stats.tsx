@@ -3,6 +3,7 @@ import { pl } from "date-fns/locale";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { TabHeader } from "@/components/tab-header";
 import { Card, ScreenBackground } from "@/components/ui";
 import { formatPLN } from "@/lib/format";
 import { colors, gradients, radius } from "@/lib/theme";
@@ -21,7 +22,7 @@ export default function StatsScreen() {
   return (
     <ScreenBackground syncStatus>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.header}>Statystyki</Text>
+        <TabHeader title="Statystyki" />
 
         <View style={styles.monthRow}>
           <Pressable onPress={() => setMonth((m) => subMonths(m, 1))} hitSlop={12}>
@@ -93,7 +94,6 @@ function StatCard({
 
 const styles = StyleSheet.create({
   content: { padding: 20, gap: 14, paddingBottom: 40 },
-  header: { fontSize: 24, fontWeight: "800", color: colors.text },
   monthRow: {
     flexDirection: "row",
     alignItems: "center",

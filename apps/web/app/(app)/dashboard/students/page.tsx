@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { MapPin, Phone, Plus, Search, Users } from "lucide-react";
+import { MapPin, Pencil, Phone, Plus, Search, Users, Video } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,31 +103,39 @@ export default function StudentsPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((student) => (
-          <Card
-            key={student.id}
-            className={cn(
-              "hover:border-primary/50 cursor-pointer transition-colors",
-              student.archived && "opacity-50",
-            )}
-            onClick={() => openEdit(student.id)}
-            role="button"
-          >
+          <Card key={student.id} className={cn(student.archived && "opacity-50")}>
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base">{student.name}</CardTitle>
-                <Badge
-                  className={
-                    student.type === "private"
-                      ? "bg-primary/10 text-primary border-primary/20"
-                      : "bg-accent text-accent-foreground"
-                  }
-                >
-                  {student.type === "private" ? "korki" : "szkółka"}
-                </Badge>
+                <div className="flex items-center gap-1.5">
+                  <Badge
+                    className={
+                      student.type === "private"
+                        ? "bg-primary/10 text-primary border-primary/20"
+                        : "bg-accent text-accent-foreground"
+                    }
+                  >
+                    {student.type === "private" ? "korki" : "szkółka"}
+                  </Badge>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label="Edytuj ucznia"
+                    onClick={() => openEdit(student.id)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="text-muted-foreground flex flex-col gap-1.5 text-sm">
-              {student.address && (
+              {student.defaultMode === "remote" && (
+                <span className="flex items-center gap-1.5">
+                  <Video className="size-3.5 shrink-0" />
+                  Online
+                </span>
+              )}
+              {student.defaultMode !== "remote" && student.address && (
                 <span className="flex items-center gap-1.5">
                   <MapPin className="size-3.5 shrink-0" />
                   {student.address}
@@ -136,7 +144,6 @@ export default function StudentsPage() {
               {student.phone && (
                 <a
                   href={`tel:${student.phone}`}
-                  onClick={(e) => e.stopPropagation()}
                   className="hover:text-foreground flex items-center gap-1.5"
                 >
                   <Phone className="size-3.5 shrink-0" />

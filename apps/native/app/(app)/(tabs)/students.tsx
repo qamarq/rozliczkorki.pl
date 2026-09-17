@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, OutlineButton, ScreenBackground } from "@/components/ui";
 import { RefreshableList } from "@/components/refreshable-list";
 import { openStudentSheet } from "@/components/student-sheet";
+import { TabHeader } from "@/components/tab-header";
 import { formatPLN } from "@/lib/format";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
@@ -15,7 +16,7 @@ export default function StudentsScreen() {
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
           <View key="head" style={styles.head}>
-            <Text style={styles.header}>Uczniowie</Text>
+            <TabHeader title="Uczniowie" />
             <OutlineButton label="+ Dodaj ucznia" onPress={() => openStudentSheet()} />
           </View>
           {students.length === 0 && !isLoading ? (
@@ -68,7 +69,6 @@ function RateSummary({ studentId }: { studentId: string }) {
 }
 
 const styles = StyleSheet.create({
-  header: { fontSize: 24, fontWeight: "800", color: colors.text },
   head: { padding: 20, paddingBottom: 8, gap: 16 },
   cardWrap: { paddingHorizontal: 20 },
   card: { marginBottom: 8, gap: 4 },

@@ -43,6 +43,13 @@
       "when": 1789499846264,
       "tag": "0005_blushing_falcon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789661480031,
+      "tag": "0006_vacations_and_lesson_mode",
+      "breakpoints": true
     }
   ]
 }
