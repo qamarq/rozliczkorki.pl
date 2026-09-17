@@ -1,3 +1,6 @@
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
+
 export type LessonMode = "in_person" | "remote";
 
 export const LESSON_MODE_LABELS: Record<LessonMode, string> = {
@@ -16,4 +19,11 @@ export function localDayRange(startDate: string, endDate: string) {
     from: new Date(`${startDate}T00:00:00`).toISOString(),
     to: new Date(`${endDate}T23:59:59.999`).toISOString(),
   };
+}
+
+export function formatVacationRange(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00`);
+  const end = new Date(`${endDate}T00:00`);
+  if (startDate === endDate) return format(start, "d MMM yyyy", { locale: pl });
+  return `${format(start, "d MMM", { locale: pl })} – ${format(end, "d MMM yyyy", { locale: pl })}`;
 }

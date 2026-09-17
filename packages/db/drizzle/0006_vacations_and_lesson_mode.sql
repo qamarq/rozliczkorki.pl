@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS "vacations" (
 	"user_id" text NOT NULL,
 	"start_date" date NOT NULL,
 	"end_date" date NOT NULL,
+	"starts_at" timestamp NOT NULL,
+	"ends_at" timestamp NOT NULL,
 	"note" text,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );

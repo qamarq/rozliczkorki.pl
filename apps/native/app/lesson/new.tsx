@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { formatPLN } from "@/lib/format";
-import { LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
+import { formatVacationRange, LESSON_MODE_LABELS, type LessonMode } from "@/lib/lessons";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
@@ -34,6 +35,13 @@ export default function NewLessonScreen() {
   const [paidAmount, setPaidAmount] = useState("");
   const [recurring, setRecurring] = useState(false);
   const [recurringEndDate, setRecurringEndDate] = useState("");
+
+  const { data: vacationOverview } = trpc.vacations.overview.useQuery({
+    today: format(new Date(), "yyyy-MM-dd"),
+  });
+  const vacationOnDate = vacationOverview?.vacations.find(
+    (v) => v.startDate <= dateStr && dateStr <= v.endDate,
+  );
 
   const { data: selectedStudent } = trpc.students.byId.useQuery(
     { id: studentId ?? "" },
@@ -153,6 +161,17 @@ export default function NewLessonScreen() {
         value={new Date(`${dateStr}T${timeStr}`)}
         onChange={(date) => setTimeStr(format(date, "HH:mm"))}
       />
+      {vacationOnDate && (
+        <View style={styles.vacationPill}>
+          <Ionicons name="airplane-outline" size={14} color={colors.warning} />
+          <Text style={styles.vacationPillText}>
+            Masz wtedy urlop (
+            {formatVacationRange(vacationOnDate.startDate, vacationOnDate.endDate)}), ale
+            zajęcia dodadzą się normalnie
+          </Text>
+        </View>
+      )}
+
       <Input
         label="Czas trwania (minuty)"
         keyboardType="numeric"
@@ -251,6 +270,22 @@ export default function NewLessonScreen() {
 }
 
 const styles = StyleSheet.create({
+  vacationPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: colors.warningBg,
+  },
+  vacationPillText: {
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.warning,
+  },
   content: { padding: 20, gap: 14 },
   label: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
   hint: { fontSize: 12, color: colors.textFaint, marginTop: -6 },

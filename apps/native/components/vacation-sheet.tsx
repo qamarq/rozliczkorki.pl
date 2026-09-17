@@ -16,44 +16,74 @@ import { closeSheet, openSheet } from "@/lib/sheet";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
-export function openVacationSheet() {
-  openSheet(() => <VacationForm onClose={closeSheet} />);
+export type EditableVacation = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  note: string | null;
+};
+
+export function openVacationSheet(vacation?: EditableVacation) {
+  openSheet(() => <VacationForm vacation={vacation} onClose={closeSheet} />);
 }
 
-function VacationForm({ onClose }: { onClose: () => void }) {
+function VacationForm({
+  vacation,
+  onClose,
+}: {
+  vacation?: EditableVacation;
+  onClose: () => void;
+}) {
   const utils = trpc.useUtils();
   const today = format(new Date(), "yyyy-MM-dd");
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
-  const [note, setNote] = useState("");
+  const [startDate, setStartDate] = useState(vacation?.startDate ?? today);
+  const [endDate, setEndDate] = useState(vacation?.endDate ?? today);
+  const [note, setNote] = useState(vacation?.note ?? "");
   const [keepIds, setKeepIds] = useState<string[]>([]);
 
   const rangeInput = { startDate, endDate, ...localDayRange(startDate, endDate) };
-  const { data: affected = [], isFetching } = trpc.vacations.preview.useQuery(rangeInput);
+  const { data: preview, isFetching } = trpc.vacations.preview.useQuery({
+    ...rangeInput,
+    vacationId: vacation?.id,
+  });
+  const affected = preview?.toCancel ?? [];
+  const restoreCount = preview?.restoreCount ?? 0;
   const remoteLessons = affected.filter((l) => l.mode === "remote");
   const cancelCount = affected.filter((l) => !keepIds.includes(l.id)).length;
 
+  const onSaved = () => {
+    utils.vacations.overview.invalidate();
+    utils.lessons.range.invalidate();
+    utils.stats.summary.invalidate();
+    onClose();
+  };
+
   const createVacation = trpc.vacations.create.useMutation({
-    onSuccess: () => {
-      utils.vacations.overview.invalidate();
-      utils.lessons.range.invalidate();
-      utils.stats.summary.invalidate();
-      onClose();
-    },
+    onSuccess: onSaved,
+    onError: (e) => alert("Błąd", e.message),
+  });
+
+  const updateVacation = trpc.vacations.update.useMutation({
+    onSuccess: onSaved,
     onError: (e) => alert("Błąd", e.message),
   });
 
   function onSave() {
-    createVacation.mutate({
+    const payload = {
       ...rangeInput,
       note: note.trim() || undefined,
       keepLessonIds: keepIds.filter((id) => remoteLessons.some((l) => l.id === id)),
-    });
+    };
+    if (vacation) {
+      updateVacation.mutate({ ...payload, id: vacation.id });
+    } else {
+      createVacation.mutate(payload);
+    }
   }
 
   return (
     <View style={styles.content}>
-      <Text style={styles.title}>Nowy urlop</Text>
+      <Text style={styles.title}>{vacation ? "Edytuj urlop" : "Nowy urlop"}</Text>
 
       <DateTimeField
         label="Od"
@@ -87,10 +117,17 @@ function VacationForm({ onClose }: { onClose: () => void }) {
             label={
               cancelCount > 0
                 ? `Odwoła ${pluralize(cancelCount, "zajęcia", "zajęcia", "zajęć")}`
-                : "Brak zajęć do odwołania"
+                : vacation
+                  ? "Brak nowych zajęć do odwołania"
+                  : "Brak zajęć do odwołania"
             }
             tone={cancelCount > 0 ? "danger" : "default"}
           />
+          {restoreCount > 0 && (
+            <Badge
+              label={`Przywróci ${pluralize(restoreCount, "zajęcia", "zajęcia", "zajęć")}`}
+            />
+          )}
           {keepIds.length > 0 && (
             <Badge
               label={`Zachowa ${pluralize(keepIds.length, "zajęcia online", "zajęcia online", "zajęć online")}`}
@@ -126,9 +163,9 @@ function VacationForm({ onClose }: { onClose: () => void }) {
 
       <View style={{ marginTop: 12 }}>
         <GradientButton
-          label="Dodaj urlop"
+          label={vacation ? "Zapisz" : "Dodaj urlop"}
           onPress={onSave}
-          loading={createVacation.isPending}
+          loading={createVacation.isPending || updateVacation.isPending}
         />
       </View>
     </View>

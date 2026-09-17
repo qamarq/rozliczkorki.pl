@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { TreePalm } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -36,6 +37,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { LESSON_MODE_LABELS, type LessonMode, pluralize } from "@/lib/lessons";
 import { trpc } from "@/lib/trpc/client";
+import { formatVacationRange } from "./vacations/notice-panel";
 import { cn, formatPLN } from "@/lib/utils";
 
 type LessonStatus = "scheduled" | "completed" | "cancelled";
@@ -127,6 +129,16 @@ export function LessonDialog({
   const [recurring, setRecurring] = useState(false);
   const [recurringEndDate, setRecurringEndDate] = useState("");
   const [confirmKind, setConfirmKind] = useState<"update" | "delete" | null>(null);
+
+  const { data: vacationOverview } = trpc.vacations.overview.useQuery(
+    { today: format(new Date(), "yyyy-MM-dd") },
+    { enabled: open && !editing },
+  );
+  const vacationOnDate = editing
+    ? undefined
+    : vacationOverview?.vacations.find(
+        (v) => !!dateStr && v.startDate <= dateStr && dateStr <= v.endDate,
+      );
 
   const { data: lastRecurringLesson } = trpc.recurring.lastLesson.useQuery(
     { id: editing?.recurringRuleId ?? "" },
@@ -404,6 +416,15 @@ export function LessonDialog({
                 />
               </div>
             </div>
+
+            {vacationOnDate && (
+              <div className="bg-warning/10 text-warning flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
+                <TreePalm className="size-3.5" />
+                Masz wtedy urlop (
+                {formatVacationRange(vacationOnDate.startDate, vacationOnDate.endDate)}),
+                ale zajęcia dodadzą się normalnie
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-2">

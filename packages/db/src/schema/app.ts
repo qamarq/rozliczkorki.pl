@@ -71,6 +71,8 @@ export const vacations = pgTable("vacations", {
     .references(() => user.id, { onDelete: "cascade" }),
   startDate: date("start_date", { mode: "string" }).notNull(),
   endDate: date("end_date", { mode: "string" }).notNull(),
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at").notNull(),
   note: text("note"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

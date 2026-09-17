@@ -7,6 +7,7 @@ import {
   CalendarRange,
   CalendarX2,
   Check,
+  Pencil,
   Phone,
   Plus,
   Trash2,
@@ -36,11 +37,12 @@ import {
   useSetNotified,
   VacationNoticesPanel,
 } from "./notice-panel";
-import { VacationDialog } from "./vacation-dialog";
+import { type EditableVacation, VacationDialog } from "./vacation-dialog";
 
 export default function VacationsPage() {
   const utils = trpc.useUtils();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingVacation, setEditingVacation] = useState<EditableVacation | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { data, isLoading } = trpc.vacations.overview.useQuery({
     today: format(new Date(), "yyyy-MM-dd"),
@@ -74,7 +76,12 @@ export default function VacationsPage() {
             Zaplanuj wolne. Zajęcia w tym czasie zostaną automatycznie odwołane.
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>
+        <Button
+          onClick={() => {
+            setEditingVacation(null);
+            setDialogOpen(true);
+          }}
+        >
           <Plus className="size-4" />
           Dodaj urlop
         </Button>
@@ -146,14 +153,27 @@ export default function VacationsPage() {
                     <p className="text-muted-foreground text-sm">{vacation.note}</p>
                   )}
                 </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Usuń urlop"
-                  onClick={() => setDeletingId(vacation.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <div className="flex items-center">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Edytuj urlop"
+                    onClick={() => {
+                      setEditingVacation(vacation);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Usuń urlop"
+                    onClick={() => setDeletingId(vacation.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
 
               {vacation.students.length > 0 && (
@@ -226,7 +246,11 @@ export default function VacationsPage() {
         </div>
       </div>
 
-      <VacationDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <VacationDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        vacation={editingVacation}
+      />
 
       <AlertDialog
         open={deletingId !== null}

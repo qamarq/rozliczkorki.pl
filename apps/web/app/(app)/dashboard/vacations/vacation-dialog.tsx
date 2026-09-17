@@ -21,12 +21,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { localDayRange, pluralize } from "@/lib/lessons";
 import { trpc } from "@/lib/trpc/client";
 
+export type EditableVacation = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  note: string | null;
+};
+
 export function VacationDialog({
   open,
   onOpenChange,
+  vacation,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  vacation?: EditableVacation | null;
 }) {
   const utils = trpc.useUtils();
   const [startDate, setStartDate] = useState("");
@@ -38,11 +47,11 @@ export function VacationDialog({
     if (!open) return;
     const today = format(new Date(), "yyyy-MM-dd");
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setStartDate(today);
-    setEndDate(today);
-    setNote("");
+    setStartDate(vacation?.startDate ?? today);
+    setEndDate(vacation?.endDate ?? today);
+    setNote(vacation?.note ?? "");
     setKeepIds([]);
-  }, [open]);
+  }, [open, vacation]);
 
   const validRange = !!startDate && !!endDate && endDate >= startDate;
   const rangeInput = {
@@ -50,27 +59,34 @@ export function VacationDialog({
     endDate,
     ...(validRange ? localDayRange(startDate, endDate) : { from: "", to: "" }),
   };
-  const { data: affected = [], isFetching } = trpc.vacations.preview.useQuery(
-    rangeInput,
-    {
-      enabled: open && validRange,
-    },
+  const { data: preview, isFetching } = trpc.vacations.preview.useQuery(
+    { ...rangeInput, vacationId: vacation?.id },
+    { enabled: open && validRange },
   );
+  const affected = preview?.toCancel ?? [];
+  const restoreCount = preview?.restoreCount ?? 0;
   const remoteLessons = affected.filter((l) => l.mode === "remote");
   const cancelCount = affected.filter((l) => !keepIds.includes(l.id)).length;
 
+  const onSaved = (cancelledCount: number, message: string) => {
+    utils.vacations.overview.invalidate();
+    utils.lessons.range.invalidate();
+    utils.stats.summary.invalidate();
+    toast.success(
+      cancelledCount > 0
+        ? `${message} i odwołano ${pluralize(cancelledCount, "zajęcia", "zajęcia", "zajęć")}`
+        : message,
+    );
+    onOpenChange(false);
+  };
+
   const createVacation = trpc.vacations.create.useMutation({
-    onSuccess: (vacation) => {
-      utils.vacations.overview.invalidate();
-      utils.lessons.range.invalidate();
-      utils.stats.summary.invalidate();
-      toast.success(
-        vacation.cancelledCount > 0
-          ? `Dodano urlop i odwołano ${pluralize(vacation.cancelledCount, "zajęcia", "zajęcia", "zajęć")}`
-          : "Dodano urlop",
-      );
-      onOpenChange(false);
-    },
+    onSuccess: (saved) => onSaved(saved.cancelledCount, "Dodano urlop"),
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateVacation = trpc.vacations.update.useMutation({
+    onSuccess: (saved) => onSaved(saved.cancelledCount, "Zapisano urlop"),
     onError: (e) => toast.error(e.message),
   });
 
@@ -80,18 +96,23 @@ export function VacationDialog({
       toast.error("Data końca nie może być wcześniejsza niż data początku");
       return;
     }
-    createVacation.mutate({
+    const payload = {
       ...rangeInput,
       note: note || undefined,
       keepLessonIds: keepIds.filter((id) => remoteLessons.some((l) => l.id === id)),
-    });
+    };
+    if (vacation) {
+      updateVacation.mutate({ ...payload, id: vacation.id });
+    } else {
+      createVacation.mutate(payload);
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nowy urlop</DialogTitle>
+          <DialogTitle>{vacation ? "Edytuj urlop" : "Nowy urlop"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -138,8 +159,15 @@ export function VacationDialog({
               <Badge variant={cancelCount > 0 ? "destructive" : "secondary"}>
                 {cancelCount > 0
                   ? `Odwoła ${pluralize(cancelCount, "zajęcia", "zajęcia", "zajęć")}`
-                  : "Brak zajęć do odwołania"}
+                  : vacation
+                    ? "Brak nowych zajęć do odwołania"
+                    : "Brak zajęć do odwołania"}
               </Badge>
+              {restoreCount > 0 && (
+                <Badge variant="outline">
+                  Przywróci {pluralize(restoreCount, "zajęcia", "zajęcia", "zajęć")}
+                </Badge>
+              )}
               {keepIds.length > 0 && (
                 <Badge variant="outline">
                   Zachowa{" "}
@@ -187,10 +215,10 @@ export function VacationDialog({
           <DialogFooter>
             <Button
               type="submit"
-              disabled={createVacation.isPending}
+              disabled={createVacation.isPending || updateVacation.isPending}
               className="bg-brand-gradient text-white hover:opacity-90"
             >
-              Dodaj urlop
+              {vacation ? "Zapisz" : "Dodaj urlop"}
             </Button>
           </DialogFooter>
         </form>

@@ -12,16 +12,9 @@ import {
 } from "@/components/ui";
 import { openVacationSheet } from "@/components/vacation-sheet";
 import { alert } from "@/lib/alert";
-import { pluralize } from "@/lib/lessons";
+import { formatVacationRange, pluralize } from "@/lib/lessons";
 import { colors, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
-
-function formatRange(startDate: string, endDate: string) {
-  const start = new Date(`${startDate}T00:00`);
-  const end = new Date(`${endDate}T00:00`);
-  if (startDate === endDate) return format(start, "d MMM yyyy", { locale: pl });
-  return `${format(start, "d MMM", { locale: pl })} – ${format(end, "d MMM yyyy", { locale: pl })}`;
-}
 
 function lessonDates(lessons: { startsAt: Date | string }[]) {
   return lessons
@@ -68,7 +61,7 @@ export default function VacationsScreen() {
   const nextLabel = stats?.current
     ? `trwa do ${format(new Date(`${stats.current.endDate}T00:00`), "d MMM", { locale: pl })}`
     : stats?.next
-      ? formatRange(stats.next.startDate, stats.next.endDate)
+      ? formatVacationRange(stats.next.startDate, stats.next.endDate)
       : "brak";
 
   return (
@@ -98,7 +91,7 @@ export default function VacationsScreen() {
           />
         </View>
 
-        <OutlineButton label="+ Dodaj urlop" onPress={openVacationSheet} />
+        <OutlineButton label="+ Dodaj urlop" onPress={() => openVacationSheet()} />
 
         {(data?.pending.length ?? 0) > 0 && (
           <View style={{ gap: 8 }}>
@@ -153,7 +146,7 @@ export default function VacationsScreen() {
               <View style={styles.vacationHead}>
                 <View style={{ flex: 1, gap: 6 }}>
                   <Text style={styles.name}>
-                    {formatRange(vacation.startDate, vacation.endDate)}
+                    {formatVacationRange(vacation.startDate, vacation.endDate)}
                   </Text>
                   <View style={styles.badgeRow}>
                     <Badge label={pluralize(vacation.days, "dzień", "dni", "dni")} />
@@ -166,9 +159,14 @@ export default function VacationsScreen() {
                     <Text style={styles.muted}>{vacation.note}</Text>
                   ) : null}
                 </View>
-                <Pressable onPress={() => confirmDelete(vacation.id)} hitSlop={10}>
-                  <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
-                </Pressable>
+                <View style={styles.vacationActions}>
+                  <Pressable onPress={() => openVacationSheet(vacation)} hitSlop={10}>
+                    <Ionicons name="create-outline" size={18} color={colors.textMuted} />
+                  </Pressable>
+                  <Pressable onPress={() => confirmDelete(vacation.id)} hitSlop={10}>
+                    <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
+                  </Pressable>
+                </View>
               </View>
               {vacation.students.map((student) => (
                 <Pressable
@@ -248,6 +246,7 @@ const styles = StyleSheet.create({
   },
   checkText: { fontSize: 12, fontWeight: "700", color: colors.success },
   vacationCard: { gap: 10 },
+  vacationActions: { flexDirection: "row", gap: 16 },
   vacationHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   studentRow: { flexDirection: "row", alignItems: "center", gap: 10 },

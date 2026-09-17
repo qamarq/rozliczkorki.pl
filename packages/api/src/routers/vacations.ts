@@ -1,6 +1,6 @@
 import { lessons, students, vacations } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq, gte, inArray, isNull, lte, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 
@@ -17,13 +17,26 @@ function daysInYear(start: string, end: string, year: number) {
   return from > to ? 0 : daysBetween(from, to);
 }
 
-async function scheduledLessonsInRange(
+async function planVacationChange(
   db: (typeof import("@repo/db"))["db"],
   userId: string,
-  from: Date,
-  to: Date,
+  range: { from: string; to: string },
+  vacationId?: string,
 ) {
-  return db
+  const from = new Date(range.from);
+  const to = new Date(range.to);
+
+  const existing = vacationId
+    ? (
+        await db
+          .select()
+          .from(vacations)
+          .where(and(eq(vacations.id, vacationId), eq(vacations.userId, userId)))
+      )[0]
+    : undefined;
+  if (vacationId && !existing) throw new TRPCError({ code: "NOT_FOUND" });
+
+  const candidates = await db
     .select({
       id: lessons.id,
       startsAt: lessons.startsAt,
@@ -43,6 +56,29 @@ async function scheduledLessonsInRange(
       ),
     )
     .orderBy(asc(lessons.startsAt));
+
+  // Scheduled lessons already inside the old range were kept, restored or added on purpose.
+  const toCancel = existing
+    ? candidates.filter(
+        (l) => l.startsAt < existing.startsAt || l.startsAt > existing.endsAt,
+      )
+    : candidates;
+
+  const toRestore = existing
+    ? await db
+        .select({ id: lessons.id })
+        .from(lessons)
+        .where(
+          and(
+            eq(lessons.userId, userId),
+            eq(lessons.vacationId, existing.id),
+            eq(lessons.status, "cancelled"),
+            or(lt(lessons.startsAt, from), gt(lessons.startsAt, to)),
+          ),
+        )
+    : [];
+
+  return { existing, toCancel, toRestore };
 }
 
 const rangeInput = z
@@ -56,6 +92,36 @@ const rangeInput = z
   .refine((v) => v.endDate >= v.startDate, {
     message: "Data końca urlopu nie może być wcześniejsza niż data początku",
   });
+
+const vacationDetailsInput = z.object({
+  note: z.string().optional(),
+  keepLessonIds: z.array(z.string().uuid()).default([]),
+});
+
+async function cancelForVacation(
+  db: (typeof import("@repo/db"))["db"],
+  vacationId: string,
+  lessonIds: string[],
+) {
+  if (lessonIds.length === 0) return 0;
+  const cancelled = await db
+    .update(lessons)
+    .set({
+      status: "cancelled",
+      vacationId,
+      studentNotified: false,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        inArray(lessons.id, lessonIds),
+        eq(lessons.status, "scheduled"),
+        isNull(lessons.vacationId),
+      ),
+    )
+    .returning({ id: lessons.id });
+  return cancelled.length;
+}
 
 export const vacationsRouter = router({
   overview: protectedProcedure
@@ -164,61 +230,94 @@ export const vacationsRouter = router({
       };
     }),
 
-  preview: protectedProcedure.input(rangeInput).query(async ({ ctx, input }) => {
-    return scheduledLessonsInRange(
-      ctx.db,
-      ctx.session.user.id,
-      new Date(input.from),
-      new Date(input.to),
-    );
-  }),
+  preview: protectedProcedure
+    .input(
+      z.intersection(rangeInput, z.object({ vacationId: z.string().uuid().optional() })),
+    )
+    .query(async ({ ctx, input }) => {
+      const plan = await planVacationChange(
+        ctx.db,
+        ctx.session.user.id,
+        input,
+        input.vacationId,
+      );
+      return { toCancel: plan.toCancel, restoreCount: plan.toRestore.length };
+    }),
 
   create: protectedProcedure
-    .input(
-      z.intersection(
-        rangeInput,
-        z.object({
-          note: z.string().optional(),
-          keepLessonIds: z.array(z.string().uuid()).default([]),
-        }),
-      ),
-    )
+    .input(z.intersection(rangeInput, vacationDetailsInput))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const { toCancel } = await planVacationChange(ctx.db, userId, input);
       const [vacation] = await ctx.db
         .insert(vacations)
         .values({
           userId,
           startDate: input.startDate,
           endDate: input.endDate,
+          startsAt: new Date(input.from),
+          endsAt: new Date(input.to),
           note: input.note?.trim() || null,
         })
         .returning();
       if (!vacation) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-      const cancelled = await ctx.db
-        .update(lessons)
-        .set({
-          status: "cancelled",
-          vacationId: vacation.id,
-          studentNotified: false,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(lessons.userId, userId),
-            eq(lessons.status, "scheduled"),
-            isNull(lessons.vacationId),
-            gte(lessons.startsAt, new Date(input.from)),
-            lte(lessons.startsAt, new Date(input.to)),
-            ...(input.keepLessonIds.length
-              ? [notInArray(lessons.id, input.keepLessonIds)]
-              : []),
-          ),
-        )
-        .returning({ id: lessons.id });
+      const cancelledCount = await cancelForVacation(
+        ctx.db,
+        vacation.id,
+        toCancel.map((l) => l.id).filter((id) => !input.keepLessonIds.includes(id)),
+      );
+      return { ...vacation, cancelledCount };
+    }),
 
-      return { ...vacation, cancelledCount: cancelled.length };
+  update: protectedProcedure
+    .input(
+      z.intersection(rangeInput, vacationDetailsInput.extend({ id: z.string().uuid() })),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const { existing, toCancel, toRestore } = await planVacationChange(
+        ctx.db,
+        userId,
+        input,
+        input.id,
+      );
+
+      if (toRestore.length > 0) {
+        await ctx.db
+          .update(lessons)
+          .set({
+            status: "scheduled",
+            vacationId: null,
+            studentNotified: false,
+            updatedAt: new Date(),
+          })
+          .where(
+            inArray(
+              lessons.id,
+              toRestore.map((l) => l.id),
+            ),
+          );
+      }
+
+      const [vacation] = await ctx.db
+        .update(vacations)
+        .set({
+          startDate: input.startDate,
+          endDate: input.endDate,
+          startsAt: new Date(input.from),
+          endsAt: new Date(input.to),
+          note: input.note?.trim() || null,
+        })
+        .where(eq(vacations.id, existing!.id))
+        .returning();
+
+      const cancelledCount = await cancelForVacation(
+        ctx.db,
+        existing!.id,
+        toCancel.map((l) => l.id).filter((id) => !input.keepLessonIds.includes(id)),
+      );
+      return { ...vacation!, cancelledCount, restoredCount: toRestore.length };
     }),
 
   delete: protectedProcedure
