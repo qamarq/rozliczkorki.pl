@@ -7,6 +7,7 @@ import { View } from "react-native";
 import { AnalyticsIdentity } from "@/lib/analytics-identity";
 import { AlertDialogHost } from "@/components/alert-dialog-host";
 import { SheetHost } from "@/components/sheet-host";
+import { UpdateBanner } from "@/components/update-banner";
 import { TRPCProvider } from "@/lib/trpc";
 import { colors } from "@/lib/theme";
 import { useNotificationTaps } from "@/lib/use-notification-taps";
@@ -63,6 +64,7 @@ export default function RootLayout() {
         </BlurTargetView>
         <SheetHost blurTarget={blurTarget} />
         <AlertDialogHost blurTarget={blurTarget} />
+        <UpdateBanner />
       </View>
       <StatusBar style="light" />
     </TRPCProvider>
