@@ -124,6 +124,8 @@ export const analyticsProcedure = protectedProcedure
       planned: 0,
       projected: 0,
       awaitingPayout: 0,
+      unpaidLessons: 0,
+      awaitingPayoutLessons: 0,
       lessonCount: 0,
       projectedLessons: 0,
       completed: 0,
@@ -241,8 +243,13 @@ export const analyticsProcedure = protectedProcedure
       if (lesson.status === "completed") totals.completed += 1;
       else totals.scheduled += 1;
       if (!past) totals.planned += due;
-      else if (schoolId) totals.awaitingPayout += due;
-      else totals.unpaid += due;
+      else if (schoolId) {
+        totals.awaitingPayout += due;
+        if (due > 0) totals.awaitingPayoutLessons += 1;
+      } else {
+        totals.unpaid += due;
+        if (due > 0) totals.unpaidLessons += 1;
+      }
 
       addStudent(lesson, price, received, due);
     }

@@ -10,6 +10,8 @@ import {
   SectionLabel,
 } from "@/components/ui";
 import { openSchoolSheet } from "@/components/school-sheet";
+import { trackStudentAdded } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { alert } from "@/lib/alert";
 import { formatPLN } from "@repo/shared";
 import { LESSON_MODE_LABELS, type LessonMode } from "@repo/shared";
@@ -84,7 +86,9 @@ function StudentForm({
   }
 
   const createStudent = trpc.students.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (created) => {
+      const countAfter = (utils.students.list.getData()?.length ?? 0) + 1;
+      void trackStudentAdded(flowDeps, { studentId: created.id, countAfter });
       invalidate();
       onClose();
     },

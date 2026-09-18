@@ -11,6 +11,7 @@ import {
   ScreenHeader,
   SectionLabel,
 } from "@/components/ui";
+import { resetAnalytics } from "@/lib/analytics";
 import { authClient, useSession } from "@/lib/auth-client";
 import { CALENDAR_VIEW_OPTIONS, useDefaultCalendarView } from "@/lib/calendar-prefs";
 import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
@@ -30,6 +31,7 @@ export default function SettingsScreen() {
 
   async function onSignOut() {
     await authClient.signOut();
+    resetAnalytics();
     syncLiveLessons([]);
     await clearOfflineCache();
   }

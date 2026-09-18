@@ -24,6 +24,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { LESSON_MODE_LABELS, formatPLN, type LessonMode } from "@repo/shared";
+import { trackStudentAdded } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { SchoolDialog } from "../schools/school-dialog";
 
@@ -103,7 +105,9 @@ export function StudentDialog({
   };
 
   const createStudent = trpc.students.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (created) => {
+      const countAfter = (utils.students.list.getData()?.length ?? 0) + 1;
+      void trackStudentAdded(flowDeps, { studentId: created.id, countAfter });
       invalidate();
       toast.success("Dodano ucznia");
       onOpenChange(false);

@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
 import { BlurTargetView } from "expo-blur";
 import { View } from "react-native";
+import { AnalyticsIdentity } from "@/lib/analytics-identity";
 import { AlertDialogHost } from "@/components/alert-dialog-host";
 import { SheetHost } from "@/components/sheet-host";
 import { TRPCProvider } from "@/lib/trpc";
@@ -38,6 +39,7 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <BlurTargetView ref={blurTarget} style={{ flex: 1 }}>
           <OnboardingGate />
+          <AnalyticsIdentity />
           <Stack
             screenOptions={{
               headerShown: false,

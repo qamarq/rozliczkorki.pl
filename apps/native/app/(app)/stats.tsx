@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { TrendChart } from "@/components/trend-chart";
@@ -13,6 +13,8 @@ import {
   previousRange,
   type PresetId,
 } from "@repo/shared";
+import { trackFinancialSummaryViewed } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { colors, gradients, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
@@ -51,6 +53,20 @@ export default function StatsScreen() {
 
   const totals = data?.totals;
   const series = data?.series ?? [];
+
+  const reported = useRef(false);
+  useEffect(() => {
+    if (!totals || reported.current) return;
+    reported.current = true;
+    void trackFinancialSummaryViewed(flowDeps, {
+      viewType: "full_summary",
+      overdueLessonsCount: totals.unpaidLessons,
+      dueLessonsCount: totals.awaitingPayoutLessons,
+      earnedAmount: totals.paid,
+      dueAmount: totals.awaitingPayout,
+      overdueAmount: totals.unpaid,
+    });
+  }, [totals]);
 
   const points = series.map((bucket) => ({
     label: bucket.label,

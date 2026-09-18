@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AnalyticsProvider } from "@/components/analytics-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,7 +40,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={cn(inter.className, mono.variable, "antialiased")}>
         <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
           <TooltipProvider>
-            <TRPCProvider>{children}</TRPCProvider>
+            <TRPCProvider>
+              <AnalyticsProvider>{children}</AnalyticsProvider>
+            </TRPCProvider>
           </TooltipProvider>
           <Toaster />
         </ThemeProvider>

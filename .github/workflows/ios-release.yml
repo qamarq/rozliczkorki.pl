@@ -57,6 +57,8 @@ jobs:
           EXPO_PUBLIC_API_URL: https://rozliczkorki.pl
           EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_MIXPANEL_TOKEN: ${{ secrets.EXPO_PUBLIC_MIXPANEL_TOKEN }}
+          EXPO_PUBLIC_MIXPANEL_API_HOST: ${{ secrets.EXPO_PUBLIC_MIXPANEL_API_HOST }}
           GIT_SSH_COMMAND: ssh -i ~/.ssh/match_key -o StrictHostKeyChecking=accept-new
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: bash scripts/build-ios-release.sh

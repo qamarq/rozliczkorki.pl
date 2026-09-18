@@ -76,6 +76,8 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_MIXPANEL_TOKEN: ${{ secrets.EXPO_PUBLIC_MIXPANEL_TOKEN }}
+          EXPO_PUBLIC_MIXPANEL_API_HOST: ${{ secrets.EXPO_PUBLIC_MIXPANEL_API_HOST }}
         run: |
           mkdir -p android-signing
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android-signing/release.keystore
@@ -85,7 +87,11 @@ jobs:
             echo "keyAlias=$ANDROID_KEY_ALIAS"
             echo "keyPassword=$ANDROID_KEY_PASSWORD"
           } > android-signing/keystore.properties
-          echo "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID" > .env
+          {
+            echo "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID"
+            echo "EXPO_PUBLIC_MIXPANEL_TOKEN=$EXPO_PUBLIC_MIXPANEL_TOKEN"
+            echo "EXPO_PUBLIC_MIXPANEL_API_HOST=$EXPO_PUBLIC_MIXPANEL_API_HOST"
+          } > .env
 
       - name: Build release AAB
         working-directory: apps/native

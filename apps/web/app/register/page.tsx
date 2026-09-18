@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { nowIso } from "@repo/analytics";
+import { rememberSignupMethod } from "@/components/analytics-provider";
+import { acquisitionSource, browserLocale, track } from "@/lib/analytics";
 import { AuthPanel } from "@/components/auth-panel";
 import { GoogleIcon } from "@/components/google-icon";
 import { Logo } from "@/components/logo";
@@ -29,6 +32,14 @@ export default function RegisterPage() {
 
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
+  useEffect(() => {
+    track("signup_started", {
+      source: acquisitionSource(),
+      locale: browserLocale(),
+      timestamp: nowIso(),
+    });
+  }, []);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -36,6 +47,7 @@ export default function RegisterPage() {
       return;
     }
     setLoading(true);
+    rememberSignupMethod("email");
     const { error } = await authClient.signUp.email({
       name,
       email,
@@ -51,6 +63,7 @@ export default function RegisterPage() {
   }
 
   async function onGoogle() {
+    rememberSignupMethod("google");
     await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
   }
 

@@ -10,6 +10,9 @@ import {
 } from "react-native";
 import { GoogleIcon } from "@/components/google-icon";
 import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
+import { nowIso } from "@repo/analytics";
+import { deviceLocale, track } from "@/lib/analytics";
+import { rememberSignupMethod } from "@/lib/analytics-identity";
 import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
 import { savePasswordCredential } from "@/lib/credentials";
@@ -31,6 +34,14 @@ export default function RegisterScreen() {
   const [resending, setResending] = useState(false);
 
   useEffect(() => {
+    track("signup_started", {
+      source: "native_app",
+      locale: deviceLocale(),
+      timestamp: nowIso(),
+    });
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = subscribeEmailVerified(async (signUp) => {
       const { error } = await authClient.signIn.email(signUp);
       if (error) {
@@ -47,6 +58,7 @@ export default function RegisterScreen() {
 
   async function onSubmit() {
     setLoading(true);
+    rememberSignupMethod("email");
     const { error } = await authClient.signUp.email({
       name,
       email,
@@ -80,6 +92,7 @@ export default function RegisterScreen() {
 
   async function onGoogle() {
     setGoogleLoading(true);
+    rememberSignupMethod("google");
     const { error } = await authClient.signIn.social({
       provider: "google",
       callbackURL: "rozliczkorki://",

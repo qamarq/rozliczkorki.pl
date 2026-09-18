@@ -11,6 +11,8 @@ import {
   SectionLabel,
   Switch,
 } from "@/components/ui";
+import { trackLessonScheduled } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { alert } from "@/lib/alert";
 import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
@@ -26,6 +28,7 @@ export default function NewLessonScreen() {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { data: students = [] } = trpc.students.list.useQuery();
+  const { data: lessonCount } = trpc.lessons.count.useQuery();
 
   const [studentId, setStudentId] = useState<string | null>(null);
   const params = useLocalSearchParams<{ date?: string }>();
@@ -66,7 +69,12 @@ export default function NewLessonScreen() {
         : hourlyRate;
 
   const createLesson = trpc.lessons.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (created) => {
+      void trackLessonScheduled(flowDeps, {
+        studentId: created.studentId,
+        lessonDatetime: new Date(created.startsAt).toISOString(),
+        countAfter: (lessonCount ?? 0) + 1,
+      });
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
       utils.stats.analytics.invalidate();

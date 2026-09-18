@@ -13,6 +13,8 @@ import {
   View,
 } from "react-native";
 import { GradientButton, Switch } from "@/components/ui";
+import { trackOnboardingStep } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { alert } from "@/lib/alert";
 import { useSession } from "@/lib/auth-client";
 import {
@@ -98,6 +100,7 @@ export default function OnboardingScreen() {
   }, [channels]);
 
   async function finish() {
+    await trackOnboardingStep(flowDeps, "notification_preferences_set");
     await SecureStore.setItemAsync(ONBOARDING_KEY, "true");
     router.replace(session?.user ? "/" : "/login");
   }

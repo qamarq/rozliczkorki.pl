@@ -46,6 +46,8 @@ import {
   type PaymentMethod,
   pluralize,
 } from "@repo/shared";
+import { trackLessonCheckedOff, trackLessonScheduled } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -66,6 +68,7 @@ type LessonRow = {
   id: string;
   studentId: string;
   startsAt: Date | string;
+  createdAt: Date | string;
   durationMinutes: number;
   prorate: boolean;
   mode: LessonMode;
@@ -96,6 +99,7 @@ export function LessonDialog({
   const { data: students = [] } = trpc.students.list.useQuery();
 
   const editing = lessonId ? allLessons.find((l) => l.id === lessonId) : null;
+  const { data: lessonCount } = trpc.lessons.count.useQuery(undefined, { enabled: open });
 
   const [studentId, setStudentId] = useState("");
   const [dateStr, setDateStr] = useState("");
@@ -221,7 +225,12 @@ export function LessonDialog({
   const updateCycleEnd = trpc.recurring.setEndDate.useMutation();
 
   const createLesson = trpc.lessons.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (created) => {
+      void trackLessonScheduled(flowDeps, {
+        studentId: created.studentId,
+        lessonDatetime: new Date(created.startsAt).toISOString(),
+        countAfter: (lessonCount ?? 0) + 1,
+      });
       invalidate();
       toast.success("Dodano zajęcia");
       onOpenChange(false);
@@ -240,6 +249,13 @@ export function LessonDialog({
 
   const updateLesson = trpc.lessons.update.useMutation({
     onSuccess: async () => {
+      if (editing && status === "completed" && editing.status !== "completed") {
+        trackLessonCheckedOff(flowDeps, {
+          lessonId: editing.id,
+          status,
+          scheduledAt: editing.createdAt,
+        });
+      }
       if (cycleEndChanged) {
         try {
           await updateCycleEnd.mutateAsync({ ...cycleEndInput, endDate: cycleEndDate });
