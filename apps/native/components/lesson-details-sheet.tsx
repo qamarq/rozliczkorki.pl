@@ -15,6 +15,8 @@ import {
   SectionLabel,
   Switch,
 } from "@/components/ui";
+import { trackLessonCheckedOff } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { alert } from "@/lib/alert";
 import { closeSheet, openSheet } from "@/lib/sheet";
 import { colors, radius } from "@/lib/theme";
@@ -167,6 +169,13 @@ function LessonDetailsContent({
 
   const updateLesson = trpc.lessons.update.useMutation({
     onSuccess: async () => {
+      if (lesson && status === "completed" && lesson.status !== "completed") {
+        trackLessonCheckedOff(flowDeps, {
+          lessonId: lesson.id,
+          status,
+          scheduledAt: lesson.createdAt,
+        });
+      }
       if (cycleEndChanged) {
         try {
           await updateCycleEnd.mutateAsync({ ...cycleEndInput, endDate: cycleEndDate });

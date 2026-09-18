@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,6 +41,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatPLN, LESSON_PAYMENT_STATE_LABELS } from "@repo/shared";
+import { trackFinancialSummaryViewed, trackLessonCheckedOff } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
@@ -110,6 +112,31 @@ export function CalendarView() {
         .slice(0, 6),
     [lessons],
   );
+
+  const summaryReported = useRef(false);
+  useEffect(() => {
+    if (!summary || summaryReported.current) return;
+    summaryReported.current = true;
+    const now = Date.now();
+    const overdueLessonsCount = lessons.filter(
+      (l) =>
+        l.status === "completed" &&
+        !l.settled &&
+        l.paymentState !== "awaiting_payout" &&
+        new Date(l.startsAt).getTime() < now,
+    ).length;
+    const dueLessonsCount = lessons.filter(
+      (l) => l.paymentState === "awaiting_payout" && !l.settled,
+    ).length;
+    void trackFinancialSummaryViewed(flowDeps, {
+      viewType: "due",
+      overdueLessonsCount,
+      dueLessonsCount,
+      earnedAmount: summary.paid,
+      dueAmount: summary.awaitingPayout,
+      overdueAmount: summary.unpaid,
+    });
+  }, [summary, lessons]);
 
   function openCreateDialog(day: Date) {
     setSelectedDate(day);
@@ -293,7 +320,13 @@ function TodayPanel({
 }) {
   const utils = trpc.useUtils();
   const markCompleted = trpc.lessons.update.useMutation({
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
+      const lesson = lessons.find((l) => l.id === variables.id);
+      trackLessonCheckedOff(flowDeps, {
+        lessonId: variables.id,
+        status: "completed",
+        scheduledAt: lesson?.createdAt,
+      });
       utils.lessons.range.invalidate();
       utils.stats.summary.invalidate();
       utils.stats.analytics.invalidate();

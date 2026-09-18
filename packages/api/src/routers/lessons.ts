@@ -1,6 +1,6 @@
 import { lessons, recurringRules, students, studentRates } from "@repo/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, gt, gte, inArray, lte, ne } from "drizzle-orm";
+import { and, count, eq, gt, gte, inArray, lte, ne } from "drizzle-orm";
 import { z } from "zod";
 import { lessonPaymentState } from "@repo/shared";
 import { settleLessons } from "../pricing";
@@ -72,6 +72,14 @@ async function withPrices(
 const paidAmountInput = z.coerce.number().nonnegative().nullable().optional();
 
 export const lessonsRouter = router({
+  count: protectedProcedure.query(async ({ ctx }) => {
+    const [row] = await ctx.db
+      .select({ value: count() })
+      .from(lessons)
+      .where(eq(lessons.userId, ctx.session.user.id));
+    return row?.value ?? 0;
+  }),
+
   byId: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {

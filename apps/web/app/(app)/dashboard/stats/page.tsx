@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, Info } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPLN, pluralize } from "@repo/shared";
+import { trackFinancialSummaryViewed } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { TrendChart } from "./charts";
@@ -69,6 +71,20 @@ export default function StatsPage() {
   const totals = data?.totals;
   const series = data?.series ?? [];
   const hasForecast = series.some((s) => !s.isPast);
+
+  const reported = useRef(false);
+  useEffect(() => {
+    if (!totals || reported.current) return;
+    reported.current = true;
+    void trackFinancialSummaryViewed(flowDeps, {
+      viewType: "full_summary",
+      overdueLessonsCount: totals.unpaidLessons,
+      dueLessonsCount: totals.awaitingPayoutLessons,
+      earnedAmount: totals.paid,
+      dueAmount: totals.awaitingPayout,
+      overdueAmount: totals.unpaid,
+    });
+  }, [totals]);
   const lastPast = series.reduce((acc, s, i) => (s.isPast ? i : acc), -1);
 
   const metricValue = (bucket: (typeof series)[number]) =>

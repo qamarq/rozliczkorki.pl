@@ -48,6 +48,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { openSettings, SettingsDialog } from "@/components/settings-dialog";
+import { resetAnalytics } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 
 const NAV_MAIN = [
@@ -66,6 +67,7 @@ function useSignOut() {
   const router = useRouter();
   return async () => {
     await authClient.signOut();
+    resetAnalytics();
     router.push("/");
     router.refresh();
   };

@@ -1,5 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card, Chip, ScreenBackground, ScreenHeader } from "@/components/ui";
+import { trackOnboardingStep } from "@repo/analytics";
+import { flowDeps } from "@/lib/analytics";
 import { CALENDAR_VIEW_OPTIONS, useDefaultCalendarView } from "@/lib/calendar-prefs";
 import { colors } from "@/lib/theme";
 
@@ -21,7 +23,10 @@ export default function CalendarSettingsScreen() {
                 key={opt.value}
                 label={opt.label}
                 active={calendarView.view === opt.value}
-                onPress={() => calendarView.update(opt.value)}
+                onPress={() => {
+                  void calendarView.update(opt.value);
+                  void trackOnboardingStep(flowDeps, "education_preferences_set");
+                }}
               />
             ))}
           </View>
