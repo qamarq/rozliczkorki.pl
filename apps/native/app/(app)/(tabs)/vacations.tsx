@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SkeletonCard, SkeletonLine, lineHeights } from "@/components/skeleton";
 import { TabHeader } from "@/components/tab-header";
 import {
   Badge,
@@ -13,7 +14,7 @@ import {
 import { openVacationSheet } from "@/components/vacation-sheet";
 import { alert } from "@/lib/alert";
 import { formatVacationRange, pluralize } from "@repo/shared";
-import { colors, radius } from "@/lib/theme";
+import { colors, radius, tabHeaderTop } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
 function lessonDates(lessons: { startsAt: Date | string }[]) {
@@ -24,7 +25,7 @@ function lessonDates(lessons: { startsAt: Date | string }[]) {
 
 export default function VacationsScreen() {
   const utils = trpc.useUtils();
-  const { data } = trpc.vacations.overview.useQuery({
+  const { data, isLoading } = trpc.vacations.overview.useQuery({
     today: format(new Date(), "yyyy-MM-dd"),
   });
 
@@ -74,21 +75,25 @@ export default function VacationsScreen() {
           <StatTile
             label="Dni urlopu w tym roku"
             value={String(stats?.daysThisYear ?? 0)}
+            loading={isLoading}
           />
           <StatTile
             label={stats?.current ? "Obecny urlop" : "Najbliższy urlop"}
             value={nextLabel}
             small
+            loading={isLoading}
           />
           <StatTile
             label="Odwołane w tym roku"
             value={String(stats?.cancelledThisYear ?? 0)}
             color={colors.danger}
+            loading={isLoading}
           />
           <StatTile
             label="Do powiadomienia"
             value={String(stats?.toNotify ?? 0)}
             color={colors.warning}
+            loading={isLoading}
           />
         </View>
 
@@ -134,7 +139,8 @@ export default function VacationsScreen() {
 
         <View style={{ gap: 8 }}>
           <SectionLabel>Twoje urlopy</SectionLabel>
-          {data?.vacations.length === 0 && (
+          {isLoading && <SkeletonCard lines={2} badge />}
+          {!isLoading && data?.vacations.length === 0 && (
             <Text style={styles.empty}>
               Brak urlopów. Dodaj urlop, a zajęcia w tym czasie odwołają się same.
             </Text>
@@ -205,31 +211,46 @@ function StatTile({
   value,
   color = colors.text,
   small,
+  loading,
 }: {
   label: string;
   value: string;
   color?: string;
   small?: boolean;
+  loading?: boolean;
 }) {
   return (
     <Card style={styles.statTile}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text
-        style={[styles.statValue, { color }, small && { fontSize: 15 }]}
-        numberOfLines={1}
-      >
-        {value}
-      </Text>
+      {loading ? (
+        <SkeletonLine
+          lineHeight={lineHeights.total}
+          barHeight={small ? 15 : 20}
+          width={small ? 108 : 56}
+        />
+      ) : (
+        <Text
+          style={[styles.statValue, { color }, small && { fontSize: 15 }]}
+          numberOfLines={1}
+        >
+          {value}
+        </Text>
+      )}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingTop: 8, gap: 16, paddingBottom: 40 },
+  content: {
+    padding: 20,
+    paddingTop: tabHeaderTop,
+    gap: 16,
+    paddingBottom: 40,
+  },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   statTile: { flexBasis: "48%", flexGrow: 1, gap: 6 },
   statLabel: { fontSize: 12, color: colors.textMuted, fontWeight: "600" },
-  statValue: { fontSize: 22, fontWeight: "800" },
+  statValue: { fontSize: 22, lineHeight: lineHeights.total, fontWeight: "800" },
   noticeCard: { flexDirection: "row", alignItems: "center", gap: 12 },
   name: { fontSize: 15, fontWeight: "700", color: colors.text },
   studentName: { fontSize: 14, fontWeight: "600", color: colors.text },

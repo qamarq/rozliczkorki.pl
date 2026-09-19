@@ -13,7 +13,7 @@ import {
   type CalendarView,
   useDefaultCalendarView,
 } from "@/lib/calendar-prefs";
-import { colors, gradients, radius } from "@/lib/theme";
+import { colors, gradients, radius, tabHeaderTop } from "@/lib/theme";
 
 export default function CalendarScreen() {
   const defaultView = useDefaultCalendarView();
@@ -24,8 +24,6 @@ export default function CalendarScreen() {
     if (defaultView.loaded) setMode(defaultView.view);
   }, [defaultView.loaded, defaultView.view]);
 
-  if (!mode) return <ScreenBackground>{null}</ScreenBackground>;
-
   return (
     <ScreenBackground syncStatus>
       <View style={styles.headerBlock}>
@@ -33,6 +31,13 @@ export default function CalendarScreen() {
         <View style={styles.segmented}>
           {CALENDAR_VIEW_OPTIONS.map((m) => {
             const active = m.value === mode;
+            if (!mode) {
+              return (
+                <View key={m.value} style={styles.segment}>
+                  <Text style={styles.segmentText}>{m.label}</Text>
+                </View>
+              );
+            }
             return (
               <Pressable key={m.value} onPress={() => setMode(m.value)}>
                 {active ? (
@@ -87,7 +92,7 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   headerBlock: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: tabHeaderTop,
     marginBottom: 12,
     gap: 12,
   },

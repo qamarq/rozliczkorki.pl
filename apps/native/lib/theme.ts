@@ -31,3 +31,6 @@ export const radius = {
 };
 
 export const spacing = (n: number) => n * 4;
+
+/** Shared by every tab screen so all four titles sit at the same height. */
+export const tabHeaderTop = 8;

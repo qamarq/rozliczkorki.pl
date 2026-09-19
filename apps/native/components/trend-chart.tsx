@@ -8,6 +8,7 @@ import Svg, {
   Path,
   Stop,
 } from "react-native-svg";
+import { Skeleton } from "@/components/skeleton";
 import { colors, radius } from "@/lib/theme";
 
 export type TrendPoint = { label: string; value: number; forecast: boolean };
@@ -30,14 +31,32 @@ function buildPath(coords: { x: number; y: number }[]) {
 export function TrendChart({
   points,
   formatValue,
+  loading,
 }: {
   points: TrendPoint[];
   formatValue: (value: number) => string;
+  loading?: boolean;
 }) {
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState<number | null>(null);
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
+
+  if (loading) {
+    return (
+      <View
+        style={styles.empty}
+        onLayout={onLayout}
+        accessibilityRole="progressbar"
+        accessibilityLabel="Wczytywanie wykresu"
+      >
+        <Skeleton
+          height={HEIGHT - 32}
+          style={{ width: "100%", borderRadius: radius.md }}
+        />
+      </View>
+    );
+  }
 
   if (points.length === 0) {
     return (
