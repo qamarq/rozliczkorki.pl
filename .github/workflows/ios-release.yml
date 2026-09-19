@@ -28,6 +28,33 @@ jobs:
           bundler-cache: true
           working-directory: apps/native
 
+      # Set explicitly rather than relying on an action's defaults: React Native's
+      # ccache wrapper overrides CCACHE_CONFIGPATH, so a mismatched cache_dir would
+      # miss the cache on every run without ever failing the build.
+      - name: Configure ccache
+        run: |
+          brew list ccache >/dev/null 2>&1 || brew install ccache
+          echo "CCACHE_DIR=$HOME/Library/Caches/ccache" >> "$GITHUB_ENV"
+          echo "CCACHE_MAXSIZE=2G" >> "$GITHUB_ENV"
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/ccache
+          key: ios-ccache-${{ github.run_id }}
+          restore-keys: ios-ccache-
+
+      # expo prebuild regenerates ios/ and its Podfile.lock on every run, so the key
+      # hashes the inputs that actually decide the pod set instead.
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            apps/native/ios/Pods
+          key: ios-pods-${{ hashFiles('pnpm-lock.yaml', 'apps/native/package.json', 'apps/native/app.json') }}
+          restore-keys: ios-pods-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -59,9 +86,16 @@ jobs:
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
           EXPO_PUBLIC_MIXPANEL_TOKEN: ${{ secrets.EXPO_PUBLIC_MIXPANEL_TOKEN }}
           EXPO_PUBLIC_MIXPANEL_API_HOST: ${{ secrets.EXPO_PUBLIC_MIXPANEL_API_HOST }}
+          # React Native wires ccache into CC/CXX/LD at pod install time when this is set.
+          USE_CCACHE: "1"
           GIT_SSH_COMMAND: ssh -i ~/.ssh/match_key -o StrictHostKeyChecking=accept-new
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: bash scripts/build-ios-release.sh
+
+      # Makes a silently-missing cache visible instead of leaving it to guesswork.
+      - name: Report ccache stats
+        if: always()
+        run: ccache -s
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
