@@ -21,6 +21,7 @@ import {
   pluralize,
 } from "@repo/shared";
 import { colors } from "@/lib/theme";
+import { SkeletonCard } from "@/components/skeleton";
 import { trpc } from "@/lib/trpc";
 
 const STATUS_TONE: Record<PayoutStatus, "default" | "success" | "warning" | "danger"> = {
@@ -58,7 +59,15 @@ export default function SchoolDetailScreen() {
       <ScreenHeader title={school?.name ?? "Szkółka"} />
       <ScrollView contentContainerStyle={styles.content}>
         {isLoading || !school ? (
-          <Text style={styles.empty}>Ładowanie…</Text>
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Wczytywanie"
+            style={{ gap: 12 }}
+          >
+            <SkeletonCard lines={3} />
+            <SkeletonCard lines={2} badge />
+            <SkeletonCard lines={2} />
+          </View>
         ) : (
           <>
             <Card style={{ gap: 8 }}>
@@ -185,5 +194,4 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 14, fontWeight: "700", color: colors.text },
   amount: { fontSize: 18, fontWeight: "800", color: colors.text },
-  empty: { textAlign: "center", color: colors.textFaint, marginTop: 40 },
 });

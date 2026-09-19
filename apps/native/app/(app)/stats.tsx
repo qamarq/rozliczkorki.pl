@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SkeletonLine, lineHeights } from "@/components/skeleton";
 import { TrendChart } from "@/components/trend-chart";
 import { Card, Chip, ScreenBackground, ScreenHeader } from "@/components/ui";
 import { formatPLN } from "@repo/shared";
@@ -45,7 +46,7 @@ export default function StatsScreen() {
     return { from: previous.from.toISOString(), to: previous.to.toISOString() };
   }, [range]);
 
-  const { data } = trpc.stats.analytics.useQuery({
+  const { data, isLoading } = trpc.stats.analytics.useQuery({
     buckets,
     compare,
     now: now.toISOString(),
@@ -136,7 +137,11 @@ export default function StatsScreen() {
         <LinearGradient colors={gradients.accent} style={styles.heroCard}>
           <Text style={styles.heroLabel}>Przychód w okresie</Text>
           <View style={styles.heroValueRow}>
-            <Text style={styles.heroValue}>{formatPLN(totals?.expected ?? 0)}</Text>
+            {isLoading ? (
+              <SkeletonLine lineHeight={lineHeights.hero} barHeight={26} width={150} />
+            ) : (
+              <Text style={styles.heroValue}>{formatPLN(totals?.expected ?? 0)}</Text>
+            )}
             {revenueDelta !== null && (
               <Text style={styles.heroDelta}>
                 {revenueDelta >= 0 ? "▲" : "▼"} {Math.abs(revenueDelta)}%
@@ -164,7 +169,11 @@ export default function StatsScreen() {
             <View key={segment.key} style={styles.segmentRow}>
               <View style={[styles.dot, { backgroundColor: segment.color }]} />
               <Text style={styles.segmentLabel}>{segment.label}</Text>
-              <Text style={styles.segmentValue}>{formatPLN(segment.value)}</Text>
+              {isLoading ? (
+                <SkeletonLine lineHeight={lineHeights.body} barHeight={11} width={62} />
+              ) : (
+                <Text style={styles.segmentValue}>{formatPLN(segment.value)}</Text>
+              )}
             </View>
           ))}
         </LinearGradient>
@@ -184,7 +193,7 @@ export default function StatsScreen() {
             {GRANULARITY_LABEL[granularity]}
             {points.some((p) => p.forecast) ? " · przerywana linia to prognoza" : ""}
           </Text>
-          <TrendChart points={points} formatValue={formatMetric} />
+          <TrendChart points={points} formatValue={formatMetric} loading={isLoading} />
         </Card>
 
         <View style={styles.tileRow}>
@@ -193,12 +202,14 @@ export default function StatsScreen() {
             value={`${lessonsTotal}`}
             delta={delta(totals?.lessonCount, data?.compare?.lessonCount)}
             hint={`${totals?.completed ?? 0} odbytych · ${totals?.cancelled ?? 0} odwołanych`}
+            loading={isLoading}
           />
           <Tile
             label="Godziny"
             value={`${totals?.hours ?? 0} h`}
             delta={delta(totals?.hours, data?.compare?.hours)}
             hint={`${totals?.activeStudents ?? 0} uczniów w okresie`}
+            loading={isLoading}
           />
         </View>
         <View style={styles.tileRow}>
@@ -207,11 +218,13 @@ export default function StatsScreen() {
             value={`${formatPLN(totals?.effectiveHourlyRate ?? 0)}/h`}
             delta={delta(totals?.effectiveHourlyRate, data?.compare?.effectiveHourlyRate)}
             hint="Przychód na godzinę"
+            loading={isLoading}
           />
           <Tile
             label="Ściągalność"
             value={`${totals?.collectionRate ?? 0}%`}
             hint={`Zaległości ${formatPLN(data?.debt.outstanding ?? 0)}`}
+            loading={isLoading}
           />
         </View>
 
@@ -319,11 +332,13 @@ function Tile({
   value,
   hint,
   delta: change,
+  loading,
 }: {
   label: string;
   value: string;
   hint: string;
   delta?: number | null;
+  loading?: boolean;
 }) {
   return (
     <Card style={styles.tile}>
@@ -340,7 +355,11 @@ function Tile({
           </Text>
         )}
       </View>
-      <Text style={styles.tileValue}>{value}</Text>
+      {loading ? (
+        <SkeletonLine lineHeight={lineHeights.tile} barHeight={18} width={84} />
+      ) : (
+        <Text style={styles.tileValue}>{value}</Text>
+      )}
       <Text style={styles.muted} numberOfLines={1}>
         {hint}
       </Text>
@@ -399,7 +418,12 @@ const styles = StyleSheet.create({
   heroCard: { borderRadius: radius.lg, padding: 20, gap: 8 },
   heroLabel: { color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "600" },
   heroValueRow: { flexDirection: "row", alignItems: "baseline", gap: 10 },
-  heroValue: { color: "#fff", fontSize: 30, fontWeight: "800" },
+  heroValue: {
+    color: "#fff",
+    fontSize: 30,
+    lineHeight: lineHeights.hero,
+    fontWeight: "800",
+  },
   heroDelta: { color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "700" },
   heroHint: { color: "rgba(255,255,255,0.75)", fontSize: 12 },
   segmentBar: {
@@ -413,14 +437,24 @@ const styles = StyleSheet.create({
   segmentRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   segmentLabel: { color: "rgba(255,255,255,0.8)", fontSize: 13, flex: 1 },
-  segmentValue: { color: "#fff", fontSize: 13, fontWeight: "700" },
+  segmentValue: {
+    color: "#fff",
+    fontSize: 13,
+    lineHeight: lineHeights.body,
+    fontWeight: "700",
+  },
   metricRow: { flexDirection: "row", gap: 8 },
   chartHint: { color: colors.textFaint, fontSize: 11 },
   tileRow: { flexDirection: "row", gap: 10 },
   tile: { flex: 1, gap: 2 },
   tileLabel: { color: colors.textMuted, fontSize: 11, fontWeight: "700" },
   tileDelta: { fontSize: 11, fontWeight: "700" },
-  tileValue: { color: colors.text, fontSize: 18, fontWeight: "800" },
+  tileValue: {
+    color: colors.text,
+    fontSize: 18,
+    lineHeight: lineHeights.tile,
+    fontWeight: "800",
+  },
   cardTitle: { fontSize: 14, fontWeight: "700", color: colors.text },
   muted: { color: colors.textMuted, fontSize: 12 },
   rowBetween: {

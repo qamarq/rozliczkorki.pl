@@ -3,9 +3,10 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, Card, OutlineButton, ScreenBackground } from "@/components/ui";
 import { RefreshableList } from "@/components/refreshable-list";
 import { openStudentSheet } from "@/components/student-sheet";
+import { SkeletonLine, SkeletonList, lineHeights } from "@/components/skeleton";
 import { TabHeader } from "@/components/tab-header";
 import { formatPLN } from "@repo/shared";
-import { colors } from "@/lib/theme";
+import { colors, tabHeaderTop } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
 export default function StudentsScreen() {
@@ -19,7 +20,9 @@ export default function StudentsScreen() {
             <TabHeader title="Uczniowie" />
             <OutlineButton label="+ Dodaj ucznia" onPress={() => openStudentSheet()} />
           </View>
-          {students.length === 0 && !isLoading ? (
+          {isLoading && students.length === 0 ? (
+            <SkeletonList key="skeleton" count={5} badge />
+          ) : students.length === 0 ? (
             <Text key="empty" style={styles.empty}>
               Brak uczniów
             </Text>
@@ -73,8 +76,9 @@ export default function StudentsScreen() {
 }
 
 function RateSummary({ studentId }: { studentId: string }) {
-  const { data } = trpc.students.byId.useQuery({ id: studentId });
+  const { data, isLoading } = trpc.students.byId.useQuery({ id: studentId });
   const currentRate = data?.rates[0];
+  if (isLoading) return <SkeletonLine style={{ marginTop: 2, maxWidth: "50%" }} />;
   if (!currentRate) return null;
   return (
     <Text style={styles.rateText}>
@@ -85,7 +89,7 @@ function RateSummary({ studentId }: { studentId: string }) {
 }
 
 const styles = StyleSheet.create({
-  head: { padding: 20, paddingBottom: 8, gap: 16 },
+  head: { paddingHorizontal: 20, paddingTop: tabHeaderTop, paddingBottom: 8, gap: 16 },
   cardWrap: { paddingHorizontal: 20 },
   card: { marginBottom: 8, gap: 4 },
   cardHeader: {
@@ -94,8 +98,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  cardTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: colors.text },
-  cardSubtitle: { fontSize: 13, color: colors.textMuted },
-  rateText: { fontSize: 13, color: colors.textFaint, marginTop: 2 },
+  cardTitle: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: lineHeights.title,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  cardSubtitle: { fontSize: 13, lineHeight: lineHeights.body, color: colors.textMuted },
+  rateText: {
+    fontSize: 13,
+    lineHeight: lineHeights.body,
+    color: colors.textFaint,
+    marginTop: 2,
+  },
   empty: { textAlign: "center", color: colors.textFaint, marginTop: 40 },
 });
