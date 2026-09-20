@@ -14,6 +14,7 @@ export default function SchoolsScreen() {
   const {
     data: schools = [],
     isLoading,
+    isError,
     refetch,
   } = trpc.schools.list.useQuery({ includeArchived: true });
 
@@ -46,6 +47,10 @@ export default function SchoolsScreen() {
 
           {isLoading && schools.length === 0 ? (
             <SkeletonList key="skeleton" count={4} lines={3} badge />
+          ) : isError && schools.length === 0 ? (
+            <Text key="error" style={styles.empty}>
+              Nie udało się pobrać szkółek. Pociągnij w dół, żeby spróbować ponownie.
+            </Text>
           ) : schools.length === 0 ? (
             <Text key="empty" style={styles.empty}>
               Brak szkółek. Dodaj placówkę, a potem przypisz do niej uczniów.

@@ -16,7 +16,7 @@ import { authClient, useSession } from "@/lib/auth-client";
 import { CALENDAR_VIEW_OPTIONS, useDefaultCalendarView } from "@/lib/calendar-prefs";
 import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { colors } from "@/lib/theme";
-import { clearOfflineCache } from "@/lib/trpc";
+import { clearOfflineCache, signOutCompletely } from "@/lib/trpc";
 import { syncLiveLessons } from "@/modules/lesson-live";
 
 const externalIcon = <Ionicons name="open-outline" size={16} color={colors.textFaint} />;
@@ -30,10 +30,9 @@ export default function SettingsScreen() {
   )?.label;
 
   async function onSignOut() {
-    await authClient.signOut();
     resetAnalytics();
     syncLiveLessons([]);
-    await clearOfflineCache();
+    await signOutCompletely();
   }
 
   return (

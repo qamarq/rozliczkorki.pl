@@ -1,6 +1,12 @@
 import { Host, List, RNHostView } from "@expo/ui";
-import { Children, isValidElement, type ReactNode } from "react";
-import { useWindowDimensions, View } from "react-native";
+import { Children, isValidElement, useState, type ReactNode } from "react";
+import {
+  Platform,
+  RefreshControl,
+  ScrollView,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { colors } from "@/lib/theme";
 
 export function RefreshableList({
@@ -12,6 +18,31 @@ export function RefreshableList({
 }) {
   const { width } = useWindowDimensions();
   const items = Children.toArray(children).filter(isValidElement);
+  const [refreshing, setRefreshing] = useState(false);
+
+  if (Platform.OS !== "android") {
+    return (
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            tintColor={colors.textMuted}
+            onRefresh={async () => {
+              setRefreshing(true);
+              try {
+                await onRefresh();
+              } finally {
+                setRefreshing(false);
+              }
+            }}
+          />
+        }
+      >
+        {items}
+      </ScrollView>
+    );
+  }
 
   return (
     <Host style={{ flex: 1 }} colorScheme="dark" seedColor={colors.accentTo}>
