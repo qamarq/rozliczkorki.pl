@@ -54,8 +54,20 @@ export const TONE_ICONS: Record<LessonTone, keyof typeof Ionicons.glyphMap> = {
   cancelledPaid: "ban-outline",
 };
 
+export function toneOf(lesson: LessonRow): LessonTone {
+  const tone = lesson.tone as LessonTone | undefined;
+  if (tone && tone in TONE_COLORS) return tone;
+  if (lesson.vacationId || lesson.status === "cancelled")
+    return lesson.settled ? "cancelledPaid" : "cancelled";
+  if (lesson.settled) return lesson.status === "completed" ? "paid" : "prepaid";
+  if (lesson.paymentState === "awaiting_payout") return "awaiting";
+  if (lesson.paymentState === "unpaid")
+    return lesson.status === "completed" ? "overdue" : "awaiting";
+  return "upcoming";
+}
+
 export function lessonTone(lesson: LessonRow) {
-  return TONE_COLORS[lesson.tone];
+  return TONE_COLORS[toneOf(lesson)];
 }
 
 export function toneRing(tone: LessonTone) {
@@ -95,9 +107,10 @@ export function PeriodNav({
 
 export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boolean }) {
   const startsAt = new Date(item.startsAt);
-  const tone = TONE_COLORS[item.tone];
-  const ring = toneRing(item.tone);
-  const struck = item.tone.startsWith("cancelled");
+  const itemTone = toneOf(item);
+  const tone = TONE_COLORS[itemTone];
+  const ring = toneRing(itemTone);
+  const struck = itemTone.startsWith("cancelled");
   return (
     <Pressable onPress={() => openLessonSheet(item.id)}>
       <Card
@@ -115,7 +128,7 @@ export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boo
               {showDate ? format(startsAt, "d MMM, ", { locale: pl }) : ""}
               {format(startsAt, "HH:mm")}
             </Text>
-            <Ionicons name={TONE_ICONS[item.tone]} size={13} color={tone.fg} />
+            <Ionicons name={TONE_ICONS[itemTone]} size={13} color={tone.fg} />
           </View>
           <Text
             style={[styles.rowTitle, struck ? styles.struck : null]}
@@ -125,7 +138,7 @@ export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boo
             {item.mode === "remote" ? " · online" : ""}
           </Text>
           <Text style={[styles.meta, { color: tone.fg }]} numberOfLines={1}>
-            {formatPLN(item.price)} · {LESSON_TONE_LABELS[item.tone]}
+            {formatPLN(item.price)} · {LESSON_TONE_LABELS[itemTone]}
           </Text>
         </View>
       </Card>
