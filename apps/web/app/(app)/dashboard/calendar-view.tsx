@@ -15,15 +15,21 @@ import {
 } from "date-fns";
 import { pl } from "date-fns/locale";
 import {
-  AlertCircle,
+  Ban,
   Banknote,
   Check,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  CircleAlert,
+  Clock3,
+  Hourglass,
   Landmark,
+  Palmtree,
   ListChecks,
   Plus,
   Video,
+  type LucideIcon,
 } from "lucide-react";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -69,29 +75,59 @@ const RING = "ring-2 ring-offset-2 ring-offset-card";
 const TONE_FILL: Record<LessonTone, string> = {
   upcoming: "bg-secondary",
   prepaid: "bg-secondary",
-  paid: "bg-success/45",
-  awaiting: "bg-warning/45",
-  overdue: "bg-warning/45",
-  cancelled: "bg-muted/70",
-  cancelledPaid: "bg-muted/70",
+  paid: "bg-success/12",
+  awaiting: "bg-warning/12",
+  overdue: "bg-warning/12",
+  cancelled: "bg-muted/60",
+  cancelledPaid: "bg-muted/60",
+};
+
+const TONE_TEXT: Record<LessonTone, string> = {
+  upcoming: "text-muted-foreground",
+  prepaid: "text-success",
+  paid: "text-success",
+  awaiting: "text-warning",
+  overdue: "text-warning",
+  cancelled: "text-muted-foreground",
+  cancelledPaid: "text-muted-foreground",
+};
+
+const TONE_ICON: Record<LessonTone, LucideIcon> = {
+  upcoming: Clock3,
+  prepaid: Banknote,
+  paid: CheckCircle2,
+  awaiting: Hourglass,
+  overdue: CircleAlert,
+  cancelled: Ban,
+  cancelledPaid: Ban,
+};
+
+const TONE_SHORT: Record<LessonTone, string> = {
+  upcoming: "Zaplanowane",
+  prepaid: "Przedpłata",
+  paid: "Opłacone",
+  awaiting: "Oczekuje",
+  overdue: "Zaległa",
+  cancelled: "Odwołane",
+  cancelledPaid: "Odwoł. opłac.",
 };
 
 const TONE_CHIP: Record<LessonTone, string> = {
-  upcoming: `${TONE_FILL.upcoming} text-foreground`,
-  prepaid: `${TONE_FILL.prepaid} text-foreground ring-success ${RING}`,
-  paid: `${TONE_FILL.paid} text-foreground`,
-  awaiting: `${TONE_FILL.awaiting} text-foreground`,
-  overdue: `${TONE_FILL.overdue} text-foreground ring-destructive ${RING}`,
-  cancelled: `${TONE_FILL.cancelled} text-muted-foreground line-through opacity-70`,
-  cancelledPaid: `${TONE_FILL.cancelledPaid} text-muted-foreground line-through ring-success ${RING}`,
-};
-
-const TONE_SWATCH: Record<LessonTone, string> = {
   upcoming: TONE_FILL.upcoming,
   prepaid: `${TONE_FILL.prepaid} ring-success ${RING}`,
   paid: TONE_FILL.paid,
   awaiting: TONE_FILL.awaiting,
   overdue: `${TONE_FILL.overdue} ring-destructive ${RING}`,
+  cancelled: `${TONE_FILL.cancelled} opacity-70`,
+  cancelledPaid: `${TONE_FILL.cancelledPaid} opacity-70 ring-success ${RING}`,
+};
+
+const TONE_SWATCH: Record<LessonTone, string> = {
+  upcoming: TONE_FILL.upcoming,
+  prepaid: `${TONE_FILL.prepaid} ring-success ${RING}`,
+  paid: "bg-success/45",
+  awaiting: "bg-warning/45",
+  overdue: `bg-warning/45 ring-destructive ${RING}`,
   cancelled: `${TONE_FILL.cancelled} opacity-70`,
   cancelledPaid: `${TONE_FILL.cancelledPaid} ring-success ${RING}`,
 };
@@ -224,10 +260,17 @@ export function CalendarView() {
             </div>
 
             <div className="bg-border-solid grid grid-cols-7 gap-px">
-              {days.map((day) => {
+              {days.map((day, dayIndex) => {
                 const key = format(day, "yyyy-MM-dd");
                 const dayLessons = lessonsByDay.get(key) ?? [];
                 const isCurrentDay = isToday(day);
+                const counted = dayLessons.filter((l) => !l.tone.startsWith("cancelled"));
+                const dayTotal = counted.length
+                  ? {
+                      amount: counted.reduce((sum, l) => sum + l.price, 0),
+                      settled: counted.every((l) => l.settled),
+                    }
+                  : null;
                 const vacation = vacationByDay.get(key);
                 return (
                   <div
@@ -251,53 +294,102 @@ export function CalendarView() {
                       >
                         {format(day, "d")}
                       </span>
-                      <button
-                        onClick={() => openCreateDialog(day)}
-                        className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-0.5 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
-                      >
-                        <Plus className="size-3.5" />
-                      </button>
+                      <span className="flex items-center">
+                        <span
+                          className={cn(
+                            "text-[11px] font-semibold tabular-nums group-hover:hidden",
+                            dayTotal === null
+                              ? "text-muted-foreground/50"
+                              : dayTotal.settled
+                                ? "text-success"
+                                : "text-warning",
+                          )}
+                        >
+                          {dayTotal === null ? "–" : formatPLN(dayTotal.amount)}
+                        </span>
+                        <button
+                          onClick={() => openCreateDialog(day)}
+                          className="text-muted-foreground hover:text-foreground hover:bg-accent hidden rounded p-0.5 focus:block group-hover:block"
+                        >
+                          <Plus className="size-3.5" />
+                        </button>
+                      </span>
                     </div>
                     {vacation && (
                       <div
                         className={cn(
-                          "bg-chart-5 -mx-2.5 h-1.5",
-                          vacation.isStart ? "ml-0 rounded-l-full" : "-ml-[11px]",
-                          vacation.isEnd ? "mr-0 rounded-r-full" : "-mr-[11px]",
+                          "-mx-2.5 flex h-5 items-center gap-1 overflow-hidden bg-[color-mix(in_oklab,var(--chart-5)_72%,black)] text-[10px] font-medium text-white",
+                          vacation.isStart ? "ml-0 rounded-l-full pl-2" : "-ml-[11px]",
+                          vacation.isEnd ? "mr-0 rounded-r-full pr-2" : "-mr-[11px]",
                         )}
                         title={vacation.note ?? "Urlop"}
-                      />
+                      >
+                        {(vacation.isStart || dayIndex % 7 === 0) && (
+                          <>
+                            <Palmtree
+                              className={cn(
+                                "size-3 shrink-0",
+                                !vacation.isStart && "ml-2.5",
+                              )}
+                            />
+                            <span className="truncate">{vacation.note ?? "Urlop"}</span>
+                          </>
+                        )}
+                      </div>
                     )}
 
                     <div className="flex flex-col gap-3">
-                      {dayLessons.map((lesson) => (
-                        <button
-                          key={lesson.id}
-                          onClick={() => openEditDialog(day, lesson.id)}
-                          title={`${LESSON_TONE_LABELS[lesson.tone]} — ${LESSON_TONE_HINTS[lesson.tone]}`}
-                          className={cn(
-                            "flex flex-col rounded-md px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
-                            TONE_CHIP[lesson.tone],
-                          )}
-                        >
-                          <span className="font-medium">
-                            {format(new Date(lesson.startsAt), "HH:mm")}{" "}
-                            {lesson.student?.name}
-                            {lesson.mode === "remote" && (
-                              <Video className="ml-1 inline size-2.5 align-baseline" />
+                      {dayLessons.map((lesson) => {
+                        const ToneIcon = TONE_ICON[lesson.tone];
+                        const struck = lesson.tone.startsWith("cancelled");
+                        return (
+                          <button
+                            key={lesson.id}
+                            onClick={() => openEditDialog(day, lesson.id)}
+                            title={`${LESSON_TONE_LABELS[lesson.tone]} — ${LESSON_TONE_HINTS[lesson.tone]}`}
+                            className={cn(
+                              "flex flex-col gap-0.5 rounded-md px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
+                              TONE_CHIP[lesson.tone],
                             )}
-                          </span>
-                          <span className="flex items-center gap-1 tabular-nums">
-                            {formatPLN(lesson.price)}
-                            {lesson.status === "completed" && (
-                              <Banknote className="text-muted-foreground size-2.5" />
-                            )}
-                            {lesson.tone === "overdue" && (
-                              <AlertCircle className="text-destructive ml-auto size-3" />
-                            )}
-                          </span>
-                        </button>
-                      ))}
+                          >
+                            <span className="flex items-center justify-between gap-1">
+                              <span
+                                className={cn(
+                                  "font-semibold tabular-nums",
+                                  TONE_TEXT[lesson.tone],
+                                  struck && "line-through",
+                                )}
+                              >
+                                {format(new Date(lesson.startsAt), "HH:mm")}
+                              </span>
+                              <ToneIcon
+                                className={cn("size-3 shrink-0", TONE_TEXT[lesson.tone])}
+                              />
+                            </span>
+                            <span
+                              className={cn(
+                                "flex items-center gap-1 truncate font-medium",
+                                struck
+                                  ? "text-muted-foreground line-through"
+                                  : "text-foreground",
+                              )}
+                            >
+                              <span className="truncate">{lesson.student?.name}</span>
+                              {lesson.mode === "remote" && (
+                                <Video className="size-2.5 shrink-0" />
+                              )}
+                            </span>
+                            <span
+                              className={cn(
+                                "truncate font-medium tabular-nums",
+                                TONE_TEXT[lesson.tone],
+                              )}
+                            >
+                              {formatPLN(lesson.price)} · {TONE_SHORT[lesson.tone]}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -484,7 +576,7 @@ function CalendarLegend() {
           </span>
         ))}
         <span className="flex items-center gap-2.5 text-xs">
-          <span className="bg-chart-5 h-1.5 w-5 shrink-0 rounded-full" />
+          <span className="h-2.5 w-5 shrink-0 rounded-full bg-[color-mix(in_oklab,var(--chart-5)_72%,black)]" />
           <span className="text-muted-foreground">Urlop</span>
         </span>
       </div>
