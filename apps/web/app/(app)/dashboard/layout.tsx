@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getServerSession } from "@/lib/auth-server";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AndroidAppBanner } from "./android-app-banner";
 import { AppSidebar, DashboardHeader } from "./nav";
 
 export default async function DashboardLayout({
@@ -37,6 +38,7 @@ export default async function DashboardLayout({
 
         <DashboardHeader />
         <div className="max-w-352 mx-auto w-full flex-1 p-4 pt-0 lg:p-8 lg:pt-0">
+          <AndroidAppBanner />
           {children}
         </div>
       </SidebarInset>

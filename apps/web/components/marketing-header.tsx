@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { PanelLink } from "@/components/marketing/panel-link";
 import { Button } from "@/components/ui/button";
 import { getServerSession } from "@/lib/auth-server";
 
@@ -21,7 +22,7 @@ export async function MarketingHeader() {
         </Button>
         {session ? (
           <Button asChild>
-            <Link href="/dashboard">Panel</Link>
+            <PanelLink href="/dashboard">Panel</PanelLink>
           </Button>
         ) : (
           <>

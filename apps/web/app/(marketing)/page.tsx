@@ -7,6 +7,7 @@ import { Bento } from "@/components/marketing/bento";
 import { Cta } from "@/components/marketing/cta";
 import { Faq } from "@/components/marketing/faq";
 import { HeroVisual } from "@/components/marketing/hero-visual";
+import { PanelLink } from "@/components/marketing/panel-link";
 import { PhoneVisual } from "@/components/marketing/phone-visual";
 import { Steps } from "@/components/marketing/steps";
 import { StoreButtons } from "@/components/store-buttons";
@@ -69,10 +70,10 @@ export default async function MarketingPage() {
             </p>
             <div className="mk-rise flex flex-wrap items-center gap-3" style={d(3)}>
               <Button size="lg" className="h-11 px-5 text-base" asChild>
-                <Link href={ctaHref}>
+                <PanelLink href={ctaHref}>
                   {ctaLabel}
                   <ArrowRight className="size-4" />
-                </Link>
+                </PanelLink>
               </Button>
               <Button size="lg" variant="ghost" className="h-11 px-4 text-base" asChild>
                 <Link href="#jak-to-dziala">Jak to działa</Link>
