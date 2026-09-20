@@ -559,7 +559,7 @@ function StatsPromoCard() {
   return (
     <Link
       href="/dashboard/stats"
-      className="bg-brand-gradient group/promo focus-visible:ring-ring flex items-center gap-3 rounded-xl p-4 text-white transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2"
+      className="group/promo focus-visible:ring-ring flex items-center gap-3 rounded-xl bg-[linear-gradient(135deg,color-mix(in_oklab,var(--brand-from)_68%,black),color-mix(in_oklab,var(--brand-to)_68%,black))] p-4 text-white transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2"
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
         <LineChart className="size-4.5" />
