@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Landmark,
   ListChecks,
-  Palmtree,
   Plus,
   Video,
 } from "lucide-react";
@@ -133,15 +132,20 @@ export function CalendarView() {
   const pendingNotices = vacationOverview?.pending ?? [];
 
   const vacationByDay = useMemo(() => {
-    const map = new Map<string, { note: string | null; startDate: string }>();
+    const map = new Map<
+      string,
+      { note: string | null; isStart: boolean; isEnd: boolean }
+    >();
     for (const vacation of vacationOverview?.vacations ?? []) {
       for (const day of eachDayOfInterval({
         start: new Date(`${vacation.startDate}T12:00:00`),
         end: new Date(`${vacation.endDate}T12:00:00`),
       })) {
-        map.set(format(day, "yyyy-MM-dd"), {
+        const dayKey = format(day, "yyyy-MM-dd");
+        map.set(dayKey, {
           note: vacation.note,
-          startDate: vacation.startDate,
+          isStart: dayKey === vacation.startDate,
+          isEnd: dayKey === vacation.endDate,
         });
       }
     }
@@ -232,7 +236,6 @@ export function CalendarView() {
                       "bg-card group relative flex min-h-28 flex-col gap-1.5 p-2.5",
                       !isSameMonth(day, month) &&
                         "bg-background/60 text-muted-foreground",
-                      vacation && "bg-chart-5/[0.07]",
                       isCurrentDay && "bg-primary/[0.06]",
                     )}
                   >
@@ -256,15 +259,14 @@ export function CalendarView() {
                       </button>
                     </div>
                     {vacation && (
-                      <span
-                        className="text-chart-5 flex items-center gap-1 truncate text-[10px] font-medium"
+                      <div
+                        className={cn(
+                          "bg-chart-5 -mx-2.5 h-1.5",
+                          vacation.isStart ? "ml-0 rounded-l-full" : "-ml-[11px]",
+                          vacation.isEnd ? "mr-0 rounded-r-full" : "-mr-[11px]",
+                        )}
                         title={vacation.note ?? "Urlop"}
-                      >
-                        <Palmtree className="size-2.5 shrink-0" />
-                        {key === vacation.startDate
-                          ? (vacation.note ?? "Urlop")
-                          : "Urlop"}
-                      </span>
+                      />
                     )}
 
                     <div className="flex flex-col gap-3">
@@ -329,7 +331,6 @@ export function CalendarView() {
 
 type ActionStep = "confirm" | "settle";
 
-// School lessons settle through the payout period, so they need nothing here once held.
 function actionStepOf(lesson: LessonRow): ActionStep | null {
   if (lesson.status === "cancelled" || lesson.vacationId) return null;
   if (lesson.settled) return null;
@@ -483,7 +484,7 @@ function CalendarLegend() {
           </span>
         ))}
         <span className="flex items-center gap-2.5 text-xs">
-          <Palmtree className="text-chart-5 size-3 shrink-0" />
+          <span className="bg-chart-5 h-1.5 w-5 shrink-0 rounded-full" />
           <span className="text-muted-foreground">Urlop</span>
         </span>
       </div>

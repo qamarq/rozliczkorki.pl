@@ -81,7 +81,6 @@ export const statsRouter = router({
 
         theoretical += settlement.price;
         paid += settlement.received;
-        // Lessons still ahead are not owed yet, so they stay out of both buckets.
         if (lessonEndsAt(lesson) <= now) {
           if (student?.schoolId) awaitingPayout += settlement.outstanding;
           else unpaid += settlement.outstanding;

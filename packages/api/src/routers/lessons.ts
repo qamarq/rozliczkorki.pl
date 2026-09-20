@@ -35,10 +35,6 @@ async function assertOwnsLesson(
   return lesson;
 }
 
-/**
- * A school lesson only counts as overdue once the payout period it belongs to
- * has passed its due date without a recorded transfer.
- */
 async function overduePayoutLessonIds(
   db: (typeof import("@repo/db"))["db"],
   userId: string,

@@ -93,7 +93,6 @@ export default function StatsPage() {
       result.push({
         label: bucket.label,
         actual: bucket.isPast ? round2(running) : null,
-        // The forecast picks up at the last real point so the dashed line connects.
         forecast: !bucket.isPast || i === lastPast ? round2(running) : null,
         previous: previous.length ? round2(runningPrev) : null,
       });
