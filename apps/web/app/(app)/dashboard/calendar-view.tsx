@@ -17,7 +17,6 @@ import { pl } from "date-fns/locale";
 import {
   AlertCircle,
   Banknote,
-  CalendarClock,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -25,14 +24,11 @@ import {
   ListChecks,
   Palmtree,
   Plus,
-  School,
-  Sparkles,
   Video,
-  Wallet,
 } from "lucide-react";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -48,7 +44,7 @@ import {
   LESSON_TONE_LABELS,
   type LessonTone,
 } from "@repo/shared";
-import { trackFinancialSummaryViewed, trackLessonCheckedOff } from "@repo/analytics";
+import { trackLessonCheckedOff } from "@repo/analytics";
 import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -69,26 +65,36 @@ const TONE_ORDER: LessonTone[] = [
   "cancelledPaid",
 ];
 
+const RING = "ring-2 ring-offset-2 ring-offset-card";
+
+const TONE_FILL: Record<LessonTone, string> = {
+  upcoming: "bg-secondary",
+  prepaid: "bg-secondary",
+  paid: "bg-success/45",
+  awaiting: "bg-warning/45",
+  overdue: "bg-warning/45",
+  cancelled: "bg-muted/70",
+  cancelledPaid: "bg-muted/70",
+};
+
 const TONE_CHIP: Record<LessonTone, string> = {
-  upcoming: "bg-muted text-foreground",
-  prepaid: "bg-muted text-foreground ring-success ring-2 ring-offset-2 ring-offset-card",
-  paid: "bg-success/15 text-foreground",
-  awaiting: "bg-warning/15 text-foreground",
-  overdue:
-    "bg-warning/15 text-foreground ring-destructive ring-2 ring-offset-2 ring-offset-card",
-  cancelled: "bg-muted/60 text-muted-foreground line-through opacity-70",
-  cancelledPaid:
-    "bg-muted/60 text-muted-foreground line-through ring-success ring-2 ring-offset-2 ring-offset-card",
+  upcoming: `${TONE_FILL.upcoming} text-foreground`,
+  prepaid: `${TONE_FILL.prepaid} text-foreground ring-success ${RING}`,
+  paid: `${TONE_FILL.paid} text-foreground`,
+  awaiting: `${TONE_FILL.awaiting} text-foreground`,
+  overdue: `${TONE_FILL.overdue} text-foreground ring-destructive ${RING}`,
+  cancelled: `${TONE_FILL.cancelled} text-muted-foreground line-through opacity-70`,
+  cancelledPaid: `${TONE_FILL.cancelledPaid} text-muted-foreground line-through ring-success ${RING}`,
 };
 
 const TONE_SWATCH: Record<LessonTone, string> = {
-  upcoming: "bg-muted",
-  prepaid: "bg-muted ring-success ring-2 ring-offset-2 ring-offset-card",
-  paid: "bg-success/40",
-  awaiting: "bg-warning/40",
-  overdue: "bg-warning/40 ring-destructive ring-2 ring-offset-2 ring-offset-card",
-  cancelled: "bg-muted/60 opacity-70",
-  cancelledPaid: "bg-muted/60 ring-success ring-2 ring-offset-2 ring-offset-card",
+  upcoming: TONE_FILL.upcoming,
+  prepaid: `${TONE_FILL.prepaid} ring-success ${RING}`,
+  paid: TONE_FILL.paid,
+  awaiting: TONE_FILL.awaiting,
+  overdue: `${TONE_FILL.overdue} ring-destructive ${RING}`,
+  cancelled: `${TONE_FILL.cancelled} opacity-70`,
+  cancelledPaid: `${TONE_FILL.cancelledPaid} ring-success ${RING}`,
 };
 
 export function CalendarView() {
@@ -107,11 +113,6 @@ export function CalendarView() {
   const { data: lessons = [], isLoading } = trpc.lessons.range.useQuery({
     from: gridStart.toISOString(),
     to: gridEnd.toISOString(),
-  });
-
-  const { data: summary } = trpc.stats.summary.useQuery({
-    from: startOfMonth(month).toISOString(),
-    to: endOfMonth(month).toISOString(),
   });
 
   const lessonsByDay = useMemo(() => {
@@ -167,31 +168,6 @@ export function CalendarView() {
       );
   }, [lessons, today]);
 
-  const summaryReported = useRef(false);
-  useEffect(() => {
-    if (!summary || summaryReported.current) return;
-    summaryReported.current = true;
-    const now = Date.now();
-    const overdueLessonsCount = lessons.filter(
-      (l) =>
-        l.status === "completed" &&
-        !l.settled &&
-        l.paymentState !== "awaiting_payout" &&
-        new Date(l.startsAt).getTime() < now,
-    ).length;
-    const dueLessonsCount = lessons.filter(
-      (l) => l.paymentState === "awaiting_payout" && !l.settled,
-    ).length;
-    void trackFinancialSummaryViewed(flowDeps, {
-      viewType: "due",
-      overdueLessonsCount,
-      dueLessonsCount,
-      earnedAmount: summary.paid,
-      dueAmount: summary.awaitingPayout,
-      overdueAmount: summary.unpaid,
-    });
-  }, [summary, lessons]);
-
   function openCreateDialog(day: Date) {
     setSelectedDate(day);
     setEditingLessonId(null);
@@ -206,33 +182,6 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          icon={Sparkles}
-          label="Potencjał miesiąca"
-          value={formatPLN(summary?.theoretical ?? 0)}
-          tone="primary"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Otrzymane środki"
-          value={formatPLN(summary?.paid ?? 0)}
-          tone="success"
-        />
-        <StatCard
-          icon={CalendarClock}
-          label="Do rozliczenia"
-          value={formatPLN(summary?.unpaid ?? 0)}
-          tone="warning"
-        />
-        <StatCard
-          icon={School}
-          label="Do wypłaty ze szkółek"
-          value={formatPLN(summary?.awaitingPayout ?? 0)}
-          tone="school"
-        />
-      </div>
-
       <div className="grid items-start gap-5 lg:grid-cols-12">
         <div className="flex flex-col gap-5 lg:col-span-8">
           <Card className="flex-row flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -538,45 +487,6 @@ function CalendarLegend() {
           <span className="text-muted-foreground">Urlop</span>
         </span>
       </div>
-    </Card>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  tone: "primary" | "success" | "warning" | "destructive" | "school";
-}) {
-  const toneClasses = {
-    primary: "bg-primary/10 text-primary",
-    success: "bg-success/10 text-success",
-    warning: "bg-warning/10 text-warning",
-    destructive: "bg-destructive/10 text-destructive",
-    school: "bg-chart-5/10 text-chart-5",
-  }[tone];
-
-  return (
-    <Card className="gap-2 p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-          {label}
-        </span>
-        <span
-          className={cn(
-            "flex size-7 items-center justify-center rounded-md",
-            toneClasses,
-          )}
-        >
-          <Icon className="size-3.5" />
-        </span>
-      </div>
-      <span className="text-2xl font-semibold tabular-nums">{value}</span>
     </Card>
   );
 }
