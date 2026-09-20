@@ -70,7 +70,12 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         persistOptions={{
           persister,
           maxAge: CACHE_MAX_AGE,
-          buster: Constants.expoConfig?.version,
+          buster: String(
+            Constants.expoConfig?.android?.versionCode ??
+              Constants.expoConfig?.ios?.buildNumber ??
+              Constants.expoConfig?.version ??
+              "0",
+          ),
         }}
       >
         {children}
