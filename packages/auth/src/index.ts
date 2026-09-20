@@ -11,6 +11,7 @@ import {
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { oneTap } from "better-auth/plugins";
 import { actionEmail, sendEmail } from "./email";
 
 const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "")
@@ -136,6 +137,7 @@ export const auth = betterAuth({
   },
   plugins: [
     passkey({ rpName: "RozliczKorki", origin: passkeyOrigins }),
+    oneTap(),
     expo(),
     nextCookies(),
   ],

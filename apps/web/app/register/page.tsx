@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,8 +22,10 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { signInWithGoogle } from "@/lib/google-sign-in";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -64,7 +67,15 @@ export default function RegisterPage() {
 
   async function onGoogle() {
     rememberSignupMethod("google");
-    await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
+    await signInWithGoogle({
+      context: "signup",
+      callbackURL: "/dashboard",
+      onSuccess: () => {
+        router.push("/dashboard");
+        router.refresh();
+      },
+      onError: (message) => toast.error(message),
+    });
   }
 
   return (
