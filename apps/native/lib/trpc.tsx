@@ -1,12 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AppRouter } from "@repo/api";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
-import { onlineManager, QueryClient } from "@tanstack/react-query";
+import {
+  MutationCache,
+  onlineManager,
+  QueryCache,
+  QueryClient,
+} from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import Constants from "expo-constants";
 import * as Network from "expo-network";
+import * as SecureStore from "expo-secure-store";
 import superjson from "superjson";
 import { useState } from "react";
 import { authClient } from "./auth-client";
@@ -29,7 +35,23 @@ onlineManager.setEventListener((setOnline) => {
   return () => subscription.remove();
 });
 
+const SESSION_KEYS = ["rozliczkorki_cookie", "rozliczkorki_session_data"];
+
+function isUnauthorized(error: unknown) {
+  const code = (error as { data?: { code?: string } })?.data?.code;
+  return code === "UNAUTHORIZED";
+}
+
+let signingOut = false;
+
+function onQueryError(error: unknown) {
+  if (!isUnauthorized(error) || signingOut) return;
+  void signOutCompletely();
+}
+
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: onQueryError }),
+  mutationCache: new MutationCache({ onError: onQueryError }),
   defaultOptions: {
     queries: { gcTime: CACHE_MAX_AGE },
     mutations: { networkMode: "always" },
@@ -46,6 +68,21 @@ const persister = createAsyncStoragePersister({
 export async function clearOfflineCache() {
   queryClient.clear();
   await persister.removeClient();
+}
+
+export async function signOutCompletely() {
+  if (signingOut) return;
+  signingOut = true;
+  try {
+    await authClient.signOut().catch(() => undefined);
+    await Promise.all(
+      SESSION_KEYS.map((key) => SecureStore.deleteItemAsync(key).catch(() => undefined)),
+    );
+    await clearOfflineCache();
+    await authClient.getSession().catch(() => undefined);
+  } finally {
+    signingOut = false;
+  }
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {

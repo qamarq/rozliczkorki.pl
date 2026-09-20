@@ -10,7 +10,12 @@ import { colors, tabHeaderTop } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
 export default function StudentsScreen() {
-  const { data: students = [], isLoading, refetch } = trpc.students.list.useQuery();
+  const {
+    data: students = [],
+    isLoading,
+    isError,
+    refetch,
+  } = trpc.students.list.useQuery();
 
   return (
     <ScreenBackground syncStatus>
@@ -22,6 +27,10 @@ export default function StudentsScreen() {
           </View>
           {isLoading && students.length === 0 ? (
             <SkeletonList key="skeleton" count={5} badge />
+          ) : isError && students.length === 0 ? (
+            <Text key="error" style={styles.empty}>
+              Nie udało się pobrać uczniów. Pociągnij w dół, żeby spróbować ponownie.
+            </Text>
           ) : students.length === 0 ? (
             <Text key="empty" style={styles.empty}>
               Brak uczniów
