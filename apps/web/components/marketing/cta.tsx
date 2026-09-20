@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PanelLink } from "@/components/marketing/panel-link";
 import { Button } from "@/components/ui/button";
 
 export function Cta({ href, label }: { href: string; label: string }) {
@@ -25,7 +25,7 @@ export function Cta({ href, label }: { href: string; label: string }) {
           className="h-11 bg-white px-6 text-base text-black hover:bg-white/90"
           asChild
         >
-          <Link href={href}>{label}</Link>
+          <PanelLink href={href}>{label}</PanelLink>
         </Button>
         <p className="font-mono-ui text-xs text-white/40">
           darmowe · bez karty · po polsku
