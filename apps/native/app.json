@@ -22,7 +22,7 @@
       "bundleIdentifier": "pl.rozliczkorki.app",
       "appleTeamId": "KWQW4NSRZ4",
       "usesAppleSignIn": true,
-      "associatedDomains": ["webcredentials:rozliczkorki.pl"]
+      "associatedDomains": ["webcredentials:rozliczkorki.pl", "applinks:rozliczkorki.pl"]
     },
     "android": {
       "adaptiveIcon": {
@@ -30,6 +30,25 @@
         "backgroundColor": "#111827"
       },
       "package": "pl.rozliczkorki.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "rozliczkorki.pl",
+              "pathPrefix": "/dashboard"
+            },
+            {
+              "scheme": "https",
+              "host": "rozliczkorki.pl",
+              "pathPrefix": "/lesson"
+            }
+          ]
+        }
+      ],
       "versionCode": 11,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
