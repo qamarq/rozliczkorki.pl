@@ -7,11 +7,7 @@ import { openLessonSheet } from "@/components/lesson-details-sheet";
 import { colors, radius } from "@/lib/theme";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterClient } from "@trpc/client";
-import {
-  LESSON_PAYMENT_STATE_LABELS,
-  LESSON_STATUS_LABELS,
-  formatPLN,
-} from "@repo/shared";
+import { LESSON_TONE_LABELS, type LessonTone, formatPLN } from "@repo/shared";
 
 export type LessonRow = Awaited<
   ReturnType<inferRouterClient<AppRouter>["lessons"]["range"]["query"]>
@@ -38,12 +34,34 @@ export function groupByDay(lessons: LessonRow[]) {
   return map;
 }
 
+export const TONE_COLORS: Record<LessonTone, { fg: string; bg: string }> = {
+  upcoming: { fg: colors.textMuted, bg: colors.surface },
+  prepaid: { fg: colors.success, bg: colors.surface },
+  paid: { fg: colors.success, bg: colors.successBg },
+  awaiting: { fg: colors.warning, bg: colors.warningBg },
+  overdue: { fg: colors.warning, bg: colors.warningBg },
+  cancelled: { fg: colors.textFaint, bg: colors.surface },
+  cancelledPaid: { fg: colors.textFaint, bg: colors.surface },
+};
+
+export const TONE_ICONS: Record<LessonTone, keyof typeof Ionicons.glyphMap> = {
+  upcoming: "time-outline",
+  prepaid: "wallet-outline",
+  paid: "checkmark-circle-outline",
+  awaiting: "hourglass-outline",
+  overdue: "alert-circle",
+  cancelled: "ban-outline",
+  cancelledPaid: "ban-outline",
+};
+
 export function lessonTone(lesson: LessonRow) {
-  if (lesson.vacationId) return { fg: colors.textFaint, bg: colors.surface };
-  if (lesson.status === "cancelled") return { fg: colors.danger, bg: colors.dangerBg };
-  if (lesson.paymentState === "paid") return { fg: colors.success, bg: colors.successBg };
-  if (lesson.paymentState === "unpaid") return { fg: colors.danger, bg: colors.dangerBg };
-  return { fg: colors.warning, bg: colors.warningBg };
+  return TONE_COLORS[lesson.tone];
+}
+
+export function toneRing(tone: LessonTone) {
+  if (tone === "overdue") return colors.danger;
+  if (tone === "prepaid" || tone === "cancelledPaid") return colors.success;
+  return null;
 }
 
 export function PeriodNav({
@@ -77,43 +95,39 @@ export function PeriodNav({
 
 export function LessonCard({ item, showDate }: { item: LessonRow; showDate?: boolean }) {
   const startsAt = new Date(item.startsAt);
+  const tone = TONE_COLORS[item.tone];
+  const ring = toneRing(item.tone);
+  const struck = item.tone.startsWith("cancelled");
   return (
     <Pressable onPress={() => openLessonSheet(item.id)}>
-      <Card style={styles.row}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.rowTitle}>
-            {showDate ? format(startsAt, "d MMM, ", { locale: pl }) : ""}
-            {format(startsAt, "HH:mm")} · {item.student?.name}
+      <Card
+        style={[
+          styles.row,
+          { backgroundColor: tone.bg },
+          ring ? { borderColor: ring, borderWidth: 1.5 } : null,
+        ]}
+      >
+        <View style={{ flex: 1, gap: 2 }}>
+          <View style={styles.timeRow}>
+            <Text
+              style={[styles.time, { color: tone.fg }, struck ? styles.struck : null]}
+            >
+              {showDate ? format(startsAt, "d MMM, ", { locale: pl }) : ""}
+              {format(startsAt, "HH:mm")}
+            </Text>
+            <Ionicons name={TONE_ICONS[item.tone]} size={13} color={tone.fg} />
+          </View>
+          <Text
+            style={[styles.rowTitle, struck ? styles.struck : null]}
+            numberOfLines={1}
+          >
+            {item.student?.name}
             {item.mode === "remote" ? " · online" : ""}
           </Text>
-          <View style={styles.badgeRow}>
-            <Badge
-              label={item.vacationId ? "Urlop" : LESSON_STATUS_LABELS[item.status]}
-              tone={
-                item.vacationId
-                  ? "default"
-                  : item.status === "cancelled"
-                    ? "danger"
-                    : item.status === "completed"
-                      ? "success"
-                      : "default"
-              }
-            />
-            <Badge
-              label={LESSON_PAYMENT_STATE_LABELS[item.paymentState].toLowerCase()}
-              tone={
-                item.paymentState === "paid"
-                  ? "success"
-                  : item.paymentState === "awaiting_payout"
-                    ? "warning"
-                    : item.paymentState === "unpaid"
-                      ? "danger"
-                      : "default"
-              }
-            />
-          </View>
+          <Text style={[styles.meta, { color: tone.fg }]} numberOfLines={1}>
+            {formatPLN(item.price)} · {LESSON_TONE_LABELS[item.tone]}
+          </Text>
         </View>
-        <Text style={styles.price}>{formatPLN(item.price)}</Text>
       </Card>
     </Pressable>
   );
@@ -161,6 +175,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   rowTitle: { fontSize: 15, fontWeight: "700", color: colors.text },
-  badgeRow: { flexDirection: "row", gap: 6, marginTop: 8 },
-  price: { fontSize: 15, fontWeight: "700", color: colors.text },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 6,
+  },
+  time: { fontSize: 13, fontWeight: "700" },
+  meta: { fontSize: 12, fontWeight: "600" },
+  struck: { textDecorationLine: "line-through", color: colors.textFaint },
 });
