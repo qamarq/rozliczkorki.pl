@@ -20,8 +20,10 @@ const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "")
 
 // Android apps sign WebAuthn requests with android:apk-key-hash:<base64url SHA-256 of the signing cert>.
 const ANDROID_APK_KEY_HASHES = [
-  "07RX20u0maNUfm94yVrKwXmWmxx_qM2-aoFVQ1YFO18",
+  "6DH8EW4rabu5yAfdU8A3wt1EhfZPAN4CKXmCXddMf3g",
   "29WbsTk-wf7yTBS8TRXg4tVfY3QnpneH_k086B2MLFA",
+  "et7yt7ydmFtMrdicZVOkJaG86qe_tn8dvRNBB5J8c_k",
+  "07RX20u0maNUfm94yVrKwXmWmxx_qM2-aoFVQ1YFO18",
 ];
 
 const passkeyOrigins = [
