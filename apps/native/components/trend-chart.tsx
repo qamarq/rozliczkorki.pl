@@ -11,7 +11,12 @@ import Svg, {
 import { Skeleton } from "@/components/skeleton";
 import { colors, radius } from "@/lib/theme";
 
-export type TrendPoint = { label: string; value: number; forecast: boolean };
+export type TrendPoint = {
+  label: string;
+  value: number;
+  previous: number | null;
+  forecast: boolean;
+};
 
 const HEIGHT = 170;
 const PADDING_TOP = 14;
@@ -66,13 +71,21 @@ export function TrendChart({
     );
   }
 
-  const max = Math.max(...points.map((p) => p.value), 1);
+  const max = Math.max(...points.map((p) => Math.max(p.value, p.previous ?? 0)), 1);
   const plotHeight = HEIGHT - PADDING_TOP - PADDING_BOTTOM;
   const step = points.length > 1 ? width / (points.length - 1) : 0;
   const coords = points.map((point, i) => ({
     x: points.length > 1 ? i * step : width / 2,
     y: PADDING_TOP + plotHeight - (point.value / max) * plotHeight,
   }));
+
+  const hasPrevious = points.some((p) => p.previous != null);
+  const previousCoords = hasPrevious
+    ? points.map((point, i) => ({
+        x: points.length > 1 ? i * step : width / 2,
+        y: PADDING_TOP + plotHeight - ((point.previous ?? 0) / max) * plotHeight,
+      }))
+    : [];
 
   const firstForecast = points.findIndex((p) => p.forecast);
   const splitAt = firstForecast === -1 ? points.length : Math.max(firstForecast - 1, 0);
@@ -134,6 +147,15 @@ export function TrendChart({
             />
 
             {areaPath !== "" && <Path d={areaPath} fill="url(#area)" />}
+            {previousCoords.length > 1 && (
+              <Path
+                d={buildPath(previousCoords)}
+                stroke={colors.success}
+                strokeWidth={2}
+                strokeDasharray="6 5"
+                fill="none"
+              />
+            )}
             {actual.length > 0 && (
               <Path
                 d={buildPath(actual)}

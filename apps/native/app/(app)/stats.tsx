@@ -19,14 +19,6 @@ import { flowDeps } from "@/lib/analytics";
 import { colors, gradients, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
-type Metric = "revenue" | "lessons" | "hours";
-
-const METRICS: { id: Metric; label: string }[] = [
-  { id: "revenue", label: "Przychód" },
-  { id: "lessons", label: "Zajęcia" },
-  { id: "hours", label: "Godziny" },
-];
-
 const GRANULARITY_LABEL = {
   day: "dziennie",
   week: "tygodniowo",
@@ -36,7 +28,6 @@ const GRANULARITY_LABEL = {
 export default function StatsScreen() {
   const now = useMemo(() => new Date(), []);
   const [preset, setPreset] = useState<PresetId>("this-month");
-  const [metric, setMetric] = useState<Metric>("revenue");
 
   const range = useMemo(() => presetRange(preset, now), [preset, now]);
   const granularity = granularityFor(range);
@@ -45,10 +36,15 @@ export default function StatsScreen() {
     const previous = previousRange(range);
     return { from: previous.from.toISOString(), to: previous.to.toISOString() };
   }, [range]);
+  const compareBuckets = useMemo(
+    () => buildBuckets(previousRange(range), granularity),
+    [range, granularity],
+  );
 
   const { data, isLoading } = trpc.stats.analytics.useQuery({
     buckets,
     compare,
+    compareBuckets,
     now: now.toISOString(),
   });
 
@@ -69,23 +65,24 @@ export default function StatsScreen() {
     });
   }, [totals]);
 
-  const points = series.map((bucket) => ({
-    label: bucket.label,
-    value:
-      metric === "revenue"
-        ? bucket.revenue
-        : metric === "lessons"
-          ? bucket.lessons
-          : bucket.hours,
-    forecast: !bucket.isPast,
-  }));
+  const points = useMemo(() => {
+    const previous = data?.compareSeries ?? [];
+    const round2 = (value: number) => Math.round(value * 100) / 100;
+    let running = 0;
+    let runningPrev = 0;
+    return series.map((bucket, i) => {
+      running += bucket.revenue;
+      runningPrev += previous[i]?.revenue ?? 0;
+      return {
+        label: bucket.label,
+        value: round2(running),
+        previous: previous.length ? round2(runningPrev) : null,
+        forecast: !bucket.isPast,
+      };
+    });
+  }, [series, data]);
 
-  const formatMetric = (value: number) =>
-    metric === "revenue"
-      ? formatPLN(value)
-      : metric === "hours"
-        ? `${Math.round(value * 10) / 10} h`
-        : `${value}`;
+  const formatMetric = (value: number) => formatPLN(value);
 
   const revenueDelta = delta(totals?.billed, data?.compare?.billed);
   const planned = (totals?.planned ?? 0) + (totals?.projected ?? 0);
@@ -180,18 +177,21 @@ export default function StatsScreen() {
 
         <Card style={{ gap: 12 }}>
           <View style={styles.metricRow}>
-            {METRICS.map((item) => (
-              <Chip
-                key={item.id}
-                label={item.label}
-                active={metric === item.id}
-                onPress={() => setMetric(item.id)}
-              />
-            ))}
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDash, { backgroundColor: colors.accentTo }]} />
+              <Text style={styles.legendText}>Ten okres</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDash, { backgroundColor: colors.accentFrom }]} />
+              <Text style={styles.legendText}>Prognoza</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDash, { backgroundColor: colors.success }]} />
+              <Text style={styles.legendText}>Poprzedni</Text>
+            </View>
           </View>
           <Text style={styles.chartHint}>
-            {GRANULARITY_LABEL[granularity]}
-            {points.some((p) => p.forecast) ? " · przerywana linia to prognoza" : ""}
+            {GRANULARITY_LABEL[granularity]} · narastająco
           </Text>
           <TrendChart points={points} formatValue={formatMetric} loading={isLoading} />
         </Card>
@@ -443,7 +443,10 @@ const styles = StyleSheet.create({
     lineHeight: lineHeights.body,
     fontWeight: "700",
   },
-  metricRow: { flexDirection: "row", gap: 8 },
+  metricRow: { flexDirection: "row", gap: 14, flexWrap: "wrap" },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+  legendDash: { width: 16, height: 3, borderRadius: 2 },
+  legendText: { color: colors.textMuted, fontSize: 11, fontWeight: "600" },
   chartHint: { color: colors.textFaint, fontSize: 11 },
   tileRow: { flexDirection: "row", gap: 10 },
   tile: { flex: 1, gap: 2 },

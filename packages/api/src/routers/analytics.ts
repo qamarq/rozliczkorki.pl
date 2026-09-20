@@ -7,6 +7,7 @@ import {
   vacations,
   type lessonModeEnum,
 } from "@repo/db";
+import { lessonEndsAt } from "@repo/shared";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { lessonPrice, settleLessons } from "../pricing";
@@ -23,6 +24,13 @@ export const analyticsInput = z.object({
     .min(1)
     .max(200),
   compare: z.object({ from: z.string(), to: z.string() }).nullable(),
+  compareBuckets: z
+    .array(
+      z.object({ key: z.string(), label: z.string(), from: z.string(), to: z.string() }),
+    )
+    .max(200)
+    .nullable()
+    .default(null),
   now: z.string(),
 });
 
@@ -116,6 +124,14 @@ export const analyticsProcedure = protectedProcedure
     const compareFrom = input.compare ? new Date(input.compare.from) : null;
     const compareTo = input.compare ? new Date(input.compare.to) : null;
 
+    const compareRanges = (input.compareBuckets ?? []).map((b) => ({
+      key: b.key,
+      label: b.label,
+      from: new Date(b.from),
+      to: new Date(b.to),
+    }));
+    const compareRevenue = new Map(compareRanges.map((r) => [r.key, 0]));
+
     const totals = {
       expected: 0,
       billed: 0,
@@ -187,7 +203,7 @@ export const analyticsProcedure = protectedProcedure
       const price = settlement?.price ?? 0;
       const received = settlement?.received ?? 0;
       const due = settlement?.outstanding ?? 0;
-      const past = lesson.startsAt <= now;
+      const past = lessonEndsAt(lesson) <= now;
 
       const schoolId = studentById.get(lesson.studentId)?.schoolId ?? null;
 
@@ -215,6 +231,11 @@ export const analyticsProcedure = protectedProcedure
           compare.paid += received;
           compare.lessonCount += 1;
           compare.hours += lesson.durationMinutes / 60;
+          const slot = compareRanges.find(
+            (r) => lesson.startsAt >= r.from && lesson.startsAt <= r.to,
+          );
+          if (slot)
+            compareRevenue.set(slot.key, (compareRevenue.get(slot.key) ?? 0) + price);
         }
       }
 
@@ -323,8 +344,15 @@ export const analyticsProcedure = protectedProcedure
 
     const totalHours = round(totals.hours);
 
+    const compareSeries = compareRanges.map((r) => ({
+      key: r.key,
+      label: r.label,
+      revenue: round(compareRevenue.get(r.key) ?? 0),
+    }));
+
     return {
       series,
+      compareSeries,
       totals: {
         ...totals,
         expected: round(totals.expected),

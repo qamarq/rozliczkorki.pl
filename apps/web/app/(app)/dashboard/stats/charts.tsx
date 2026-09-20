@@ -12,11 +12,13 @@ export type TrendPoint = {
   label: string;
   actual: number | null;
   forecast: number | null;
+  previous: number | null;
 };
 
 const config = {
-  actual: { label: "Zrealizowane", color: "var(--chart-1)" },
+  actual: { label: "Ten okres", color: "var(--chart-1)" },
   forecast: { label: "Prognoza", color: "var(--chart-1)" },
+  previous: { label: "Poprzedni okres", color: "var(--success)" },
 } satisfies ChartConfig;
 
 export function TrendChart({
@@ -49,7 +51,16 @@ export function TrendChart({
         <ChartTooltip
           content={
             <ChartTooltipContent
-              formatter={(value) => formatValue(Number(value))}
+              formatter={(value, name) => (
+                <span className="flex w-full justify-between gap-3">
+                  <span className="text-muted-foreground">
+                    {config[name as keyof typeof config]?.label ?? name}
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {formatValue(Number(value))}
+                  </span>
+                </span>
+              )}
               indicator="line"
             />
           }
@@ -73,6 +84,17 @@ export function TrendChart({
           fill="url(#trend-fill)"
           fillOpacity={0.4}
           connectNulls={false}
+          dot={false}
+          activeDot={{ r: 4 }}
+        />
+        <Area
+          dataKey="previous"
+          type="monotone"
+          stroke="var(--color-previous)"
+          strokeWidth={2}
+          strokeDasharray="5 4"
+          fill="none"
+          connectNulls
           dot={false}
           activeDot={{ r: 4 }}
         />

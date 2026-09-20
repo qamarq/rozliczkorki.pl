@@ -1,8 +1,22 @@
-import { lessons, recurringRules, students, studentRates } from "@repo/db";
+import {
+  lessons,
+  recurringRules,
+  schoolPayouts,
+  schools,
+  students,
+  studentRates,
+} from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { and, count, eq, gt, gte, inArray, lte, ne } from "drizzle-orm";
 import { z } from "zod";
-import { lessonPaymentState } from "@repo/shared";
+import {
+  lessonEndsAt,
+  lessonPaymentState,
+  lessonTone,
+  payoutDueDate,
+  payoutPeriodOf,
+  payoutStatus,
+} from "@repo/shared";
 import { settleLessons } from "../pricing";
 import { protectedProcedure, router } from "../trpc";
 
@@ -21,6 +35,48 @@ async function assertOwnsLesson(
   return lesson;
 }
 
+async function overduePayoutLessonIds(
+  db: (typeof import("@repo/db"))["db"],
+  userId: string,
+  schoolOf: Map<string, string | null>,
+  rows: (typeof lessons.$inferSelect)[],
+  now: Date,
+) {
+  const overdue = new Set<string>();
+  const schoolLessons = rows.filter((l) => schoolOf.get(l.studentId));
+  if (schoolLessons.length === 0) return overdue;
+
+  const schoolIds = [
+    ...new Set(schoolLessons.map((l) => schoolOf.get(l.studentId) as string)),
+  ];
+  const [schoolRows, payoutRows] = await Promise.all([
+    db.select().from(schools).where(inArray(schools.id, schoolIds)),
+    db
+      .select()
+      .from(schoolPayouts)
+      .where(
+        and(eq(schoolPayouts.userId, userId), inArray(schoolPayouts.schoolId, schoolIds)),
+      ),
+  ]);
+  const schoolById = new Map(schoolRows.map((s) => [s.id, s]));
+  const paidKeys = new Set(payoutRows.map((p) => `${p.schoolId}:${p.periodKey}`));
+
+  for (const lesson of schoolLessons) {
+    const schoolId = schoolOf.get(lesson.studentId) as string;
+    const school = schoolById.get(schoolId);
+    if (!school) continue;
+    const period = payoutPeriodOf(
+      lesson.startsAt,
+      school.payoutFrequency,
+      school.payoutAnchor,
+    );
+    const dueDate = payoutDueDate(period, school.payoutFrequency, school.payoutDay);
+    const paid = paidKeys.has(`${schoolId}:${period.key}`);
+    if (payoutStatus(period, dueDate, paid, now) === "due") overdue.add(lesson.id);
+  }
+  return overdue;
+}
+
 async function withPrices(
   db: (typeof import("@repo/db"))["db"],
   userId: string,
@@ -34,8 +90,22 @@ async function withPrices(
     received: 0,
     settled: false,
     paymentState: "unpaid" as const,
+    tone: "upcoming" as const,
+    endsAt: new Date(),
   };
-  if (studentIds.length === 0) return rows.map((l) => ({ ...l, ...empty }));
+  if (studentIds.length === 0)
+    return rows.map((l) => ({
+      ...l,
+      ...empty,
+      endsAt: lessonEndsAt(l),
+      tone: lessonTone({
+        status: l.status,
+        settled: false,
+        isVacation: !!l.vacationId,
+        endsAt: lessonEndsAt(l),
+        hasSchool: false,
+      }),
+    }));
 
   const [rates, history, studentRows] = await Promise.all([
     db.select().from(studentRates).where(inArray(studentRates.studentId, studentIds)),
@@ -48,12 +118,16 @@ async function withPrices(
   const settlements = settleLessons(history, rates);
   const schoolOf = new Map(studentRows.map((s) => [s.id, s.schoolId]));
   const now = new Date();
+  const overdueLessonIds = await overduePayoutLessonIds(db, userId, schoolOf, rows, now);
 
   return rows.map((lesson) => {
     const s = settlements.get(lesson.id);
     const settled = s?.settled ?? lesson.paid;
+    const schoolId = schoolOf.get(lesson.studentId) ?? null;
+    const endsAt = lessonEndsAt(lesson);
     return {
       ...lesson,
+      endsAt,
       price: s?.price ?? 0,
       carry: s?.carry ?? 0,
       amountDue: s?.amountDue ?? 0,
@@ -61,8 +135,17 @@ async function withPrices(
       settled,
       paymentState: lessonPaymentState({
         settled,
-        startsAt: lesson.startsAt,
-        hasSchool: !!schoolOf.get(lesson.studentId),
+        endsAt,
+        hasSchool: !!schoolId,
+        now,
+      }),
+      tone: lessonTone({
+        status: lesson.status,
+        settled,
+        isVacation: !!lesson.vacationId,
+        endsAt,
+        hasSchool: !!schoolId,
+        schoolPayoutOverdue: overdueLessonIds.has(lesson.id),
         now,
       }),
     };

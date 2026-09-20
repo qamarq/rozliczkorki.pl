@@ -1,6 +1,7 @@
 import { lessons, students, studentRates } from "@repo/db";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
+import { lessonEndsAt } from "@repo/shared";
 import { settleLessons } from "../pricing";
 import { protectedProcedure, router } from "../trpc";
 import { analyticsProcedure } from "./analytics";
@@ -45,6 +46,7 @@ export const statsRouter = router({
         : [];
       const settlements = settleLessons(history, rates);
       const studentById = new Map(studentRows.map((s) => [s.id, s]));
+      const now = new Date();
 
       let theoretical = 0;
       let paid = 0;
@@ -79,8 +81,10 @@ export const statsRouter = router({
 
         theoretical += settlement.price;
         paid += settlement.received;
-        if (student?.schoolId) awaitingPayout += settlement.outstanding;
-        else unpaid += settlement.outstanding;
+        if (lessonEndsAt(lesson) <= now) {
+          if (student?.schoolId) awaitingPayout += settlement.outstanding;
+          else unpaid += settlement.outstanding;
+        }
 
         const entry = byStudent.get(lesson.studentId) ?? {
           studentId: lesson.studentId,

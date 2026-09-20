@@ -13,13 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPLN, pluralize } from "@repo/shared";
 import { trackFinancialSummaryViewed } from "@repo/analytics";
 import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
-import { TrendChart } from "./charts";
+import { TrendChart, type TrendPoint } from "./charts";
 import {
   buildBuckets,
   granularityFor,
@@ -29,14 +28,6 @@ import {
   type Range,
 } from "@repo/shared";
 import { RangePicker } from "./range-picker";
-
-type Metric = "revenue" | "lessons" | "hours";
-
-const METRICS: { id: Metric; label: string }[] = [
-  { id: "revenue", label: "Przychód" },
-  { id: "lessons", label: "Zajęcia" },
-  { id: "hours", label: "Godziny" },
-];
 
 const GRANULARITY_LABEL = {
   day: "dziennie",
@@ -53,7 +44,6 @@ export default function StatsPage() {
   const now = useMemo(() => new Date(), []);
   const [preset, setPreset] = useState<PresetId | null>("this-month");
   const [range, setRange] = useState<Range>(() => presetRange("this-month", now));
-  const [metric, setMetric] = useState<Metric>("revenue");
 
   const granularity = granularityFor(range);
   const buckets = useMemo(() => buildBuckets(range, granularity), [range, granularity]);
@@ -61,16 +51,19 @@ export default function StatsPage() {
     const previous = previousRange(range);
     return { from: previous.from.toISOString(), to: previous.to.toISOString() };
   }, [range]);
+  const compareBuckets = useMemo(
+    () => buildBuckets(previousRange(range), granularity),
+    [range, granularity],
+  );
 
   const { data, isLoading } = trpc.stats.analytics.useQuery({
     buckets,
     compare,
+    compareBuckets,
     now: now.toISOString(),
   });
 
   const totals = data?.totals;
-  const series = data?.series ?? [];
-  const hasForecast = series.some((s) => !s.isPast);
 
   const reported = useRef(false);
   useEffect(() => {
@@ -85,30 +78,30 @@ export default function StatsPage() {
       overdueAmount: totals.unpaid,
     });
   }, [totals]);
-  const lastPast = series.reduce((acc, s, i) => (s.isPast ? i : acc), -1);
 
-  const metricValue = (bucket: (typeof series)[number]) =>
-    metric === "revenue"
-      ? bucket.revenue
-      : metric === "lessons"
-        ? bucket.lessons
-        : bucket.hours;
+  const points = useMemo(() => {
+    const current = data?.series ?? [];
+    const previous = data?.compareSeries ?? [];
+    const lastPast = current.reduce((acc, b, i) => (b.isPast ? i : acc), -1);
+    const round2 = (value: number) => Math.round(value * 100) / 100;
+    let running = 0;
+    let runningPrev = 0;
+    const result: TrendPoint[] = [];
+    for (const [i, bucket] of current.entries()) {
+      running += bucket.revenue;
+      runningPrev += previous[i]?.revenue ?? 0;
+      result.push({
+        label: bucket.label,
+        actual: bucket.isPast ? round2(running) : null,
+        forecast: !bucket.isPast || i === lastPast ? round2(running) : null,
+        previous: previous.length ? round2(runningPrev) : null,
+      });
+    }
+    return result;
+  }, [data]);
 
-  const points = series.map((bucket, i) => ({
-    label: bucket.label,
-    actual: bucket.isPast ? metricValue(bucket) : null,
-    forecast:
-      hasForecast && (!bucket.isPast || i === lastPast) ? metricValue(bucket) : null,
-  }));
-
-  const formatMetric = (value: number) =>
-    metric === "revenue"
-      ? formatPLN(value)
-      : metric === "hours"
-        ? `${Math.round(value * 10) / 10} h`
-        : String(value);
-  const formatAxis = (value: number) =>
-    metric === "revenue" ? shortPLN(value) : String(Math.round(value));
+  const formatMetric = (value: number) => formatPLN(value);
+  const formatAxis = (value: number) => shortPLN(value);
 
   const revenueDelta = delta(totals?.billed, data?.compare?.billed);
   const bar = [
@@ -156,7 +149,7 @@ export default function StatsPage() {
       </div>
 
       <div className="grid items-stretch gap-4 lg:grid-cols-12">
-        <Card className="bg-primary text-primary-foreground justify-between gap-6 p-5 lg:col-span-4">
+        <Card className="text-primary-foreground justify-between gap-6 bg-[color-mix(in_oklab,var(--primary)_72%,black)] p-5 lg:col-span-4">
           <div className="flex flex-col gap-2">
             <span className="text-primary-foreground/70 text-xs font-semibold uppercase tracking-wide">
               Przychód w okresie
@@ -219,19 +212,23 @@ export default function StatsPage() {
             <div className="flex flex-col">
               <span className="font-semibold">Trend</span>
               <span className="text-muted-foreground text-xs">
-                {GRANULARITY_LABEL[granularity]}
-                {hasForecast && " · przerywana linia to prognoza"}
+                {GRANULARITY_LABEL[granularity]} · narastająco
               </span>
             </div>
-            <Tabs value={metric} onValueChange={(value) => setMetric(value as Metric)}>
-              <TabsList>
-                {METRICS.map((item) => (
-                  <TabsTrigger key={item.id} value={item.id}>
-                    {item.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="bg-chart-1 h-0.5 w-5 rounded-full" />
+                <span className="text-muted-foreground">Ten okres</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="border-chart-1 w-5 border-t-2 border-dashed" />
+                <span className="text-muted-foreground">Prognoza</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="border-success w-5 border-t-2 border-dashed" />
+                <span className="text-muted-foreground">Poprzedni okres</span>
+              </span>
+            </div>
           </div>
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
