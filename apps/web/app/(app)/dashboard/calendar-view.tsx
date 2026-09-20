@@ -21,6 +21,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ArrowRight,
+  LineChart,
   CircleAlert,
   Clock3,
   Hourglass,
@@ -31,6 +33,7 @@ import {
   Video,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useMemo, useState } from "react";
@@ -401,6 +404,7 @@ export function CalendarView() {
         </div>
 
         <div className="flex flex-col gap-5 lg:col-span-4">
+          <StatsPromoCard />
           {pendingNotices.length > 0 && <VacationNoticesPanel pending={pendingNotices} />}
           <ActionPanel
             lessons={actionLessons}
@@ -548,6 +552,26 @@ function ActionPanel({
         })}
       </div>
     </Card>
+  );
+}
+
+function StatsPromoCard() {
+  return (
+    <Link
+      href="/dashboard/stats"
+      className="bg-brand-gradient group/promo focus-visible:ring-ring flex items-center gap-3 rounded-xl p-4 text-white transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
+        <LineChart className="size-4.5" />
+      </span>
+      <span className="flex flex-col">
+        <span className="text-sm font-semibold">Finanse i statystyki</span>
+        <span className="text-xs text-white/75">
+          Przychody, prognoza i zaległości w jednym miejscu
+        </span>
+      </span>
+      <ArrowRight className="ml-auto size-4 shrink-0 transition-transform group-hover/promo:translate-x-0.5" />
+    </Link>
   );
 }
 
