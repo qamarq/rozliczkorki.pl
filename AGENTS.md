@@ -43,9 +43,17 @@ names, PR titles and descriptions.
 
 One subject line, nothing else. No body, no bullet list, no explanation paragraph.
 
+Use Conventional Commits with a scope naming the part of the repo the change touches:
+
 ```
-feat: add school payout tracking
+feat(web): add school payout tracking
+fix(native): survive cached lessons without a tone
+ci(android): cache gradle builds
 ```
+
+Scopes follow the workspace layout: `web`, `native`, `api`, `db`, `shared`, plus
+`android`, `ios` and `cd` for platform and release plumbing, and `auth` for sign-in.
+Drop the scope only when a change genuinely spans the whole repo.
 
 ## Before every push
 
