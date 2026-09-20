@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { signInWithGoogle } from "@/lib/google-sign-in";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,7 +63,15 @@ export default function LoginPage() {
   }
 
   async function onGoogle() {
-    await authClient.signIn.social({ provider: "google", callbackURL: "/dashboard" });
+    await signInWithGoogle({
+      context: "signin",
+      callbackURL: "/dashboard",
+      onSuccess: () => {
+        router.push("/dashboard");
+        router.refresh();
+      },
+      onError: (message) => toast.error(message),
+    });
   }
 
   async function onPasskey() {
