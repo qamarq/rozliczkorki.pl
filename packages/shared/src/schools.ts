@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
+import type { LessonStatus } from "./lessons";
 
 export type PayoutFrequency = "monthly" | "biweekly" | "weekly" | "per_lesson";
 
@@ -174,17 +175,72 @@ export function formatPayoutSchedule(
 
 export function lessonPaymentState({
   settled,
-  startsAt,
+  endsAt,
   hasSchool,
   now = new Date(),
 }: {
   settled: boolean;
-  startsAt: Date;
+  endsAt: Date;
   hasSchool: boolean;
   now?: Date;
 }): LessonPaymentState {
   if (settled) return "paid";
   if (hasSchool) return "awaiting_payout";
-  if (startsAt > now) return "upcoming";
+  if (endsAt > now) return "upcoming";
   return "unpaid";
+}
+
+export type LessonTone =
+  | "cancelled"
+  | "cancelledPaid"
+  | "upcoming"
+  | "prepaid"
+  | "paid"
+  | "awaiting"
+  | "overdue";
+
+export const LESSON_TONE_LABELS: Record<LessonTone, string> = {
+  cancelled: "Odwołane",
+  cancelledPaid: "Odwołane, opłacone",
+  upcoming: "Zaplanowane",
+  prepaid: "Opłacone z góry",
+  paid: "Odbyte i opłacone",
+  awaiting: "Czeka na rozliczenie",
+  overdue: "Zaległa płatność",
+};
+
+export const LESSON_TONE_HINTS: Record<LessonTone, string> = {
+  cancelled: "Nie liczy się do rozliczeń.",
+  cancelledPaid: "Odwołane, ale pieniądze zostały już zaksięgowane.",
+  upcoming: "Zajęcia jeszcze się nie odbyły.",
+  prepaid: "Pieniądze są, zajęcia dopiero przed Tobą.",
+  paid: "Temat zamknięty.",
+  awaiting: "Oznacz jako odbyte albo poczekaj na przelew ze szkółki.",
+  overdue: "Termin minął, a pieniądze nie wpłynęły.",
+};
+
+export function lessonTone({
+  status,
+  settled,
+  isVacation,
+  endsAt,
+  hasSchool,
+  schoolPayoutOverdue = false,
+  now = new Date(),
+}: {
+  status: LessonStatus;
+  settled: boolean;
+  isVacation: boolean;
+  endsAt: Date;
+  hasSchool: boolean;
+  schoolPayoutOverdue?: boolean;
+  now?: Date;
+}): LessonTone {
+  if (status === "cancelled" || isVacation)
+    return settled ? "cancelledPaid" : "cancelled";
+  if (settled) return status === "completed" ? "paid" : "prepaid";
+  if (endsAt > now) return "upcoming";
+  if (status !== "completed") return "awaiting";
+  if (hasSchool) return schoolPayoutOverdue ? "overdue" : "awaiting";
+  return "overdue";
 }

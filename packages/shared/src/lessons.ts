@@ -40,3 +40,7 @@ export function formatVacationRange(startDate: string, endDate: string) {
   if (startDate === endDate) return format(start, "d MMM yyyy", { locale: pl });
   return `${format(start, "d MMM", { locale: pl })} – ${format(end, "d MMM yyyy", { locale: pl })}`;
 }
+
+export function lessonEndsAt(lesson: { startsAt: Date; durationMinutes: number }) {
+  return new Date(lesson.startsAt.getTime() + lesson.durationMinutes * 60_000);
+}

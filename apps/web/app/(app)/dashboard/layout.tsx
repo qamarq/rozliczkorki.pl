@@ -36,7 +36,7 @@ export default async function DashboardLayout({
         </div>
 
         <DashboardHeader />
-        <div className="mx-auto w-full max-w-6xl flex-1 p-4 pt-0 lg:p-8 lg:pt-0">
+        <div className="max-w-352 mx-auto w-full flex-1 p-4 pt-0 lg:p-8 lg:pt-0">
           {children}
         </div>
       </SidebarInset>

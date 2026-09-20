@@ -15,6 +15,7 @@ import {
 } from "date-fns";
 import { pl } from "date-fns/locale";
 import {
+  AlertCircle,
   Banknote,
   CalendarClock,
   Check,
@@ -22,6 +23,7 @@ import {
   ChevronRight,
   Landmark,
   ListChecks,
+  Palmtree,
   Plus,
   School,
   Sparkles,
@@ -40,7 +42,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatPLN, LESSON_PAYMENT_STATE_LABELS } from "@repo/shared";
+import {
+  formatPLN,
+  LESSON_TONE_HINTS,
+  LESSON_TONE_LABELS,
+  type LessonTone,
+} from "@repo/shared";
 import { trackFinancialSummaryViewed, trackLessonCheckedOff } from "@repo/analytics";
 import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
@@ -51,6 +58,38 @@ import { VacationNoticesPanel } from "./vacations/notice-panel";
 const WEEKDAYS = ["pon", "wt", "śr", "czw", "pt", "sob", "niedz"];
 
 type LessonRow = inferRouterOutputs<AppRouter>["lessons"]["range"][number];
+
+const TONE_ORDER: LessonTone[] = [
+  "upcoming",
+  "prepaid",
+  "awaiting",
+  "overdue",
+  "paid",
+  "cancelled",
+  "cancelledPaid",
+];
+
+const TONE_CHIP: Record<LessonTone, string> = {
+  upcoming: "bg-muted text-foreground",
+  prepaid: "bg-muted text-foreground ring-success ring-2 ring-offset-2 ring-offset-card",
+  paid: "bg-success/15 text-foreground",
+  awaiting: "bg-warning/15 text-foreground",
+  overdue:
+    "bg-warning/15 text-foreground ring-destructive ring-2 ring-offset-2 ring-offset-card",
+  cancelled: "bg-muted/60 text-muted-foreground line-through opacity-70",
+  cancelledPaid:
+    "bg-muted/60 text-muted-foreground line-through ring-success ring-2 ring-offset-2 ring-offset-card",
+};
+
+const TONE_SWATCH: Record<LessonTone, string> = {
+  upcoming: "bg-muted",
+  prepaid: "bg-muted ring-success ring-2 ring-offset-2 ring-offset-card",
+  paid: "bg-success/40",
+  awaiting: "bg-warning/40",
+  overdue: "bg-warning/40 ring-destructive ring-2 ring-offset-2 ring-offset-card",
+  cancelled: "bg-muted/60 opacity-70",
+  cancelledPaid: "bg-muted/60 ring-success ring-2 ring-offset-2 ring-offset-card",
+};
 
 export function CalendarView() {
   const [month, setMonth] = useState(() => new Date());
@@ -86,32 +125,47 @@ export function CalendarView() {
     return map;
   }, [lessons]);
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const { data: vacationOverview } = trpc.vacations.overview.useQuery({
     today: format(today, "yyyy-MM-dd"),
   });
   const pendingNotices = vacationOverview?.pending ?? [];
-  const todayLessons = useMemo(
-    () =>
-      lessons
-        .filter((l) => isSameDay(new Date(l.startsAt), today) && l.status !== "cancelled")
-        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
-    [lessons],
-  );
 
-  const dueLessons = useMemo(
-    () =>
-      lessons
-        .filter(
-          (l) =>
-            l.status === "completed" &&
-            !l.settled &&
-            l.paymentState !== "awaiting_payout",
-        )
-        .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-        .slice(0, 6),
-    [lessons],
-  );
+  const vacationByDay = useMemo(() => {
+    const map = new Map<string, { note: string | null; startDate: string }>();
+    for (const vacation of vacationOverview?.vacations ?? []) {
+      for (const day of eachDayOfInterval({
+        start: new Date(`${vacation.startDate}T12:00:00`),
+        end: new Date(`${vacation.endDate}T12:00:00`),
+      })) {
+        map.set(format(day, "yyyy-MM-dd"), {
+          note: vacation.note,
+          startDate: vacation.startDate,
+        });
+      }
+    }
+    return map;
+  }, [vacationOverview]);
+  const actionLessons = useMemo(() => {
+    const rank = (l: LessonRow) => {
+      if (l.tone === "overdue") return 0;
+      if (l.status !== "completed" && new Date(l.endsAt) <= today) return 1;
+      if (isSameDay(new Date(l.startsAt), today)) return 2;
+      return 3;
+    };
+    return lessons
+      .filter((l) => {
+        if (actionStepOf(l) === null) return false;
+        if (l.tone === "overdue") return true;
+        if (new Date(l.endsAt) <= today) return true;
+        return isSameDay(new Date(l.startsAt), today);
+      })
+      .sort(
+        (a, b) =>
+          rank(a) - rank(b) ||
+          new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+      );
+  }, [lessons, today]);
 
   const summaryReported = useRef(false);
   useEffect(() => {
@@ -221,13 +275,15 @@ export function CalendarView() {
                 const key = format(day, "yyyy-MM-dd");
                 const dayLessons = lessonsByDay.get(key) ?? [];
                 const isCurrentDay = isToday(day);
+                const vacation = vacationByDay.get(key);
                 return (
                   <div
                     key={key}
                     className={cn(
-                      "bg-card group relative flex min-h-28 flex-col gap-1 p-1.5",
+                      "bg-card group relative flex min-h-28 flex-col gap-1.5 p-2.5",
                       !isSameMonth(day, month) &&
                         "bg-background/60 text-muted-foreground",
+                      vacation && "bg-chart-5/[0.07]",
                       isCurrentDay && "bg-primary/[0.06]",
                     )}
                   >
@@ -250,22 +306,27 @@ export function CalendarView() {
                         <Plus className="size-3.5" />
                       </button>
                     </div>
-                    <div className="flex flex-col gap-1">
+                    {vacation && (
+                      <span
+                        className="text-chart-5 flex items-center gap-1 truncate text-[10px] font-medium"
+                        title={vacation.note ?? "Urlop"}
+                      >
+                        <Palmtree className="size-2.5 shrink-0" />
+                        {key === vacation.startDate
+                          ? (vacation.note ?? "Urlop")
+                          : "Urlop"}
+                      </span>
+                    )}
+
+                    <div className="flex flex-col gap-3">
                       {dayLessons.map((lesson) => (
                         <button
                           key={lesson.id}
                           onClick={() => openEditDialog(day, lesson.id)}
+                          title={`${LESSON_TONE_LABELS[lesson.tone]} — ${LESSON_TONE_HINTS[lesson.tone]}`}
                           className={cn(
-                            "flex flex-col rounded-md border-l-2 px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
-                            lesson.vacationId
-                              ? "bg-muted border-muted-foreground/40 text-muted-foreground line-through opacity-70"
-                              : lesson.status === "cancelled"
-                                ? "bg-destructive/10 border-destructive/50 text-muted-foreground line-through"
-                                : lesson.paymentState === "paid"
-                                  ? "bg-success/10 border-success text-foreground"
-                                  : lesson.paymentState === "awaiting_payout"
-                                    ? "bg-warning/10 border-warning text-foreground"
-                                    : "bg-destructive/5 border-destructive/60 text-foreground",
+                            "flex flex-col rounded-md px-1.5 py-1 text-left text-[11px] leading-tight transition-colors",
+                            TONE_CHIP[lesson.tone],
                           )}
                         >
                           <span className="font-medium">
@@ -279,6 +340,9 @@ export function CalendarView() {
                             {formatPLN(lesson.price)}
                             {lesson.status === "completed" && (
                               <Banknote className="text-muted-foreground size-2.5" />
+                            )}
+                            {lesson.tone === "overdue" && (
+                              <AlertCircle className="text-destructive ml-auto size-3" />
                             )}
                           </span>
                         </button>
@@ -295,8 +359,11 @@ export function CalendarView() {
 
         <div className="flex flex-col gap-5 lg:col-span-4">
           {pendingNotices.length > 0 && <VacationNoticesPanel pending={pendingNotices} />}
-          <TodayPanel lessons={todayLessons} onOpen={(id) => openEditDialog(today, id)} />
-          <DuePanel lessons={dueLessons} onOpen={(day, id) => openEditDialog(day, id)} />
+          <ActionPanel
+            lessons={actionLessons}
+            onOpen={(day, id) => openEditDialog(day, id)}
+          />
+          <CalendarLegend />
         </div>
       </div>
 
@@ -311,14 +378,29 @@ export function CalendarView() {
   );
 }
 
-function TodayPanel({
+type ActionStep = "confirm" | "settle";
+
+// School lessons settle through the payout period, so they need nothing here once held.
+function actionStepOf(lesson: LessonRow): ActionStep | null {
+  if (lesson.status === "cancelled" || lesson.vacationId) return null;
+  if (lesson.settled) return null;
+  if (lesson.status !== "completed") return "confirm";
+  return lesson.paymentState === "awaiting_payout" ? null : "settle";
+}
+
+function ActionPanel({
   lessons,
   onOpen,
 }: {
   lessons: LessonRow[];
-  onOpen: (id: string) => void;
+  onOpen: (day: Date, id: string) => void;
 }) {
   const utils = trpc.useUtils();
+  const invalidate = () => {
+    utils.lessons.range.invalidate();
+    utils.stats.summary.invalidate();
+    utils.stats.analytics.invalidate();
+  };
   const markCompleted = trpc.lessons.update.useMutation({
     onSuccess: (_result, variables) => {
       const lesson = lessons.find((l) => l.id === variables.id);
@@ -327,69 +409,67 @@ function TodayPanel({
         status: "completed",
         scheduledAt: lesson?.createdAt,
       });
-      utils.lessons.range.invalidate();
-      utils.stats.summary.invalidate();
-      utils.stats.analytics.invalidate();
+      invalidate();
     },
   });
-  const markPaid = trpc.lessons.update.useMutation({
-    onSuccess: () => {
-      utils.lessons.range.invalidate();
-      utils.stats.summary.invalidate();
-      utils.stats.analytics.invalidate();
-    },
-  });
+  const markPaid = trpc.lessons.update.useMutation({ onSuccess: invalidate });
+  const pending = markCompleted.isPending || markPaid.isPending;
 
   return (
     <Card className="gap-3 p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Dzisiejsze zajęcia</h2>
+        <div className="flex items-center gap-2">
+          <ListChecks className="text-warning size-4" />
+          <h2 className="text-sm font-semibold">Do zrobienia</h2>
+        </div>
         <Badge variant="secondary">{lessons.length}</Badge>
       </div>
       {lessons.length === 0 && (
-        <p className="text-muted-foreground text-sm">Brak zajęć zaplanowanych na dziś.</p>
+        <p className="text-muted-foreground text-sm">
+          Wszystko odhaczone i rozliczone. 🎉
+        </p>
       )}
       <div className="flex flex-col gap-2">
-        {lessons.map((lesson) => (
-          <div
-            key={lesson.id}
-            className="border-border-solid flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
-          >
-            <button
-              onClick={() => onOpen(lesson.id)}
-              className="flex flex-1 flex-col items-start text-left"
+        {lessons.map((lesson) => {
+          const step = actionStepOf(lesson);
+          return (
+            <div
+              key={lesson.id}
+              className="border-border-solid flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
             >
-              <span className="text-sm font-medium">
-                {format(new Date(lesson.startsAt), "HH:mm")} {lesson.student?.name}
-              </span>
-              <span className="text-muted-foreground text-xs tabular-nums">
-                {formatPLN(lesson.price)}
-              </span>
-            </button>
-            {lesson.status === "scheduled" && (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={markCompleted.isPending}
-                onClick={() =>
-                  markCompleted.mutate({ id: lesson.id, status: "completed" })
-                }
+              <button
+                onClick={() => onOpen(new Date(lesson.startsAt), lesson.id)}
+                className="flex flex-1 flex-col items-start text-left"
               >
-                <Check className="size-3.5" />
-                Odbyta
-              </Button>
-            )}
-            {lesson.paymentState === "awaiting_payout" && (
-              <Badge className="bg-warning/10 text-warning border-warning/20">
-                {LESSON_PAYMENT_STATE_LABELS.awaiting_payout}
-              </Badge>
-            )}
-            {lesson.status === "completed" &&
-              !lesson.settled &&
-              lesson.paymentState !== "awaiting_payout" && (
+                <span className="text-sm font-medium">{lesson.student?.name}</span>
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {isToday(new Date(lesson.startsAt))
+                    ? format(new Date(lesson.startsAt), "'dziś' HH:mm")
+                    : format(new Date(lesson.startsAt), "d MMM, HH:mm", {
+                        locale: pl,
+                      })}{" "}
+                  · {formatPLN(step === "settle" ? lesson.amountDue : lesson.price)}
+                </span>
+              </button>
+
+              {step === "confirm" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() =>
+                    markCompleted.mutate({ id: lesson.id, status: "completed" })
+                  }
+                >
+                  <Check className="size-3.5" />
+                  Odbyły się
+                </Button>
+              )}
+
+              {step === "settle" && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="sm" disabled={markPaid.isPending}>
+                    <Button size="sm" disabled={pending}>
                       Rozlicz
                     </Button>
                   </DropdownMenuTrigger>
@@ -421,96 +501,42 @@ function TodayPanel({
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-            {lesson.status === "completed" && lesson.settled && (
-              <Badge className="bg-success/10 text-success border-success/20">
-                Opłacone
-              </Badge>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </Card>
   );
 }
 
-function DuePanel({
-  lessons,
-  onOpen,
-}: {
-  lessons: LessonRow[];
-  onOpen: (day: Date, id: string) => void;
-}) {
-  const utils = trpc.useUtils();
-  const markPaid = trpc.lessons.update.useMutation({
-    onSuccess: () => {
-      utils.lessons.range.invalidate();
-      utils.stats.summary.invalidate();
-      utils.stats.analytics.invalidate();
-    },
-  });
-
+function CalendarLegend() {
   return (
-    <Card className="gap-3 p-4">
-      <div className="flex items-center gap-2">
-        <ListChecks className="text-warning size-4" />
-        <h2 className="text-sm font-semibold">Oczekują na rozliczenie</h2>
-      </div>
-      {lessons.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Wszystkie odbyte zajęcia są rozliczone. 🎉
-        </p>
-      )}
-      <div className="flex flex-col gap-2">
-        {lessons.map((lesson) => (
-          <div
-            key={lesson.id}
-            className="border-warning/30 bg-warning/5 flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
+    <Card className="gap-2 px-4 py-3">
+      <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
+        Legenda
+      </span>
+      <div className="flex flex-wrap gap-x-5 gap-y-3.5">
+        {TONE_ORDER.map((tone) => (
+          <span
+            key={tone}
+            className="flex items-center gap-2.5 text-xs"
+            title={LESSON_TONE_HINTS[tone]}
           >
-            <button
-              onClick={() => onOpen(new Date(lesson.startsAt), lesson.id)}
-              className="flex flex-1 flex-col items-start text-left"
+            <span className={cn("size-3 shrink-0 rounded-sm", TONE_SWATCH[tone])} />
+            <span
+              className={cn(
+                "text-muted-foreground",
+                tone.startsWith("cancelled") && "line-through",
+              )}
             >
-              <span className="text-sm font-medium">{lesson.student?.name}</span>
-              <span className="text-muted-foreground text-xs">
-                {format(new Date(lesson.startsAt), "d MMM, HH:mm", { locale: pl })} ·{" "}
-                {formatPLN(lesson.amountDue)}
-              </span>
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" disabled={markPaid.isPending}>
-                  Rozlicz
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() =>
-                    markPaid.mutate({
-                      id: lesson.id,
-                      paid: true,
-                      paymentMethod: "cash",
-                    })
-                  }
-                >
-                  <Banknote className="size-4" />
-                  Gotówka
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    markPaid.mutate({
-                      id: lesson.id,
-                      paid: true,
-                      paymentMethod: "transfer",
-                    })
-                  }
-                >
-                  <Landmark className="size-4" />
-                  Przelew
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+              {LESSON_TONE_LABELS[tone]}
+            </span>
+          </span>
         ))}
+        <span className="flex items-center gap-2.5 text-xs">
+          <Palmtree className="text-chart-5 size-3 shrink-0" />
+          <span className="text-muted-foreground">Urlop</span>
+        </span>
       </div>
     </Card>
   );
