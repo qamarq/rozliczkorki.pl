@@ -7,14 +7,14 @@ const STEPS = [
     title: "Dodaj uczniów",
     description:
       "Imię, stawka godzinowa, ewentualnie adres i telefon. Stawkę zmienisz kiedy chcesz, stare zajęcia zachowają starą cenę.",
-    eta: "~5 min",
+    eta: "~2 min",
   },
   {
     n: "02",
     title: "Wrzuć zajęcia do kalendarza",
     description:
       "Pojedyncze terminy albo reguła cykliczna na cały semestr. Długość lekcji dowolna, rozliczenie liczy się proporcjonalnie.",
-    eta: "~10 min",
+    eta: "~3 min",
   },
   {
     n: "03",

@@ -3,6 +3,28 @@ import { notifyEmailVerified } from "@/lib/pending-verification";
 
 const LESSON_LINK = /lesson\/([0-9a-f-]{36})/i;
 const VERIFY_LINK = /login-email\?(.*)$/i;
+const DASHBOARD_LINK = /\/dashboard(\/[^?#]*)?/i;
+const SCHOOL_LINK = /^schools\/([0-9a-f-]{36})$/i;
+
+const DASHBOARD_ROUTES: Record<string, string> = {
+  "": "/",
+  students: "/students",
+  schools: "/schools",
+  vacations: "/vacations",
+  stats: "/stats",
+  settings: "/settings",
+};
+
+function dashboardPath(path: string) {
+  const match = DASHBOARD_LINK.exec(path);
+  if (!match) return null;
+
+  const rest = (match[1] ?? "").replace(/^\/+|\/+$/g, "");
+  const school = SCHOOL_LINK.exec(rest);
+  if (school) return `/school/${school[1]}`;
+
+  return DASHBOARD_ROUTES[rest] ?? "/";
+}
 
 export function redirectSystemPath({
   path,
@@ -21,7 +43,10 @@ export function redirectSystemPath({
   }
 
   const match = LESSON_LINK.exec(path);
-  if (!match) return path;
-  requestLessonSheet(match[1]);
-  return initial ? "/" : null;
+  if (match) {
+    requestLessonSheet(match[1]);
+    return initial ? "/" : null;
+  }
+
+  return dashboardPath(path) ?? path;
 }

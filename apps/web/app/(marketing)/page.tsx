@@ -1,13 +1,13 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
+import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { MarketingFooter } from "@/components/marketing-footer";
 import { MarketingHeader } from "@/components/marketing-header";
 import { Bento } from "@/components/marketing/bento";
 import { Cta } from "@/components/marketing/cta";
 import { Faq } from "@/components/marketing/faq";
 import { HeroVisual } from "@/components/marketing/hero-visual";
-import { Reveal } from "@/components/marketing/reveal";
+import { PhoneVisual } from "@/components/marketing/phone-visual";
 import { Steps } from "@/components/marketing/steps";
 import { StoreButtons } from "@/components/store-buttons";
 import { Button } from "@/components/ui/button";
@@ -96,7 +96,7 @@ export default async function MarketingPage() {
               </div>
               <div className="flex gap-1.5">
                 <dt>konfiguracja</dt>
-                <dd className="text-foreground">~15 min</dd>
+                <dd className="text-foreground">~5 min</dd>
               </div>
             </dl>
           </div>
@@ -104,45 +104,52 @@ export default async function MarketingPage() {
           <HeroVisual />
         </section>
 
+        <section
+          id="aplikacja"
+          className="border-border-solid relative grid scroll-mt-24 gap-12 overflow-hidden rounded-3xl border p-8 sm:p-12 lg:grid-cols-[1.05fr_auto] lg:items-center"
+        >
+          <div
+            aria-hidden
+            className="bg-linegrid mask-fade-b absolute inset-0 -z-10 opacity-50"
+          />
+          <div className="flex flex-col gap-6">
+            <SectionHeading
+              index="I"
+              eyebrow="Aplikacja mobilna"
+              title="Korki masz w kieszeni, nie w laptopie."
+              description="Android jest już w Google Play. Te same zajęcia, te same statystyki, plus push przed lekcją i odklikanie płatności zaraz po niej."
+            />
+            <ul className="text-muted-foreground grid gap-2 text-sm sm:grid-cols-2">
+              <AppPoint>Powiadomienia push przed zajęciami</AppPoint>
+              <AppPoint>Odklikanie lekcji w dwa dotknięcia</AppPoint>
+              <AppPoint>Dane te same co w przeglądarce</AppPoint>
+              <AppPoint>Widżet z dzisiejszym planem</AppPoint>
+            </ul>
+            <StoreButtons />
+          </div>
+
+          <PhoneVisual className="lg:pl-6" />
+        </section>
+
         <section id="jak-to-dziala" className="flex scroll-mt-24 flex-col gap-12">
           <SectionHeading
-            index="I"
+            index="II"
             eyebrow="Jak to działa"
             title="Trzy kroki i masz spokój do końca semestru."
-            description="Konfiguracja zajmuje kwadrans. Potem zostaje Ci tylko odklikiwanie lekcji po zajęciach."
+            description="Konfiguracja zajmuje około pięciu minut. Potem zostaje Ci tylko odklikiwanie lekcji po zajęciach."
           />
           <Steps />
         </section>
 
         <section id="funkcje" className="flex scroll-mt-24 flex-col gap-12">
           <SectionHeading
-            index="II"
+            index="III"
             eyebrow="Funkcje"
             title="Wszystko, czego korepetytor naprawdę potrzebuje."
             description="Bez modułów, których nigdy nie otworzysz. Osiem rzeczy, które robią robotę."
           />
           <Bento />
         </section>
-
-        <Reveal className="border-border-solid relative grid gap-8 overflow-hidden rounded-3xl border p-8 md:grid-cols-[1fr_auto] md:items-center md:p-10">
-          <div
-            aria-hidden
-            className="bg-linegrid mask-fade-b absolute inset-0 -z-10 opacity-50"
-          />
-          <div className="flex max-w-lg flex-col gap-3">
-            <span className="font-mono-ui text-muted-foreground text-xs">
-              III · na telefon
-            </span>
-            <h2 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
-              Miej korki w kieszeni.
-            </h2>
-            <p className="text-muted-foreground text-pretty">
-              Aplikacja na Androida jest już w Google Play: te same dane, te same
-              statystyki, plus powiadomienia push przed zajęciami.
-            </p>
-          </div>
-          <StoreButtons className="shrink-0" />
-        </Reveal>
 
         {latestPosts.length > 0 && (
           <section className="flex flex-col gap-12">
@@ -202,6 +209,15 @@ export default async function MarketingPage() {
         <MarketingFooter />
       </div>
     </div>
+  );
+}
+
+function AppPoint({ children }: { children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      <Check className="text-primary mt-0.5 size-4 shrink-0" />
+      {children}
+    </li>
   );
 }
 
