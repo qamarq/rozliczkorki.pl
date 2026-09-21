@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Polityka prywatności</h1>
           <p className="text-muted-foreground mt-2 text-sm">
-            Ostatnia aktualizacja: 10 września 2026
+            Ostatnia aktualizacja: 21 września 2026
           </p>
         </div>
 
@@ -43,6 +43,7 @@ export default function PrivacyPage() {
               "Dane o zajęciach: terminy, czas trwania, status (zaplanowane/odbyte/odwołane), status i sposób płatności, notatki, które sam(a) dodajesz.",
               "Dane techniczne: adres IP, informacje o urządzeniu i przeglądarce, identyfikator sesji, potrzebne do zalogowania i utrzymania bezpieczeństwa konta.",
               "Token powiadomień push (jeśli włączysz powiadomienia w aplikacji mobilnej), potrzebny wyłącznie do wysyłki przypomnień o zajęciach i płatnościach.",
+              "Dane analityczne (jeśli nie wyłączysz analityki): zdarzenia opisujące korzystanie z aplikacji — rejestracja i sposób logowania, ukończone kroki konfiguracji, dodanie pierwszego ucznia, zaplanowanie i odznaczenie zajęć, wyświetlenie podsumowania finansowego — wraz z identyfikatorem konta, wewnętrznymi identyfikatorami ucznia i zajęć, platformą (web/iOS/Android), językiem przeglądarki, źródłem wejścia na stronę oraz danymi technicznymi urządzenia zbieranymi przez SDK analityczny. Nie wysyłamy tam imion ani adresów uczniów.",
             ]}
           />
         </Section>
@@ -54,6 +55,7 @@ export default function PrivacyPage() {
               "Logowanie i bezpieczeństwo konta, w tym logowanie przez Google i kluczem dostępu (podstawa: wykonanie umowy oraz prawnie uzasadniony interes, art. 6 ust. 1 lit. f RODO).",
               "Wysyłka przypomnień push i e-mail o zbliżających się zajęciach lub zaległych płatnościach (podstawa: wykonanie umowy).",
               "Utrzymanie i rozwój aplikacji, w tym wykrywanie i naprawa błędów (podstawa: prawnie uzasadniony interes).",
+              "Analityka korzystania z aplikacji w narzędziu Mixpanel: statystyki użycia funkcji, wykrywanie miejsc, w których użytkownicy się gubią, oraz ulepszanie aplikacji (podstawa: prawnie uzasadniony interes, art. 6 ust. 1 lit. f RODO; masz prawo sprzeciwu wobec tego przetwarzania).",
             ]}
           />
         </Section>
@@ -85,11 +87,23 @@ export default function PrivacyPage() {
               "Dostawca bazy danych (Neon, PostgreSQL): przechowywanie danych konta, uczniów i zajęć.",
               "Google: jeśli zdecydujesz się na logowanie przez Google (weryfikacja tożsamości).",
               "Dostawca powiadomień push (Expo/Apple/Google): wyłącznie w celu doręczenia powiadomień, jeśli je włączysz.",
+              "Mixpanel (Mixpanel, Inc.): zewnętrzny dostawca analityki, który w naszym imieniu zbiera i przetwarza zdarzenia opisane w punkcie 2. Dane mogą być przetwarzane poza Europejskim Obszarem Gospodarczym, w oparciu o standardowe klauzule umowne zatwierdzone przez Komisję Europejską.",
             ]}
           />
         </Section>
 
-        <Section title="7. Twoje prawa">
+        <Section title="7. Analityka i jej wyłączenie">
+          <p>
+            Do analityki używamy zewnętrznej usługi Mixpanel. Zbieramy wyłącznie zdarzenia
+            wymienione w punkcie 2 — nie nagrywamy ekranu, nie zbieramy treści notatek ani
+            danych osobowych Twoich uczniów, nie używamy tych danych do reklam i nie
+            sprzedajemy ich nikomu. W każdej chwili możesz wnieść sprzeciw wobec analityki
+            — napisz do nas na adres kontaktowy, a wyłączymy zbieranie zdarzeń dla Twojego
+            konta. W przeglądarce respektujemy też ustawienie „Do Not Track”.
+          </p>
+        </Section>
+
+        <Section title="8. Twoje prawa">
           <p>
             Zgodnie z RODO masz prawo do: dostępu do swoich danych, ich sprostowania,
             usunięcia, ograniczenia przetwarzania, przenoszenia danych oraz sprzeciwu
@@ -103,7 +117,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="8. Bezpieczeństwo">
+        <Section title="9. Bezpieczeństwo">
           <p>
             Hasła przechowujemy w postaci zahaszowanej, połączenia z aplikacją są
             szyfrowane (HTTPS/TLS), a dostęp do bazy danych jest ograniczony wyłącznie do
@@ -112,7 +126,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="9. Zmiany polityki prywatności">
+        <Section title="10. Zmiany polityki prywatności">
           <p>
             Jeśli zmienimy tę politykę, poinformujemy o tym w aplikacji lub mailowo, z
             odpowiednim wyprzedzeniem przed wejściem zmian w życie.
