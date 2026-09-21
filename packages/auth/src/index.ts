@@ -40,6 +40,11 @@ const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  account: {
+    accountLinking: {
+      enabled: true,
+    },
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: { user, session, account, verification, passkey: passkeyTable },

@@ -176,6 +176,18 @@ export default function LoginPage() {
             <AuthPanel />
           </CardContent>
         </Card>
+
+        <FieldDescription className="px-6 text-center">
+          Zakładając konto, akceptujesz{" "}
+          <Link href="/terms" className="underline">
+            Regulamin
+          </Link>{" "}
+          i{" "}
+          <Link href="/privacy" className="underline">
+            Politykę prywatności
+          </Link>
+          .
+        </FieldDescription>
       </div>
     </div>
   );
