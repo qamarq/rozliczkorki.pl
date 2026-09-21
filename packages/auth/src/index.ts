@@ -42,7 +42,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   account: {
     accountLinking: {
-      enabled: false,
+      enabled: true,
     },
   },
   database: drizzleAdapter(db, {
