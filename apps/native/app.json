@@ -82,6 +82,9 @@
           "android": {
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true
+          },
+          "ios": {
+            "enableSceneSupport": true
           }
         }
       ],
