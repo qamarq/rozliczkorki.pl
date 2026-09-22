@@ -1,8 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
-import { Link } from "expo-router";
+import { Link, type Href } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { TabHeader } from "@/components/tab-header";
 import { ScreenBackground } from "@/components/ui";
 import { ListView } from "@/components/calendar/list-view";
@@ -24,39 +25,64 @@ export default function CalendarScreen() {
     if (defaultView.loaded) setMode(defaultView.view);
   }, [defaultView.loaded, defaultView.view]);
 
+  const newLessonHref: Href =
+    mode === "list"
+      ? "/lesson/new"
+      : { pathname: "/lesson/new", params: { date: format(selectedDate, "yyyy-MM-dd") } };
+
   return (
     <ScreenBackground syncStatus>
       <View style={styles.headerBlock}>
         <TabHeader title="Kalendarz" />
-        <View style={styles.segmented}>
-          {CALENDAR_VIEW_OPTIONS.map((m) => {
-            const active = m.value === mode;
-            if (!mode) {
-              return (
-                <View key={m.value} style={styles.segment}>
-                  <Text style={styles.segmentText}>{m.label}</Text>
-                </View>
-              );
-            }
-            return (
-              <Pressable key={m.value} onPress={() => setMode(m.value)}>
-                {active ? (
-                  <LinearGradient
-                    colors={gradients.accent}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.segment}
-                  >
-                    <Text style={styles.segmentTextActive}>{m.label}</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.segment}>
+        <View style={styles.controls}>
+          <View style={styles.segmented}>
+            {CALENDAR_VIEW_OPTIONS.map((m) => {
+              const active = m.value === mode;
+              if (!mode) {
+                return (
+                  <View key={m.value} style={styles.segment}>
                     <Text style={styles.segmentText}>{m.label}</Text>
                   </View>
-                )}
+                );
+              }
+              return (
+                <Pressable key={m.value} onPress={() => setMode(m.value)}>
+                  {active ? (
+                    <LinearGradient
+                      colors={gradients.accent}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.segment}
+                    >
+                      <Text style={styles.segmentTextActive}>{m.label}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.segment}>
+                      <Text style={styles.segmentText}>{m.label}</Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+          {Platform.OS === "ios" && (
+            <Link href={newLessonHref} asChild>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Nowe zajęcia"
+                hitSlop={6}
+              >
+                <LinearGradient
+                  colors={gradients.accent}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.addButton}
+                >
+                  <Ionicons name="add" size={20} color="#fff" />
+                </LinearGradient>
               </Pressable>
-            );
-          })}
+            </Link>
+          )}
         </View>
       </View>
       <View style={{ flex: 1 }}>
@@ -68,23 +94,15 @@ export default function CalendarScreen() {
         )}
         {mode === "list" && <ListView />}
       </View>
-      <Link
-        href={
-          mode === "list"
-            ? "/lesson/new"
-            : {
-                pathname: "/lesson/new",
-                params: { date: format(selectedDate, "yyyy-MM-dd") },
-              }
-        }
-        asChild
-      >
-        <Pressable style={styles.fabWrap}>
-          <LinearGradient colors={gradients.accent} style={styles.fab}>
-            <Text style={styles.fabText}>+</Text>
-          </LinearGradient>
-        </Pressable>
-      </Link>
+      {Platform.OS !== "ios" && (
+        <Link href={newLessonHref} asChild>
+          <Pressable style={styles.fabWrap}>
+            <LinearGradient colors={gradients.accent} style={styles.fab}>
+              <Text style={styles.fabText}>+</Text>
+            </LinearGradient>
+          </Pressable>
+        </Link>
+      )}
     </ScreenBackground>
   );
 }
@@ -95,6 +113,19 @@ const styles = StyleSheet.create({
     paddingTop: tabHeaderTop,
     marginBottom: 12,
     gap: 12,
+  },
+  controls: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
   },
   segmented: {
     alignSelf: "flex-start",
