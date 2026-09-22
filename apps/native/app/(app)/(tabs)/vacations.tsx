@@ -10,6 +10,7 @@ import {
   OutlineButton,
   ScreenBackground,
   SectionLabel,
+  tabScreenEdges,
 } from "@/components/ui";
 import { openVacationSheet } from "@/components/vacation-sheet";
 import { alert } from "@/lib/alert";
@@ -67,7 +68,7 @@ export default function VacationsScreen() {
       : "brak";
 
   return (
-    <ScreenBackground syncStatus>
+    <ScreenBackground syncStatus edges={tabScreenEdges}>
       <ScrollView contentContainerStyle={styles.content}>
         <TabHeader title="Urlopy" />
 

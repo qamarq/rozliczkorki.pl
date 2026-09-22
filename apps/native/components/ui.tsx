@@ -8,6 +8,7 @@ import { useRouter } from "expo-router";
 import { Children, type ComponentProps, type ReactNode, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -34,6 +35,8 @@ export function Switch({
     </Host>
   );
 }
+
+export const tabScreenEdges: Edge[] = Platform.OS === "ios" ? ["top"] : ["top", "bottom"];
 
 export function ScreenBackground({
   children,

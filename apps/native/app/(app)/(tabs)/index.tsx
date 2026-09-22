@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { TabHeader } from "@/components/tab-header";
-import { ScreenBackground } from "@/components/ui";
+import { ScreenBackground, tabScreenEdges } from "@/components/ui";
 import { ListView } from "@/components/calendar/list-view";
 import { MonthView } from "@/components/calendar/month-view";
 import { WeekView } from "@/components/calendar/week-view";
@@ -31,7 +31,7 @@ export default function CalendarScreen() {
       : { pathname: "/lesson/new", params: { date: format(selectedDate, "yyyy-MM-dd") } };
 
   return (
-    <ScreenBackground syncStatus>
+    <ScreenBackground syncStatus edges={tabScreenEdges}>
       <View style={styles.headerBlock}>
         <TabHeader title="Kalendarz" />
         <View style={styles.controls}>
