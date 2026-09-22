@@ -19,7 +19,7 @@ export async function signInWithApple(): Promise<AppleSignInResult> {
     if ((e as { code?: string } | null)?.code === "ERR_REQUEST_CANCELED") {
       return { status: "dismissed" };
     }
-    console.error("Apple sign-in failed", e);
+    console.warn("Apple sign-in failed", e);
     return {
       status: "error",
       message: e instanceof Error ? e.message : "Spróbuj ponownie",
