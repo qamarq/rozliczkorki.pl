@@ -101,13 +101,13 @@ export default function LoginEmailScreen() {
             onChangeText={setPassword}
           />
           <GradientButton label="Zaloguj się" onPress={onSubmit} loading={loading} />
+          <AppleSignInButton />
           <OutlineButton
             label="Kontynuuj przez Google"
             icon={<GoogleIcon />}
             onPress={onGoogle}
             disabled={googleLoading}
           />
-          <AppleSignInButton />
         </View>
 
         <Link href="/forgot-password" style={styles.link}>

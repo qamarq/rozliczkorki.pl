@@ -163,13 +163,13 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
           />
           <GradientButton label="Załóż konto" onPress={onSubmit} loading={loading} />
+          <AppleSignInButton onStart={() => rememberSignupMethod("apple")} />
           <OutlineButton
             label="Kontynuuj przez Google"
             icon={<GoogleIcon />}
             onPress={onGoogle}
             disabled={googleLoading}
           />
-          <AppleSignInButton onStart={() => rememberSignupMethod("apple")} />
         </View>
 
         <Link href="/login" style={styles.link}>
