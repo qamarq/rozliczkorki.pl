@@ -7,7 +7,7 @@ import { pl } from "date-fns/locale";
 import { Check, Phone, PhoneOff, TreePalm } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { CollapsibleCard } from "@/components/collapsible-card";
 import { pluralize } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 
@@ -25,14 +25,12 @@ export function VacationNoticesPanel({ pending }: { pending: PendingNotice[] }) 
   const setNotified = useSetNotified();
 
   return (
-    <Card className="gap-3 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <TreePalm className="text-warning size-4" />
-          <h2 className="text-sm font-semibold">Do odwołania (urlop)</h2>
-        </div>
-        <Badge variant="secondary">{pending.length}</Badge>
-      </div>
+    <CollapsibleCard
+      id="vacation-notices"
+      title="Do odwołania (urlop)"
+      icon={<TreePalm className="text-warning size-4" />}
+      aside={<Badge variant="secondary">{pending.length}</Badge>}
+    >
       {pending.length === 0 && (
         <p className="text-muted-foreground text-sm">
           Wszyscy uczniowie wiedzą o odwołanych zajęciach.
@@ -89,6 +87,6 @@ export function VacationNoticesPanel({ pending }: { pending: PendingNotice[] }) 
           </div>
         ))}
       </div>
-    </Card>
+    </CollapsibleCard>
   );
 }
