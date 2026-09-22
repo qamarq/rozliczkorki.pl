@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  addDays,
   addMonths,
   eachDayOfInterval,
   endOfMonth,
@@ -19,7 +20,9 @@ import {
   Banknote,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
+  Info,
   ChevronRight,
   ArrowRight,
   LineChart,
@@ -37,6 +40,7 @@ import Link from "next/link";
 import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useMemo, useState } from "react";
+import { CollapsibleCard } from "@/components/collapsible-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -58,6 +62,8 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
 import { VacationNoticesPanel } from "./vacations/notice-panel";
+
+const NOTICE_LEAD_DAYS = 14;
 
 const WEEKDAYS = ["pon", "wt", "śr", "czw", "pt", "sob", "niedz"];
 
@@ -168,7 +174,10 @@ export function CalendarView() {
   const { data: vacationOverview } = trpc.vacations.overview.useQuery({
     today: format(today, "yyyy-MM-dd"),
   });
-  const pendingNotices = vacationOverview?.pending ?? [];
+  const pendingNotices = useMemo(() => {
+    const horizon = format(addDays(today, NOTICE_LEAD_DAYS), "yyyy-MM-dd");
+    return (vacationOverview?.pending ?? []).filter((n) => n.startDate <= horizon);
+  }, [vacationOverview, today]);
 
   const vacationByDay = useMemo(() => {
     const map = new Map<
@@ -193,13 +202,13 @@ export function CalendarView() {
   const actionLessons = useMemo(() => {
     const rank = (l: LessonRow) => {
       if (l.tone === "overdue") return 0;
-      if (l.status !== "completed" && new Date(l.endsAt) <= today) return 1;
+      if (new Date(l.endsAt) <= today) return 1;
       if (isSameDay(new Date(l.startsAt), today)) return 2;
       return 3;
     };
     return lessons
       .filter((l) => {
-        if (actionStepOf(l) === null) return false;
+        if (!needsAction(l)) return false;
         if (l.tone === "overdue") return true;
         if (new Date(l.endsAt) <= today) return true;
         return isSameDay(new Date(l.startsAt), today);
@@ -425,14 +434,17 @@ export function CalendarView() {
   );
 }
 
-type ActionStep = "confirm" | "settle";
-
-function actionStepOf(lesson: LessonRow): ActionStep | null {
-  if (lesson.status === "cancelled" || lesson.vacationId) return null;
-  if (lesson.settled) return null;
-  if (lesson.status !== "completed") return "confirm";
-  return lesson.paymentState === "awaiting_payout" ? null : "settle";
+function isSchoolLesson(lesson: LessonRow) {
+  return lesson.paymentState === "awaiting_payout";
 }
+
+function needsAction(lesson: LessonRow) {
+  if (lesson.status === "cancelled" || lesson.vacationId) return false;
+  if (lesson.status !== "completed") return true;
+  return !lesson.settled && !isSchoolLesson(lesson);
+}
+
+const PAYMENT_METHOD_LABELS = { cash: "gotówka", transfer: "przelew" } as const;
 
 function ActionPanel({
   lessons,
@@ -447,29 +459,29 @@ function ActionPanel({
     utils.stats.summary.invalidate();
     utils.stats.analytics.invalidate();
   };
-  const markCompleted = trpc.lessons.update.useMutation({
+  const setCompleted = trpc.lessons.update.useMutation({
     onSuccess: (_result, variables) => {
-      const lesson = lessons.find((l) => l.id === variables.id);
-      trackLessonCheckedOff(flowDeps, {
-        lessonId: variables.id,
-        status: "completed",
-        scheduledAt: lesson?.createdAt,
-      });
+      if (variables.status === "completed") {
+        const lesson = lessons.find((l) => l.id === variables.id);
+        trackLessonCheckedOff(flowDeps, {
+          lessonId: variables.id,
+          status: "completed",
+          scheduledAt: lesson?.createdAt,
+        });
+      }
       invalidate();
     },
   });
-  const markPaid = trpc.lessons.update.useMutation({ onSuccess: invalidate });
-  const pending = markCompleted.isPending || markPaid.isPending;
+  const setPaid = trpc.lessons.update.useMutation({ onSuccess: invalidate });
+  const pending = setCompleted.isPending || setPaid.isPending;
 
   return (
-    <Card className="gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ListChecks className="text-warning size-4" />
-          <h2 className="text-sm font-semibold">Do zrobienia</h2>
-        </div>
-        <Badge variant="secondary">{lessons.length}</Badge>
-      </div>
+    <CollapsibleCard
+      id="action-panel"
+      title="Do zrobienia"
+      icon={<ListChecks className="text-warning size-4" />}
+      aside={<Badge variant="secondary">{lessons.length}</Badge>}
+    >
       {lessons.length === 0 && (
         <p className="text-muted-foreground text-sm">
           Wszystko odhaczone i rozliczone. 🎉
@@ -477,15 +489,16 @@ function ActionPanel({
       )}
       <div className="flex flex-col gap-2">
         {lessons.map((lesson) => {
-          const step = actionStepOf(lesson);
+          const completed = lesson.status === "completed";
+          const school = isSchoolLesson(lesson);
           return (
             <div
               key={lesson.id}
-              className="border-border-solid flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
+              className="border-border-solid flex flex-col gap-2 rounded-lg border px-3 py-2"
             >
               <button
                 onClick={() => onOpen(new Date(lesson.startsAt), lesson.id)}
-                className="flex flex-1 flex-col items-start text-left"
+                className="flex flex-col items-start text-left"
               >
                 <span className="text-sm font-medium">{lesson.student?.name}</span>
                 <span className="text-muted-foreground text-xs tabular-nums">
@@ -494,64 +507,98 @@ function ActionPanel({
                     : format(new Date(lesson.startsAt), "d MMM, HH:mm", {
                         locale: pl,
                       })}{" "}
-                  · {formatPLN(step === "settle" ? lesson.amountDue : lesson.price)}
+                  · {formatPLN(lesson.settled ? lesson.price : lesson.amountDue)}
                 </span>
               </button>
 
-              {step === "confirm" && (
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant={completed ? "secondary" : "outline"}
                   disabled={pending}
+                  className={cn(completed && "text-success")}
                   onClick={() =>
-                    markCompleted.mutate({ id: lesson.id, status: "completed" })
+                    setCompleted.mutate({
+                      id: lesson.id,
+                      status: completed ? "scheduled" : "completed",
+                    })
                   }
                 >
-                  <Check className="size-3.5" />
-                  Odbyły się
+                  <Check className={cn("size-3.5", !completed && "opacity-30")} />
+                  Odbyte
                 </Button>
-              )}
 
-              {step === "settle" && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" disabled={pending}>
-                      Rozlicz
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() =>
-                        markPaid.mutate({
-                          id: lesson.id,
-                          paid: true,
-                          paymentMethod: "cash",
-                        })
-                      }
-                    >
-                      <Banknote className="size-4" />
-                      Gotówka
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        markPaid.mutate({
-                          id: lesson.id,
-                          paid: true,
-                          paymentMethod: "transfer",
-                        })
-                      }
-                    >
-                      <Landmark className="size-4" />
-                      Przelew
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                {school ? (
+                  <span className="text-muted-foreground flex items-center justify-center gap-1.5 text-xs">
+                    <Landmark className="size-3.5" />
+                    Wypłata ze szkółki
+                  </span>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant={lesson.settled ? "secondary" : "outline"}
+                        disabled={pending}
+                        className={cn(lesson.settled && "text-success")}
+                      >
+                        <Banknote
+                          className={cn("size-3.5", !lesson.settled && "opacity-30")}
+                        />
+                        {lesson.settled && lesson.paid && lesson.paymentMethod
+                          ? `Opłacone · ${PAYMENT_METHOD_LABELS[lesson.paymentMethod]}`
+                          : "Opłacone"}
+                        <ChevronDown className="size-3.5 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPaid.mutate({
+                            id: lesson.id,
+                            paid: true,
+                            paymentMethod: "cash",
+                          })
+                        }
+                      >
+                        <Banknote className="size-4" />
+                        Gotówka
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setPaid.mutate({
+                            id: lesson.id,
+                            paid: true,
+                            paymentMethod: "transfer",
+                          })
+                        }
+                      >
+                        <Landmark className="size-4" />
+                        Przelew
+                      </DropdownMenuItem>
+                      {lesson.paid && (
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setPaid.mutate({
+                              id: lesson.id,
+                              paid: false,
+                              paymentMethod: null,
+                            })
+                          }
+                        >
+                          <Ban className="size-4" />
+                          Nieopłacone
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
-    </Card>
+    </CollapsibleCard>
   );
 }
 
@@ -577,10 +624,11 @@ function StatsPromoCard() {
 
 function CalendarLegend() {
   return (
-    <Card className="gap-2 px-4 py-3">
-      <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-        Legenda
-      </span>
+    <CollapsibleCard
+      id="calendar-legend"
+      title="Legenda"
+      icon={<Info className="text-muted-foreground size-4" />}
+    >
       <div className="flex flex-wrap gap-x-5 gap-y-3.5">
         {TONE_ORDER.map((tone) => (
           <span
@@ -604,6 +652,6 @@ function CalendarLegend() {
           <span className="text-muted-foreground">Urlop</span>
         </span>
       </div>
-    </Card>
+    </CollapsibleCard>
   );
 }

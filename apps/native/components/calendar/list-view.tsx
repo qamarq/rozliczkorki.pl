@@ -52,7 +52,10 @@ export function ListView() {
 
   const { past, future } = useMemo(() => {
     const olderUnpaid = (older.data ?? []).filter(
-      (l) => !l.settled && l.status !== "cancelled" && new Date(l.startsAt) < from,
+      (l) =>
+        (!l.settled || l.status !== "completed") &&
+        l.status !== "cancelled" &&
+        new Date(l.startsAt) < from,
     );
     const all = [...olderUnpaid, ...(recent.data ?? [])];
     return {
