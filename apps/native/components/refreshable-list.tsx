@@ -1,12 +1,6 @@
 import { Host, List, RNHostView } from "@expo/ui";
 import { Children, isValidElement, useState, type ReactNode } from "react";
-import {
-  Platform,
-  RefreshControl,
-  ScrollView,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { Platform, RefreshControl, ScrollView, View } from "react-native";
 import { colors } from "@/lib/theme";
 
 export function RefreshableList({
@@ -16,7 +10,7 @@ export function RefreshableList({
   children: ReactNode;
   onRefresh: () => Promise<unknown>;
 }) {
-  const { width } = useWindowDimensions();
+  const [width, setWidth] = useState(0);
   const items = Children.toArray(children).filter(isValidElement);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -45,19 +39,23 @@ export function RefreshableList({
   }
 
   return (
-    <Host style={{ flex: 1 }} colorScheme="dark" seedColor={colors.accentTo}>
-      <List
-        key={items.length}
-        onRefresh={async () => {
-          await onRefresh();
-        }}
-      >
-        {items.map((child, index) => (
-          <RNHostView key={child.key ?? index} matchContents>
-            <View style={{ width }}>{child}</View>
-          </RNHostView>
-        ))}
-      </List>
-    </Host>
+    <View style={{ flex: 1 }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {width > 0 && (
+        <Host style={{ flex: 1 }} colorScheme="dark" seedColor={colors.accentTo}>
+          <List
+            key={items.length}
+            onRefresh={async () => {
+              await onRefresh();
+            }}
+          >
+            {items.map((child, index) => (
+              <RNHostView key={child.key ?? index} matchContents>
+                <View style={{ width }}>{child}</View>
+              </RNHostView>
+            ))}
+          </List>
+        </Host>
+      )}
+    </View>
   );
 }

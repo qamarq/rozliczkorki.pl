@@ -29,7 +29,7 @@ import {
   ensureNotificationChannels,
   requestNotificationPermission,
 } from "@/lib/notifications";
-import { colors, gradients } from "@/lib/theme";
+import { colors, gradients, maxWidth } from "@/lib/theme";
 import { canScheduleExactAlarms, openExactAlarmSettings } from "@/modules/exact-alarms";
 import { canPostLiveUpdates, openLiveUpdateSettings } from "@/modules/lesson-live";
 
@@ -285,6 +285,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
     gap: 14,
+    width: "100%",
+    maxWidth: maxWidth.form,
+    alignSelf: "center",
   },
   logoBadge: {
     width: 84,
@@ -347,5 +350,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   dotActive: { backgroundColor: colors.accentTo, width: 20 },
-  footer: { paddingHorizontal: 24, paddingBottom: 32, gap: 10 },
+  footer: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    gap: 10,
+    width: "100%",
+    maxWidth: maxWidth.form,
+    alignSelf: "center",
+  },
 });

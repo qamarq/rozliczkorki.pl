@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GoogleIcon } from "@/components/google-icon";
 import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
@@ -62,7 +63,7 @@ export default function LoginEmailScreen() {
   }
 
   return (
-    <ScreenBackground>
+    <ScreenBackground width="form">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
@@ -106,6 +107,7 @@ export default function LoginEmailScreen() {
             onPress={onGoogle}
             disabled={googleLoading}
           />
+          <AppleSignInButton />
         </View>
 
         <Link href="/forgot-password" style={styles.link}>

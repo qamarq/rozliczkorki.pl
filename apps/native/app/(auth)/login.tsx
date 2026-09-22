@@ -1,6 +1,7 @@
 import { Link, Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GradientButton, OutlineButton, ScreenBackground } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { credentialManagerAvailable, signInWithSavedCredential } from "@/lib/credentials";
@@ -33,7 +34,7 @@ export default function LoginScreen() {
   if (!credentialManagerAvailable) return <Redirect href="/login-email" />;
 
   return (
-    <ScreenBackground>
+    <ScreenBackground width="form">
       <View style={styles.container}>
         <Text style={styles.logo}>RozliczKorki</Text>
         <Text style={styles.subtitle}>Zaloguj się do panelu</Text>
@@ -53,6 +54,7 @@ export default function LoginScreen() {
             label="Zaloguj się e-mailem i hasłem"
             onPress={() => router.push("/login-email")}
           />
+          <AppleSignInButton />
         </View>
 
         <Link href="/register" style={styles.link}>
