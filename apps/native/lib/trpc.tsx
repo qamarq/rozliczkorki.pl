@@ -95,6 +95,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           async headers() {
             return { cookie: await authClient.getCookie() };
           },
+          fetch(url, options) {
+            return fetch(url, { ...options, credentials: "omit" });
+          },
         }),
       ],
     }),

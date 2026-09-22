@@ -1,6 +1,6 @@
 export type Iso8601 = string;
 
-export type SignupMethod = "email" | "google" | "passkey";
+export type SignupMethod = "email" | "google" | "apple" | "passkey";
 
 export type Platform = "web" | "ios" | "android";
 

@@ -31,7 +31,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <ScreenBackground>
+    <ScreenBackground width="form">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}

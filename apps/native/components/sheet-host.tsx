@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { closeSheet, subscribeSheet, type SheetState } from "@/lib/sheet";
-import { colors, radius } from "@/lib/theme";
+import { colors, maxWidth, radius } from "@/lib/theme";
 
 const MARGIN = 12;
 const HANDLE_HEIGHT = 21;
@@ -26,7 +26,7 @@ export function SheetHost({ blurTarget }: { blurTarget: RefObject<View | null> }
   const [state, setState] = useState<SheetState>(null);
   const [visible, setVisible] = useState<SheetState>(null);
   const [contentHeight, setContentHeight] = useState(0);
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
   const fullHeight = Math.round(height - insets.top - insets.bottom - MARGIN * 2);
@@ -37,6 +37,7 @@ export function SheetHost({ blurTarget }: { blurTarget: RefObject<View | null> }
     fullHeight,
   );
   const hiddenY = fullHeight + MARGIN + insets.bottom;
+  const sideInset = Math.max(MARGIN, (width - maxWidth.sheet) / 2);
 
   const sheetHeight = useRef(new Animated.Value(baseHeight)).current;
   const translateY = useRef(new Animated.Value(hiddenY)).current;
@@ -183,6 +184,8 @@ export function SheetHost({ blurTarget }: { blurTarget: RefObject<View | null> }
           {
             height: sheetHeight,
             bottom: MARGIN + insets.bottom,
+            left: sideInset,
+            right: sideInset,
             transform: [{ translateY }],
           },
         ]}
@@ -215,8 +218,6 @@ const styles = StyleSheet.create({
   scrim: { backgroundColor: "rgba(4,4,8,0.5)" },
   sheet: {
     position: "absolute",
-    left: MARGIN,
-    right: MARGIN,
     borderRadius: 28,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,

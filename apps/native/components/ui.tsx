@@ -8,6 +8,7 @@ import { useRouter } from "expo-router";
 import { Children, type ComponentProps, type ReactNode, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { OfflineBanner } from "@/components/sync-status";
-import { colors, gradients, radius } from "@/lib/theme";
+import { colors, gradients, maxWidth, radius } from "@/lib/theme";
 
 export function Switch({
   value,
@@ -35,14 +36,18 @@ export function Switch({
   );
 }
 
+export const tabScreenEdges: Edge[] = Platform.OS === "ios" ? ["top"] : ["top", "bottom"];
+
 export function ScreenBackground({
   children,
   edges = ["top", "bottom"],
   syncStatus,
+  width = "content",
 }: {
   children: ReactNode;
   edges?: Edge[];
   syncStatus?: boolean;
+  width?: "form" | "content";
 }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -54,7 +59,16 @@ export function ScreenBackground({
       />
       <SafeAreaView style={{ flex: 1 }} edges={edges}>
         {syncStatus && <OfflineBanner />}
-        <View style={{ flex: 1 }}>{children}</View>
+        <View
+          style={{
+            flex: 1,
+            width: "100%",
+            maxWidth: maxWidth[width],
+            alignSelf: "center",
+          }}
+        >
+          {children}
+        </View>
       </SafeAreaView>
     </View>
   );

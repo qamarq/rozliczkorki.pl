@@ -1,6 +1,12 @@
 import { format } from "date-fns";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Badge, Card, OutlineButton, ScreenBackground } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  OutlineButton,
+  ScreenBackground,
+  tabScreenEdges,
+} from "@/components/ui";
 import { RefreshableList } from "@/components/refreshable-list";
 import { openStudentSheet } from "@/components/student-sheet";
 import { SkeletonLine, SkeletonList, lineHeights } from "@/components/skeleton";
@@ -18,7 +24,7 @@ export default function StudentsScreen() {
   } = trpc.students.list.useQuery();
 
   return (
-    <ScreenBackground syncStatus>
+    <ScreenBackground syncStatus edges={tabScreenEdges}>
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
           <View key="head" style={styles.head}>

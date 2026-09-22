@@ -1,6 +1,12 @@
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Badge, Card, OutlineButton, ScreenBackground } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  OutlineButton,
+  ScreenBackground,
+  tabScreenEdges,
+} from "@/components/ui";
 import { RefreshableList } from "@/components/refreshable-list";
 import { openSchoolSheet } from "@/components/school-sheet";
 import { SkeletonLine, SkeletonList, lineHeights } from "@/components/skeleton";
@@ -21,7 +27,7 @@ export default function SchoolsScreen() {
   const awaitingTotal = schools.reduce((sum, school) => sum + school.awaiting, 0);
 
   return (
-    <ScreenBackground syncStatus>
+    <ScreenBackground syncStatus edges={tabScreenEdges}>
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
           <View key="head" style={styles.head}>

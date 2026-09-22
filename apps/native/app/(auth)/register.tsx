@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GoogleIcon } from "@/components/google-icon";
 import { GradientButton, Input, OutlineButton, ScreenBackground } from "@/components/ui";
 import { nowIso } from "@repo/analytics";
@@ -105,7 +106,7 @@ export default function RegisterScreen() {
 
   if (sentTo) {
     return (
-      <ScreenBackground>
+      <ScreenBackground width="form">
         <View style={styles.container}>
           <Text style={styles.logo}>Sprawdź skrzynkę</Text>
           <Text style={styles.subtitle}>
@@ -129,7 +130,7 @@ export default function RegisterScreen() {
   }
 
   return (
-    <ScreenBackground>
+    <ScreenBackground width="form">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
@@ -162,6 +163,7 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
           />
           <GradientButton label="Załóż konto" onPress={onSubmit} loading={loading} />
+          <AppleSignInButton onStart={() => rememberSignupMethod("apple")} />
           <OutlineButton
             label="Kontynuuj przez Google"
             icon={<GoogleIcon />}

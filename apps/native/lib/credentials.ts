@@ -60,7 +60,16 @@ async function passkeyRequest() {
   return data ?? undefined;
 }
 
-export async function signInWithSavedCredential(): Promise<SavedCredentialResult> {
+let pendingSignIn: Promise<SavedCredentialResult> | null = null;
+
+export function signInWithSavedCredential(): Promise<SavedCredentialResult> {
+  pendingSignIn ??= requestSavedCredential().finally(() => {
+    pendingSignIn = null;
+  });
+  return pendingSignIn;
+}
+
+async function requestSavedCredential(): Promise<SavedCredentialResult> {
   if (!credentialManagerAvailable) return { status: "unavailable" };
 
   const passkeys = await passkeyRequest().catch(() => undefined);
