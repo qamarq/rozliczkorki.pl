@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Card,
   GradientButton,
@@ -14,6 +14,7 @@ import {
 import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
 import { colors } from "@/lib/theme";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 type SessionRow = {
   id: string;
@@ -64,9 +65,8 @@ export default function SecuritySettingsScreen() {
   }
 
   return (
-    <ScreenBackground>
-      <ScreenHeader title="Bezpieczeństwo" />
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenBackground header={<ScreenHeader title="Bezpieczeństwo" />}>
+      <HeaderScrollView contentContainerStyle={styles.content}>
         <View>
           <SectionLabel>Zmiana hasła</SectionLabel>
           <Card style={{ gap: 12 }}>
@@ -116,7 +116,7 @@ export default function SecuritySettingsScreen() {
             ))}
           </Card>
         </View>
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

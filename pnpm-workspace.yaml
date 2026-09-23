@@ -10,5 +10,6 @@ overrides:
   "@expo/dom-webview": ^57.0.1
 
 patchedDependencies:
+  expo-backdrop@0.1.1: patches/expo-backdrop@0.1.1.patch
   expo-widgets@57.0.19: patches/expo-widgets@57.0.19.patch
   react-native-google-one-tap-signin: patches/react-native-google-one-tap-signin.patch

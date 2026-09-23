@@ -12,7 +12,7 @@ import { openStudentSheet } from "@/components/student-sheet";
 import { SkeletonLine, SkeletonList, lineHeights } from "@/components/skeleton";
 import { TabHeader } from "@/components/tab-header";
 import { formatPLN } from "@repo/shared";
-import { colors, tabHeaderTop } from "@/lib/theme";
+import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
 export default function StudentsScreen() {
@@ -24,11 +24,14 @@ export default function StudentsScreen() {
   } = trpc.students.list.useQuery();
 
   return (
-    <ScreenBackground syncStatus edges={tabScreenEdges}>
+    <ScreenBackground
+      syncStatus
+      edges={tabScreenEdges}
+      header={<TabHeader title="Uczniowie" />}
+    >
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
           <View key="head" style={styles.head}>
-            <TabHeader title="Uczniowie" />
             <OutlineButton label="+ Dodaj ucznia" onPress={() => openStudentSheet()} />
           </View>
           {isLoading && students.length === 0 ? (
@@ -104,7 +107,7 @@ function RateSummary({ studentId }: { studentId: string }) {
 }
 
 const styles = StyleSheet.create({
-  head: { paddingHorizontal: 20, paddingTop: tabHeaderTop, paddingBottom: 8, gap: 16 },
+  head: { paddingHorizontal: 20, paddingBottom: 8 },
   cardWrap: { paddingHorizontal: 20 },
   card: { marginBottom: 8, gap: 4 },
   cardHeader: {

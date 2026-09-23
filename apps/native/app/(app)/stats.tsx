@@ -18,6 +18,7 @@ import { trackFinancialSummaryViewed } from "@repo/analytics";
 import { flowDeps } from "@/lib/analytics";
 import { colors, gradients, radius } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 const GRANULARITY_LABEL = {
   day: "dziennie",
@@ -111,10 +112,8 @@ export default function StatsScreen() {
   const lessonsTotal = (totals?.lessonCount ?? 0) + (totals?.projectedLessons ?? 0);
 
   return (
-    <ScreenBackground syncStatus>
-      <ScrollView contentContainerStyle={styles.content}>
-        <ScreenHeader title="Statystyki" />
-
+    <ScreenBackground syncStatus header={<ScreenHeader title="Statystyki" />}>
+      <HeaderScrollView contentContainerStyle={styles.content}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -317,7 +316,7 @@ export default function StatsScreen() {
             format={formatPLN}
           />
         </Card>
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

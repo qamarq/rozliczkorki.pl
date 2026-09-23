@@ -1,0 +1,25 @@
+diff --git a/expo-module.config.json b/expo-module.config.json
+index ec9a267b1016be6d1238dcdc72c36b9e3de38d85..f29bb1a9268abebcb450a760e4d1c7c6bfb7fd6e 100644
+--- a/expo-module.config.json
++++ b/expo-module.config.json
+@@ -1,7 +1,7 @@
+ {
+   "platforms": ["apple", "android"],
+   "apple": {
+-    "modules": ["BlurViewModule"]
++    "modules": ["BackdropBlurViewModule"]
+   },
+   "android": {
+     "modules": ["expo.modules.blurview.BlurViewModule"]
+diff --git a/ios/BlurViewModule.swift b/ios/BlurViewModule.swift
+index a787632216b2b947af22cfa274a590ae53219fd8..a01be018558f02d2233876a7e78258d6fd7b3741 100644
+--- a/ios/BlurViewModule.swift
++++ b/ios/BlurViewModule.swift
+@@ -1,6 +1,6 @@
+ import ExpoModulesCore
+ 
+-public class BlurViewModule: Module {
++public class BackdropBlurViewModule: Module {
+   public func definition() -> ModuleDefinition {
+     Name("BlurView")
+ 

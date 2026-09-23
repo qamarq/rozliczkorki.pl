@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
-import { Image, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Linking, StyleSheet, Text, View } from "react-native";
 import {
   Card,
   MenuGroup,
@@ -18,6 +18,7 @@ import { DELETE_ACCOUNT_URL, PRIVACY_URL, TERMS_URL } from "@/lib/legal";
 import { colors } from "@/lib/theme";
 import { clearOfflineCache, signOutCompletely } from "@/lib/trpc";
 import { syncLiveLessons } from "@/modules/lesson-live";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 const externalIcon = <Ionicons name="open-outline" size={16} color={colors.textFaint} />;
 
@@ -36,9 +37,8 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScreenBackground syncStatus>
-      <ScreenHeader title="Ustawienia" />
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenBackground syncStatus header={<ScreenHeader title="Ustawienia" />}>
+      <HeaderScrollView contentContainerStyle={styles.content}>
         <Card style={styles.profileCard}>
           {session?.user?.image ? (
             <Image source={{ uri: session.user.image }} style={styles.avatar} />
@@ -127,7 +127,7 @@ export default function SettingsScreen() {
         <Text style={styles.version}>
           RozliczKorki {Constants.expoConfig?.version ?? ""}
         </Text>
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

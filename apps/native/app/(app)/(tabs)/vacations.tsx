@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { SkeletonCard, SkeletonLine, lineHeights } from "@/components/skeleton";
 import { TabHeader } from "@/components/tab-header";
 import {
@@ -17,6 +17,7 @@ import { alert } from "@/lib/alert";
 import { formatVacationRange, pluralize } from "@repo/shared";
 import { colors, radius, tabHeaderTop } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 function lessonDates(lessons: { startsAt: Date | string }[]) {
   return lessons
@@ -68,10 +69,12 @@ export default function VacationsScreen() {
       : "brak";
 
   return (
-    <ScreenBackground syncStatus edges={tabScreenEdges}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <TabHeader title="Urlopy" />
-
+    <ScreenBackground
+      syncStatus
+      edges={tabScreenEdges}
+      header={<TabHeader title="Urlopy" />}
+    >
+      <HeaderScrollView contentContainerStyle={styles.content}>
         <View style={styles.statsGrid}>
           <StatTile
             label="Dni urlopu w tym roku"
@@ -202,7 +205,7 @@ export default function VacationsScreen() {
             </Card>
           ))}
         </View>
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

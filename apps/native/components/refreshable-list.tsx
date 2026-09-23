@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { RefreshControl, ScrollView } from "react-native";
+import { RefreshControl } from "react-native";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 import { colors } from "@/lib/theme";
 
 export function RefreshableList({
@@ -12,7 +13,7 @@ export function RefreshableList({
   const [refreshing, setRefreshing] = useState(false);
 
   return (
-    <ScrollView
+    <HeaderScrollView
       style={{ flex: 1 }}
       refreshControl={
         <RefreshControl
@@ -32,6 +33,6 @@ export function RefreshableList({
       }
     >
       {children}
-    </ScrollView>
+    </HeaderScrollView>
   );
 }

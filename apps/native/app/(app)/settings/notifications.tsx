@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Card,
   Chip,
@@ -22,6 +22,7 @@ import { requestNotificationPermission } from "@/lib/notifications";
 import { colors } from "@/lib/theme";
 import { openExactAlarmSettings, useExactAlarmsAllowed } from "@/modules/exact-alarms";
 import { openLiveUpdateSettings, useLiveUpdatesAllowed } from "@/modules/lesson-live";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 export default function NotificationSettingsScreen() {
   const { prefs, update } = useNotificationPrefs();
@@ -44,9 +45,8 @@ export default function NotificationSettingsScreen() {
   }
 
   return (
-    <ScreenBackground>
-      <ScreenHeader title="Powiadomienia" />
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenBackground header={<ScreenHeader title="Powiadomienia" />}>
+      <HeaderScrollView contentContainerStyle={styles.content}>
         <View>
           <SectionLabel>Rodzaje powiadomień</SectionLabel>
           <Card style={{ gap: 16 }}>
@@ -138,7 +138,7 @@ export default function NotificationSettingsScreen() {
             />
           </MenuGroup>
         </View>
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

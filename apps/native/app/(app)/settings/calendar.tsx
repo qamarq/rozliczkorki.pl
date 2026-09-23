@@ -1,17 +1,17 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Card, Chip, ScreenBackground, ScreenHeader } from "@/components/ui";
 import { trackOnboardingStep } from "@repo/analytics";
 import { flowDeps } from "@/lib/analytics";
 import { CALENDAR_VIEW_OPTIONS, useDefaultCalendarView } from "@/lib/calendar-prefs";
 import { colors } from "@/lib/theme";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 export default function CalendarSettingsScreen() {
   const calendarView = useDefaultCalendarView();
 
   return (
-    <ScreenBackground>
-      <ScreenHeader title="Kalendarz" />
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenBackground header={<ScreenHeader title="Kalendarz" />}>
+      <HeaderScrollView contentContainerStyle={styles.content}>
         <Card style={{ gap: 8 }}>
           <Text style={styles.prefLabel}>Domyślny widok</Text>
           <Text style={styles.prefHint}>
@@ -31,7 +31,7 @@ export default function CalendarSettingsScreen() {
             ))}
           </View>
         </Card>
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

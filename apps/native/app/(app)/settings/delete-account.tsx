@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { Card, OutlineButton, ScreenBackground, ScreenHeader } from "@/components/ui";
 import { alert } from "@/lib/alert";
 import { authClient } from "@/lib/auth-client";
 import { WEB_URL } from "@/lib/legal";
 import { colors } from "@/lib/theme";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 export default function DeleteAccountScreen() {
   const [deleting, setDeleting] = useState(false);
@@ -39,9 +40,8 @@ export default function DeleteAccountScreen() {
   }
 
   return (
-    <ScreenBackground>
-      <ScreenHeader title="Usuwanie konta" />
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenBackground header={<ScreenHeader title="Usuwanie konta" />}>
+      <HeaderScrollView contentContainerStyle={styles.content}>
         <Card style={{ gap: 12 }}>
           <Text style={styles.hint}>
             Konto i wszystkie dane znikają bezpowrotnie. Dla bezpieczeństwa potwierdzasz
@@ -54,7 +54,7 @@ export default function DeleteAccountScreen() {
             disabled={deleting}
           />
         </Card>
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

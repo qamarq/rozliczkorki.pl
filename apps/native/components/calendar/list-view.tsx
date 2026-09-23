@@ -13,6 +13,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { colors } from "@/lib/theme";
 import { capitalize, dayKey, LessonCard, type LessonRow } from "./shared";
+import { HeaderScrollView, useHeaderHeight } from "@/components/scroll-edge-blur";
 
 const EPOCH = new Date(2000, 0, 1);
 
@@ -38,6 +39,7 @@ export function ListView() {
   const from = subDays(today, 7);
   const to = addDays(today, 45);
   const [refreshing, setRefreshing] = useState(false);
+  const headerHeight = useHeaderHeight();
   const scrollRef = useRef<ScrollView>(null);
   const didScroll = useRef(false);
 
@@ -67,7 +69,7 @@ export function ListView() {
   const loading = recent.isLoading || older.isLoading;
 
   return (
-    <ScrollView
+    <HeaderScrollView
       ref={scrollRef}
       contentContainerStyle={{ paddingBottom: 110 }}
       refreshControl={
@@ -92,7 +94,7 @@ export function ListView() {
           if (loading || didScroll.current) return;
           didScroll.current = true;
           scrollRef.current?.scrollTo({
-            y: Math.max(0, e.nativeEvent.layout.y - 8),
+            y: Math.max(0, e.nativeEvent.layout.y - 8 - headerHeight),
             animated: false,
           });
         }}
@@ -108,7 +110,7 @@ export function ListView() {
       ) : (
         <Sections sections={sectionize(future)} />
       )}
-    </ScrollView>
+    </HeaderScrollView>
   );
 }
 
