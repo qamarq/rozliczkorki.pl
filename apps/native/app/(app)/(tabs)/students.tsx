@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Badge,
   Card,
@@ -31,9 +31,11 @@ export default function StudentsScreen() {
     >
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
-          <View key="head" style={styles.head}>
-            <OutlineButton label="+ Dodaj ucznia" onPress={() => openStudentSheet()} />
-          </View>
+          {Platform.OS === "ios" && (
+            <View key="head" style={styles.head}>
+              <OutlineButton label="+ Dodaj ucznia" onPress={() => openStudentSheet()} />
+            </View>
+          )}
           {isLoading && students.length === 0 ? (
             <SkeletonList key="skeleton" count={5} badge />
           ) : isError && students.length === 0 ? (

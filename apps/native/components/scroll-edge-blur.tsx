@@ -18,23 +18,32 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, floatingTabBarSpace } from "@/lib/theme";
 
 const HEADER_FADE = 48;
 const blurSupported = Platform.OS !== "web";
 
 const HeaderHeightContext = createContext(0);
+const OverTabBarContext = createContext(false);
 
 export function useHeaderHeight() {
   return useContext(HeaderHeightContext);
 }
 
+function useTabBarSpace() {
+  const insets = useSafeAreaInsets();
+  return Platform.OS === "android" ? insets.bottom + floatingTabBarSpace : 0;
+}
+
 export function BlurHeader({
   header,
   banner,
+  overTabBar,
   children,
 }: {
   header: ReactNode;
   banner?: ReactNode;
+  overTabBar?: boolean;
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
@@ -43,19 +52,10 @@ export function BlurHeader({
   return (
     <View style={styles.container}>
       <HeaderHeightContext.Provider value={height}>
-        {height > 0 && children}
+        <OverTabBarContext.Provider value={!!overTabBar}>
+          {height > 0 && children}
+        </OverTabBarContext.Provider>
       </HeaderHeightContext.Provider>
-      {blurSupported && height > 0 && (
-        <ProgressiveBlurView
-          edge="top"
-          intensity={50}
-          startOffset={height / (height + HEADER_FADE) - 0.25}
-          tint="systemUltraThinMaterialDark"
-          tintColor="rgba(27, 22, 45, 0.6)"
-          scrollFallback={false}
-          style={[styles.headerBlur, { height: height + HEADER_FADE }]}
-        />
-      )}
       <View
         style={[styles.header, { paddingTop: insets.top }]}
         onLayout={(e) => setHeight(Math.round(e.nativeEvent.layout.height))}
@@ -76,38 +76,52 @@ export function HeaderScrollView({
   ...props
 }: ScrollViewProps & { ref?: Ref<ScrollView> }) {
   const top = useHeaderHeight();
+  const insets = useSafeAreaInsets();
+  const overTabBar = useContext(OverTabBarContext);
+  const tabBarSpace = useTabBarSpace();
+  const bottom = overTabBar ? tabBarSpace : 0;
   const flat = StyleSheet.flatten(contentContainerStyle) ?? {};
   const paddingTop =
     Number(flat.paddingTop ?? flat.paddingVertical ?? flat.padding ?? 0) + top;
+  const paddingBottom =
+    Number(flat.paddingBottom ?? flat.paddingVertical ?? flat.padding ?? 0) + bottom;
 
   return (
-    <ScrollView
-      ref={ref}
-      {...props}
-      contentContainerStyle={[contentContainerStyle, { paddingTop }]}
-      scrollIndicatorInsets={{ top }}
-      refreshControl={
-        isValidElement(refreshControl)
-          ? cloneElement(refreshControl as ReactElement<RefreshControlProps>, {
-              progressViewOffset: top,
-            })
-          : refreshControl
-      }
-    />
-  );
-}
-
-export function TabBarEdgeBlur() {
-  const insets = useSafeAreaInsets();
-  if (Platform.OS !== "ios") return null;
-  return (
-    <ProgressiveBlurView
-      edge="bottom"
-      tint="systemUltraThinMaterialDark"
-      tintColor="rgba(11, 11, 16, 0.7)"
-      scrollFallback={false}
-      style={[styles.tabBar, { height: insets.bottom + 72 }]}
-    />
+    <View style={styles.container}>
+      <ScrollView
+        ref={ref}
+        {...props}
+        contentContainerStyle={[contentContainerStyle, { paddingTop, paddingBottom }]}
+        scrollIndicatorInsets={{ top, bottom }}
+        refreshControl={
+          isValidElement(refreshControl)
+            ? cloneElement(refreshControl as ReactElement<RefreshControlProps>, {
+                progressViewOffset: top,
+              })
+            : refreshControl
+        }
+      />
+      {blurSupported && top > 0 && (
+        <ProgressiveBlurView
+          edge="top"
+          intensity={50}
+          startOffset={top / (top + HEADER_FADE) - 0.25}
+          tint="systemUltraThinMaterialDark"
+          tintColor="rgba(27, 22, 45, 0.6)"
+          fallbackColor="rgb(27, 22, 45)"
+          style={[styles.headerBlur, { height: top + HEADER_FADE }]}
+        />
+      )}
+      {blurSupported && overTabBar && (
+        <ProgressiveBlurView
+          edge="bottom"
+          tint="systemUltraThinMaterialDark"
+          tintColor="rgba(11, 11, 16, 0.7)"
+          fallbackColor={colors.bg}
+          style={[styles.tabBar, { height: tabBarSpace || insets.bottom + 72 }]}
+        />
+      )}
+    </View>
   );
 }
 

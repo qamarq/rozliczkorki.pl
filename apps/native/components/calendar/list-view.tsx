@@ -94,7 +94,7 @@ export function ListView() {
           if (loading || didScroll.current) return;
           didScroll.current = true;
           scrollRef.current?.scrollTo({
-            y: Math.max(0, e.nativeEvent.layout.y - 8 - headerHeight),
+            y: Math.max(0, e.nativeEvent.layout.y - 40 - headerHeight),
             animated: false,
           });
         }}

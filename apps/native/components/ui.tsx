@@ -17,7 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
-import { BlurHeader, TabBarEdgeBlur } from "@/components/scroll-edge-blur";
+import { BlurHeader } from "@/components/scroll-edge-blur";
 import { OfflineBanner } from "@/components/sync-status";
 import { colors, gradients, maxWidth, radius } from "@/lib/theme";
 
@@ -37,7 +37,7 @@ export function Switch({
   );
 }
 
-export const tabScreenEdges: Edge[] = Platform.OS === "ios" ? ["top"] : ["top", "bottom"];
+export const tabScreenEdges: Edge[] = ["top"];
 
 export function ScreenBackground({
   children,
@@ -74,7 +74,11 @@ export function ScreenBackground({
           }}
         >
           {header ? (
-            <BlurHeader header={header} banner={syncStatus && <OfflineBanner />}>
+            <BlurHeader
+              header={header}
+              banner={syncStatus && <OfflineBanner />}
+              overTabBar={!edges.includes("bottom")}
+            >
               {children}
             </BlurHeader>
           ) : (
@@ -82,7 +86,6 @@ export function ScreenBackground({
           )}
         </View>
       </SafeAreaView>
-      {!edges.includes("bottom") && <TabBarEdgeBlur />}
     </View>
   );
 }

@@ -14,6 +14,7 @@ import {
   type CalendarView,
   useDefaultCalendarView,
 } from "@/lib/calendar-prefs";
+import { setNewLessonHref } from "@/lib/new-lesson";
 import { colors, gradients, radius } from "@/lib/theme";
 
 export default function CalendarScreen() {
@@ -29,6 +30,10 @@ export default function CalendarScreen() {
     mode === "list"
       ? "/lesson/new"
       : { pathname: "/lesson/new", params: { date: format(selectedDate, "yyyy-MM-dd") } };
+
+  useEffect(() => {
+    setNewLessonHref(newLessonHref);
+  }, [mode, selectedDate.getTime()]);
 
   return (
     <ScreenBackground
@@ -101,15 +106,6 @@ export default function CalendarScreen() {
         {mode === "week" && <WeekView selectedDate={selectedDate} />}
         {mode === "list" && <ListView />}
       </View>
-      {Platform.OS !== "ios" && (
-        <Link href={newLessonHref} asChild>
-          <Pressable style={styles.fabWrap}>
-            <LinearGradient colors={gradients.accent} style={styles.fab}>
-              <Text style={styles.fabText}>+</Text>
-            </LinearGradient>
-          </Pressable>
-        </Link>
-      )}
     </ScreenBackground>
   );
 }
@@ -144,23 +140,4 @@ const styles = StyleSheet.create({
   },
   segmentText: { color: colors.textMuted, fontWeight: "600", fontSize: 12 },
   segmentTextActive: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  fabWrap: {
-    position: "absolute",
-    right: 20,
-    bottom: 12,
-    borderRadius: 16,
-    shadowColor: colors.accentTo,
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fabText: { color: "white", fontSize: 28, lineHeight: 30 },
 });

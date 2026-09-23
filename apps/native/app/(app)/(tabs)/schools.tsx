@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Badge,
   Card,
@@ -34,9 +34,11 @@ export default function SchoolsScreen() {
     >
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
-          <View key="head" style={styles.head}>
-            <OutlineButton label="+ Dodaj szkółkę" onPress={() => openSchoolSheet()} />
-          </View>
+          {Platform.OS === "ios" && (
+            <View key="head" style={styles.head}>
+              <OutlineButton label="+ Dodaj szkółkę" onPress={() => openSchoolSheet()} />
+            </View>
+          )}
 
           {isLoading && schools.length === 0 ? (
             <View key="total" style={styles.cardWrap}>

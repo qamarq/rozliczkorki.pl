@@ -1,54 +1,34 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { colors } from "@/lib/theme";
+import { FloatingTabBar } from "@/components/floating-tab-bar";
 
 export default function TabsLayout() {
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#a78bfa",
-        tabBarInactiveTintColor: colors.textFaint,
-        tabBarStyle: {
-          backgroundColor: colors.bgElevated,
-          borderTopColor: colors.border,
-        },
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <FloatingTabBar {...props} />}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Kalendarz",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
         }}
       />
       <Tabs.Screen
         name="students"
         options={{
           title: "Uczniowie",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
-          ),
         }}
       />
       <Tabs.Screen
         name="schools"
         options={{
           title: "Szkółki",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school-outline" size={size} color={color} />
-          ),
         }}
       />
       <Tabs.Screen
         name="vacations"
         options={{
           title: "Urlopy",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="airplane-outline" size={size} color={color} />
-          ),
         }}
       />
     </Tabs>
