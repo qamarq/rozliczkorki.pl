@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Badge,
   Card,
@@ -12,7 +12,7 @@ import { openSchoolSheet } from "@/components/school-sheet";
 import { SkeletonLine, SkeletonList, lineHeights } from "@/components/skeleton";
 import { TabHeader } from "@/components/tab-header";
 import { formatPayoutSchedule, formatPLN, pluralize } from "@repo/shared";
-import { colors, tabHeaderTop } from "@/lib/theme";
+import { colors } from "@/lib/theme";
 import { trpc } from "@/lib/trpc";
 
 export default function SchoolsScreen() {
@@ -27,13 +27,18 @@ export default function SchoolsScreen() {
   const awaitingTotal = schools.reduce((sum, school) => sum + school.awaiting, 0);
 
   return (
-    <ScreenBackground syncStatus edges={tabScreenEdges}>
+    <ScreenBackground
+      syncStatus
+      edges={tabScreenEdges}
+      header={<TabHeader title="Szkółki" />}
+    >
       <View style={{ flex: 1 }}>
         <RefreshableList onRefresh={refetch}>
-          <View key="head" style={styles.head}>
-            <TabHeader title="Szkółki" />
-            <OutlineButton label="+ Dodaj szkółkę" onPress={() => openSchoolSheet()} />
-          </View>
+          {Platform.OS === "ios" && (
+            <View key="head" style={styles.head}>
+              <OutlineButton label="+ Dodaj szkółkę" onPress={() => openSchoolSheet()} />
+            </View>
+          )}
 
           {isLoading && schools.length === 0 ? (
             <View key="total" style={styles.cardWrap}>
@@ -97,7 +102,7 @@ export default function SchoolsScreen() {
 }
 
 const styles = StyleSheet.create({
-  head: { paddingHorizontal: 20, paddingTop: tabHeaderTop, paddingBottom: 8, gap: 16 },
+  head: { paddingHorizontal: 20, paddingBottom: 8 },
   cardWrap: { paddingHorizontal: 20 },
   card: { marginBottom: 8, gap: 4 },
   totalCard: { marginBottom: 12, gap: 2 },

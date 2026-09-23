@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
+import { BlurHeader } from "@/components/scroll-edge-blur";
 import { OfflineBanner } from "@/components/sync-status";
 import { colors, gradients, maxWidth, radius } from "@/lib/theme";
 
@@ -36,16 +37,18 @@ export function Switch({
   );
 }
 
-export const tabScreenEdges: Edge[] = Platform.OS === "ios" ? ["top"] : ["top", "bottom"];
+export const tabScreenEdges: Edge[] = ["top"];
 
 export function ScreenBackground({
   children,
   edges = ["top", "bottom"],
+  header,
   syncStatus,
   width = "content",
 }: {
   children: ReactNode;
   edges?: Edge[];
+  header?: ReactNode;
   syncStatus?: boolean;
   width?: "form" | "content";
 }) {
@@ -57,8 +60,11 @@ export function ScreenBackground({
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <SafeAreaView style={{ flex: 1 }} edges={edges}>
-        {syncStatus && <OfflineBanner />}
+      <SafeAreaView
+        style={{ flex: 1 }}
+        edges={header ? edges.filter((edge) => edge !== "top") : edges}
+      >
+        {syncStatus && !header && <OfflineBanner />}
         <View
           style={{
             flex: 1,
@@ -67,7 +73,17 @@ export function ScreenBackground({
             alignSelf: "center",
           }}
         >
-          {children}
+          {header ? (
+            <BlurHeader
+              header={header}
+              banner={syncStatus && <OfflineBanner />}
+              overTabBar={!edges.includes("bottom")}
+            >
+              {children}
+            </BlurHeader>
+          ) : (
+            children
+          )}
         </View>
       </SafeAreaView>
     </View>

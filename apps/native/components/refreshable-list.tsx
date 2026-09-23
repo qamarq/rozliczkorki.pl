@@ -1,6 +1,6 @@
-import { Host, List, RNHostView } from "@expo/ui";
-import { Children, isValidElement, useState, type ReactNode } from "react";
-import { Platform, RefreshControl, ScrollView, View } from "react-native";
+import { useState, type ReactNode } from "react";
+import { RefreshControl } from "react-native";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 import { colors } from "@/lib/theme";
 
 export function RefreshableList({
@@ -10,52 +10,29 @@ export function RefreshableList({
   children: ReactNode;
   onRefresh: () => Promise<unknown>;
 }) {
-  const [width, setWidth] = useState(0);
-  const items = Children.toArray(children).filter(isValidElement);
   const [refreshing, setRefreshing] = useState(false);
 
-  if (Platform.OS !== "android") {
-    return (
-      <ScrollView
-        style={{ flex: 1 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            tintColor={colors.textMuted}
-            onRefresh={async () => {
-              setRefreshing(true);
-              try {
-                await onRefresh();
-              } finally {
-                setRefreshing(false);
-              }
-            }}
-          />
-        }
-      >
-        {items}
-      </ScrollView>
-    );
-  }
-
   return (
-    <View style={{ flex: 1 }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
-      {width > 0 && (
-        <Host style={{ flex: 1 }} colorScheme="dark" seedColor={colors.accentTo}>
-          <List
-            key={items.length}
-            onRefresh={async () => {
+    <HeaderScrollView
+      style={{ flex: 1 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          tintColor={colors.textMuted}
+          colors={[colors.accentTo]}
+          progressBackgroundColor={colors.surface}
+          onRefresh={async () => {
+            setRefreshing(true);
+            try {
               await onRefresh();
-            }}
-          >
-            {items.map((child, index) => (
-              <RNHostView key={child.key ?? index} matchContents>
-                <View style={{ width }}>{child}</View>
-              </RNHostView>
-            ))}
-          </List>
-        </Host>
-      )}
-    </View>
+            } finally {
+              setRefreshing(false);
+            }
+          }}
+        />
+      }
+    >
+      {children}
+    </HeaderScrollView>
   );
 }

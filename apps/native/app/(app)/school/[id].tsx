@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Badge,
   Card,
@@ -23,6 +23,7 @@ import {
 import { colors } from "@/lib/theme";
 import { SkeletonCard } from "@/components/skeleton";
 import { trpc } from "@/lib/trpc";
+import { HeaderScrollView } from "@/components/scroll-edge-blur";
 
 const STATUS_TONE: Record<PayoutStatus, "default" | "success" | "warning" | "danger"> = {
   paid: "success",
@@ -55,9 +56,8 @@ export default function SchoolDetailScreen() {
   });
 
   return (
-    <ScreenBackground>
-      <ScreenHeader title={school?.name ?? "Szkółka"} />
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenBackground header={<ScreenHeader title={school?.name ?? "Szkółka"} />}>
+      <HeaderScrollView contentContainerStyle={styles.content}>
         {isLoading || !school ? (
           <View
             accessibilityRole="progressbar"
@@ -171,7 +171,7 @@ export default function SchoolDetailScreen() {
             )}
           </>
         )}
-      </ScrollView>
+      </HeaderScrollView>
     </ScreenBackground>
   );
 }

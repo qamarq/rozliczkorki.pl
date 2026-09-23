@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import type { ReactNode } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSession } from "@/lib/auth-client";
-import { colors, gradients, radius } from "@/lib/theme";
+import { colors, gradients, radius, tabHeaderTop } from "@/lib/theme";
 
 function initials(name?: string | null) {
   if (!name) return "?";
@@ -49,19 +50,23 @@ function StatsButton() {
   );
 }
 
-export function TabHeader({ title, style }: { title: string; style?: object }) {
+export function TabHeader({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <View style={[styles.row, style]}>
-      <Text style={styles.title} numberOfLines={1}>
-        {title}
-      </Text>
-      <StatsButton />
-      <ProfileAvatarButton />
+    <View style={styles.block}>
+      <View style={styles.row}>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+        <StatsButton />
+        <ProfileAvatarButton />
+      </View>
+      {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  block: { paddingHorizontal: 20, paddingTop: tabHeaderTop, paddingBottom: 12, gap: 12 },
   row: {
     flexDirection: "row",
     alignItems: "center",

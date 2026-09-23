@@ -38,5 +38,7 @@ export const maxWidth = {
   sheet: 600,
 };
 
+export const floatingTabBarSpace = 96;
+
 /** Shared by every tab screen so all four titles sit at the same height. */
 export const tabHeaderTop = 8;
