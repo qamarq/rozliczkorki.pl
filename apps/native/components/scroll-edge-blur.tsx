@@ -18,7 +18,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, floatingTabBarSpace } from "@/lib/theme";
+import { floatingTabBarSpace } from "@/lib/theme";
 
 const HEADER_FADE = 48;
 const blurSupported = Platform.OS !== "web";
@@ -104,20 +104,20 @@ export function HeaderScrollView({
       {blurSupported && top > 0 && (
         <ProgressiveBlurView
           edge="top"
-          intensity={50}
-          startOffset={top / (top + HEADER_FADE) - 0.25}
+          intensity={100}
           tint="systemUltraThinMaterialDark"
-          tintColor="rgba(27, 22, 45, 0.6)"
-          fallbackColor="rgb(27, 22, 45)"
+          tintColor="rgba(27, 22, 45, 0.8)"
+          scrollFallback={false}
           style={[styles.headerBlur, { height: top + HEADER_FADE }]}
         />
       )}
       {blurSupported && overTabBar && (
         <ProgressiveBlurView
           edge="bottom"
+          intensity={100}
           tint="systemUltraThinMaterialDark"
-          tintColor="rgba(11, 11, 16, 0.7)"
-          fallbackColor={colors.bg}
+          tintColor="rgba(11, 11, 16, 0.8)"
+          scrollFallback={false}
           style={[styles.tabBar, { height: tabBarSpace || insets.bottom + 72 }]}
         />
       )}

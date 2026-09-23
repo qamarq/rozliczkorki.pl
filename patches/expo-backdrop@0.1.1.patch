@@ -1,25 +1,3 @@
-diff --git a/android/src/main/java/expo/modules/blurview/views/ProgressiveBlurView.kt b/android/src/main/java/expo/modules/blurview/views/ProgressiveBlurView.kt
-index 6c977a52f8b2f23fc1b1d484e7fce2b976ef6bfc..44b94e1b0b5440e05790d19d71aec875258ec649 100644
---- a/android/src/main/java/expo/modules/blurview/views/ProgressiveBlurView.kt
-+++ b/android/src/main/java/expo/modules/blurview/views/ProgressiveBlurView.kt
-@@ -143,7 +143,7 @@ class ProgressiveBlurView(context: Context, appContext: AppContext) : ExpoView(c
- 
-     val fallback = fallbackColor ?: background
-     val stops = fade(0f, fadeLength, rising = true) + GradientStop(1f, 1f)
--    fallbackGradient.update(edge, fallback, stops.map { GradientStop(it.location, it.alpha * strength) })
-+    fallbackGradient.update(edge, fallback, stops)
-   }
- 
-   private fun backgroundColorBehind(): Int {
-@@ -270,7 +270,7 @@ class ProgressiveBlurView(context: Context, appContext: AppContext) : ExpoView(c
- 
-     private const val COVERAGE_FADE_DISTANCE = 24f
- 
--    private const val SCROLL_VIEW_CHECK_INTERVAL_MS = 500L
-+    private const val SCROLL_VIEW_CHECK_INTERVAL_MS = 50L
- 
-     private const val DEFAULT_WASH_OPACITY = 0.85f
- 
 diff --git a/expo-module.config.json b/expo-module.config.json
 index ec9a267b1016be6d1238dcdc72c36b9e3de38d85..f29bb1a9268abebcb450a760e4d1c7c6bfb7fd6e 100644
 --- a/expo-module.config.json
@@ -45,26 +23,3 @@ index a787632216b2b947af22cfa274a590ae53219fd8..a01be018558f02d2233876a7e78258d6
    public func definition() -> ModuleDefinition {
      Name("BlurView")
  
-diff --git a/ios/Views/ProgressiveBlurView.swift b/ios/Views/ProgressiveBlurView.swift
-index d72ea94b5379c0ea8907887682e0b0b63be6ca84..384cee35f01598719cfcef70da4072d8b234d4f1 100644
---- a/ios/Views/ProgressiveBlurView.swift
-+++ b/ios/Views/ProgressiveBlurView.swift
-@@ -7,7 +7,7 @@ class ProgressiveBlurView: ExpoView {
-   private static let blurScale: CGFloat = 1.25
-   private static let blurRampShare: CGFloat = 0.6
-   private static let coverageFadeDistance: CGFloat = 24
--  private static let scrollViewCheckInterval: TimeInterval = 0.5
-+  private static let scrollViewCheckInterval: TimeInterval = 0.05
-   private static let defaultWashOpacity: CGFloat = 0.85
- 
-   private let blurContainer = UIView()
-@@ -161,8 +161,7 @@ class ProgressiveBlurView: ExpoView {
-     tintWash.update(edge: edge, color: wash, stops: rising)
- 
-     let fallback = (fallbackColor ?? background).resolvedColor(with: traitCollection)
--    let stops: [GradientStop] = rising.map { ($0.location, $0.alpha * strength) }
--    fallbackGradient.update(edge: edge, color: fallback, stops: stops)
-+    fallbackGradient.update(edge: edge, color: fallback, stops: rising)
-   }
- 
-   private static func fade(from start: CGFloat, to end: CGFloat, rising: Bool) -> [GradientStop] {
