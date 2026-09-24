@@ -9,7 +9,6 @@ import { nowIso } from "@repo/analytics";
 import { rememberSignupMethod } from "@/components/analytics-provider";
 import { acquisitionSource, browserLocale, track } from "@/lib/analytics";
 import { AuthPanel } from "@/components/auth-panel";
-import { GoogleIcon } from "@/components/google-icon";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +21,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-import { signInWithGoogle } from "@/lib/google-sign-in";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -63,19 +62,6 @@ export default function RegisterPage() {
       return;
     }
     setSent(true);
-  }
-
-  async function onGoogle() {
-    rememberSignupMethod("google");
-    await signInWithGoogle({
-      context: "signup",
-      callbackURL: "/dashboard",
-      onSuccess: () => {
-        router.push("/dashboard");
-        router.refresh();
-      },
-      onError: (message) => toast.error(message),
-    });
   }
 
   return (
@@ -135,10 +121,16 @@ export default function RegisterPage() {
                 ) : (
                   <>
                     <Field>
-                      <Button variant="outline" onClick={onGoogle} type="button">
-                        <GoogleIcon data-icon="inline-start" />
-                        Kontynuuj przez Google
-                      </Button>
+                      <GoogleSignInButton
+                        context="signup"
+                        callbackURL="/dashboard"
+                        label="Kontynuuj przez Google"
+                        onSuccess={() => {
+                          router.push("/dashboard");
+                          router.refresh();
+                        }}
+                        onError={(message) => toast.error(message)}
+                      />
                     </Field>
 
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card *:data-[slot=separator]:bg-border-solid">
