@@ -7,6 +7,7 @@ import {
   Animated,
   AppState,
   Linking,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -53,12 +54,17 @@ const CHANNEL_ICONS = {
   live: "pulse-outline",
 } as const;
 
+const INITIAL_CHANNELS =
+  Platform.OS === "ios"
+    ? { upcoming: false, overdue: false, live: false }
+    : DEFAULT_NOTIFICATION_PREFS.channels;
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const { data: session } = useSession();
   const [step, setStep] = useState(0);
   const [requesting, setRequesting] = useState(false);
-  const [channels, setChannels] = useState(DEFAULT_NOTIFICATION_PREFS.channels);
+  const [channels, setChannels] = useState(INITIAL_CHANNELS);
   const awaitingSettings = useRef(false);
   const anySelected = Object.values(channels).some(Boolean);
 
