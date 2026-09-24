@@ -6,7 +6,6 @@ import { KeyRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AuthPanel } from "@/components/auth-panel";
-import { GoogleIcon } from "@/components/google-icon";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-import { signInWithGoogle } from "@/lib/google-sign-in";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,18 +61,6 @@ export default function LoginPage() {
     router.refresh();
   }
 
-  async function onGoogle() {
-    await signInWithGoogle({
-      context: "signin",
-      callbackURL: "/dashboard",
-      onSuccess: () => {
-        router.push("/dashboard");
-        router.refresh();
-      },
-      onError: (message) => toast.error(message),
-    });
-  }
-
   async function onPasskey() {
     const { error } = await authClient.signIn.passkey();
     if (error) {
@@ -108,10 +95,15 @@ export default function LoginPage() {
                 </div>
 
                 <Field className="grid gap-3 sm:grid-cols-2">
-                  <Button variant="outline" onClick={onGoogle} type="button">
-                    <GoogleIcon data-icon="inline-start" />
-                    Google
-                  </Button>
+                  <GoogleSignInButton
+                    context="signin"
+                    callbackURL="/dashboard"
+                    onSuccess={() => {
+                      router.push("/dashboard");
+                      router.refresh();
+                    }}
+                    onError={(message) => toast.error(message)}
+                  />
                   <Button variant="outline" onClick={onPasskey} type="button">
                     <KeyRound data-icon="inline-start" />
                     Klucz dostępu
