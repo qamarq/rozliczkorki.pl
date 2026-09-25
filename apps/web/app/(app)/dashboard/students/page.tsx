@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { formatPLN } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "../page-header";
 import { StudentDialog } from "./student-dialog";
 
 type Filter = "active" | "archived" | "all";
@@ -53,18 +54,18 @@ export default function StudentsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Uczniowie i stawki</h1>
-          <p className="text-muted-foreground text-sm">
-            Lista uczniów, kontakt i aktualne stawki godzinowe.
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="size-4" />
-          Dodaj ucznia
-        </Button>
-      </div>
+      <PageHeader
+        title="Uczniowie i stawki"
+        description="Lista uczniów, kontakt i aktualne stawki godzinowe."
+        actions={
+          <>
+            <Button onClick={openCreate}>
+              <Plus className="size-4" />
+              Dodaj ucznia
+            </Button>
+          </>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">

@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { GoogleIcon } from "@/components/google-icon";
 import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 import { renderGoogleButton, signInWithGoogleRedirect } from "@/lib/google-sign-in";
 
 type Props = {
   context: "signin" | "signup";
   callbackURL: string;
   label?: string;
+  className?: string;
   onSuccess: () => void;
   onError: (message: string) => void;
 };
@@ -17,6 +19,7 @@ export function GoogleSignInButton({
   context,
   callbackURL,
   label = "Google",
+  className,
   onSuccess,
   onError,
 }: Props) {
@@ -65,7 +68,7 @@ export function GoogleSignInButton({
       <Button
         variant="outline"
         type="button"
-        className="w-full"
+        className={cn("w-full", className)}
         onClick={() => signInWithGoogleRedirect(callbackURL)}
       >
         <GoogleIcon data-icon="inline-start" />

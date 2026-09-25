@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPayoutSchedule, formatPLN, pluralize } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "../page-header";
 import { SchoolDialog } from "./school-dialog";
 
 export default function SchoolsPage() {
@@ -21,18 +22,18 @@ export default function SchoolsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Szkółki</h1>
-          <p className="text-muted-foreground text-sm">
-            Placówki, w których uczysz, i przelewy, które od nich dostajesz.
-          </p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="size-4" />
-          Dodaj szkółkę
-        </Button>
-      </div>
+      <PageHeader
+        title="Szkółki"
+        description="Placówki, w których uczysz, i przelewy, które od nich dostajesz."
+        actions={
+          <>
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="size-4" />
+              Dodaj szkółkę
+            </Button>
+          </>
+        }
+      />
 
       {schools.length > 0 && (
         <Card className="flex-row items-center gap-3 p-4">

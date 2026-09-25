@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Clock3 } from "lucide-react";
+import type { CSSProperties } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { MarketingFooter } from "@/components/marketing-footer";
 import { MarketingHeader } from "@/components/marketing-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { PageTransition } from "@/components/marketing/page-transition";
 import { formatDate, getPost, getPostSlugs } from "@/lib/blog";
 import { SITE_URL } from "@/lib/site";
 
@@ -55,63 +55,86 @@ export default async function BlogPostPage({ params }: Props) {
   };
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-16 px-6 py-10">
-      <MarketingHeader />
+    <PageTransition>
+      <div
+        aria-hidden
+        className="reading-progress bg-primary fixed inset-x-0 top-0 z-50 h-[3px] origin-left"
+      />
+      <div className="site-container">
+        <MarketingHeader />
+      </div>
 
-      <article className="mx-auto flex w-full max-w-3xl flex-col gap-8">
-        <Link
-          href="/blog"
-          className="text-muted-foreground hover:text-foreground flex w-fit items-center gap-1.5 text-sm"
-        >
-          <ArrowLeft className="size-4" />
-          Wszystkie wpisy
-        </Link>
+      <div className="site-container">
+        <article className="mx-auto flex max-w-3xl flex-col gap-10 pb-24 pt-8 sm:pt-14">
+          <Link
+            href="/blog"
+            className="text-muted-foreground hover:text-foreground group flex w-fit items-center gap-1.5 text-sm transition-colors"
+          >
+            <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
+            Wszystkie wpisy
+          </Link>
 
-        <header className="flex flex-col gap-4">
-          <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
-            {post.title}
-          </h1>
-          <p className="text-muted-foreground text-pretty text-lg">{post.description}</p>
-          <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
-            <span className="flex items-center gap-1.5">
-              <CalendarDays className="size-4" />
+          <header className="flex flex-col gap-5">
+            <h1 className="font-display mk-rise text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.015em] sm:text-5xl">
+              {post.title}
+            </h1>
+            <p
+              className="text-muted-foreground mk-rise text-pretty text-lg sm:text-xl"
+              style={{ "--i": 1 } as CSSProperties}
+            >
+              {post.description}
+            </p>
+            <div
+              className="text-muted-foreground border-border mk-rise flex flex-wrap items-center gap-x-5 gap-y-2 border-y py-3 text-sm"
+              style={{ "--i": 2 } as CSSProperties}
+            >
               <time dateTime={post.date}>{formatDate(post.date)}</time>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock3 className="size-4" />
-              {post.readingTime} min czytania
-            </span>
-            <span>{post.author}</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </header>
+              <span>{post.readingTime} min czytania</span>
+              <span>{post.author}</span>
+              {post.tags.length > 0 && (
+                <ul className="flex flex-wrap gap-2 sm:ml-auto">
+                  {post.tags.map((tag) => (
+                    <li
+                      key={tag}
+                      className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    >
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </header>
 
-        <div className="prose-blog" dangerouslySetInnerHTML={{ __html: post.html }} />
+          <div className="prose-blog" dangerouslySetInnerHTML={{ __html: post.html }} />
 
-        <aside className="border-border-solid bg-card/60 flex flex-col items-start gap-3 rounded-xl border p-6">
-          <h2 className="text-lg font-semibold">Pilnuj limitu bez zeszytu</h2>
-          <p className="text-muted-foreground text-pretty text-sm">
-            RozliczKorki liczy Twoje przychody na bieżąco. Widzisz, ile zarobiłaś w tym
-            kwartale, kto jeszcze nie zapłacił i jak blisko progu jesteś.
-          </p>
-          <Button asChild>
-            <Link href="/register">Zacznij za darmo</Link>
-          </Button>
-        </aside>
-      </article>
+          <aside className="bg-inverse text-inverse-foreground border-inverse-border flex flex-col items-start gap-4 rounded-3xl border p-7 sm:p-9">
+            <h2 className="text-balance text-2xl font-semibold sm:text-3xl">
+              Pilnuj limitu bez zeszytu
+            </h2>
+            <p className="text-inverse-foreground/70 max-w-xl text-pretty">
+              RozliczKorki liczy Twoje przychody na bieżąco. Widzisz, ile zarobiłaś w tym
+              kwartale, kto jeszcze nie zapłacił i jak blisko progu jesteś.
+            </p>
+            <Link
+              href="/register"
+              className="bg-primary text-primary-foreground group inline-flex h-11 items-center gap-2 rounded-xl px-5 font-semibold transition-[filter] hover:brightness-110"
+            >
+              Zacznij za darmo
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </aside>
+        </article>
+      </div>
 
-      <MarketingFooter />
+      <div className="site-container">
+        <MarketingFooter />
+      </div>
 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-    </div>
+    </PageTransition>
   );
 }

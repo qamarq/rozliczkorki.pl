@@ -27,6 +27,7 @@ import {
   previousRange,
   type Range,
 } from "@repo/shared";
+import { PageHeader } from "../page-header";
 import { RangePicker } from "./range-picker";
 
 const GRANULARITY_LABEL = {
@@ -122,7 +123,7 @@ export default function StatsPage() {
       key: "planned",
       label: "Zaplanowane",
       value: (totals?.planned ?? 0) + (totals?.projected ?? 0),
-      className: "bg-primary-foreground/40",
+      className: "bg-inverse-foreground/40",
     },
   ];
   const barTotal = bar.reduce((sum, part) => sum + part.value, 0) || 1;
@@ -130,32 +131,30 @@ export default function StatsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Statystyki</h1>
-          <p className="text-muted-foreground text-sm">
-            Przychody, obłożenie i prognoza dla dowolnego zakresu dat.
-          </p>
-        </div>
-        <RangePicker
-          range={range}
-          preset={preset}
-          now={now}
-          onChange={(next, nextPreset) => {
-            setRange(next);
-            setPreset(nextPreset);
-          }}
-        />
-      </div>
+      <PageHeader
+        title="Finanse i statystyki"
+        description="Przychody, obłożenie i prognoza dla dowolnego zakresu dat."
+        actions={
+          <RangePicker
+            range={range}
+            preset={preset}
+            now={now}
+            onChange={(next, nextPreset) => {
+              setRange(next);
+              setPreset(nextPreset);
+            }}
+          />
+        }
+      />
 
       <div className="grid items-stretch gap-4 lg:grid-cols-12">
-        <Card className="text-primary-foreground justify-between gap-6 bg-[color-mix(in_oklab,var(--primary)_72%,black)] p-5 lg:col-span-4">
+        <Card className="bg-inverse text-inverse-foreground ring-inverse-border justify-between gap-6 p-5 lg:col-span-4">
           <div className="flex flex-col gap-2">
-            <span className="text-primary-foreground/70 text-xs font-semibold uppercase tracking-wide">
+            <span className="text-inverse-foreground/70 text-xs font-semibold uppercase tracking-wide">
               Przychód w okresie
             </span>
             {isLoading ? (
-              <Skeleton className="bg-primary-foreground/20 h-9 w-40" />
+              <Skeleton className="bg-inverse-foreground/20 h-9 w-40" />
             ) : (
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-3xl font-semibold tabular-nums">
@@ -173,7 +172,7 @@ export default function StatsPage() {
                 )}
               </div>
             )}
-            <span className="text-primary-foreground/70 text-xs">
+            <span className="text-inverse-foreground/70 text-xs">
               {(totals?.projected ?? 0) > 0
                 ? `w tym ${formatPLN(totals?.projected ?? 0)} prognozy z zajęć cyklicznych`
                 : "w porównaniu z poprzednim okresem tej samej długości"}
@@ -181,7 +180,7 @@ export default function StatsPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="bg-primary-foreground/15 flex h-2 gap-0.5 overflow-hidden rounded-full">
+            <div className="bg-inverse-foreground/15 flex h-2 gap-0.5 overflow-hidden rounded-full">
               {bar.map((part) => (
                 <span
                   key={part.key}
@@ -197,7 +196,7 @@ export default function StatsPage() {
               {bar.map((part) => (
                 <div key={part.key} className="flex items-center gap-2 text-sm">
                   <span className={cn("size-2 rounded-full", part.className)} />
-                  <span className="text-primary-foreground/70">{part.label}</span>
+                  <span className="text-inverse-foreground/70">{part.label}</span>
                   <span className="ml-auto font-medium tabular-nums">
                     {formatPLN(part.value)}
                   </span>

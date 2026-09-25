@@ -32,6 +32,7 @@ import { Card } from "@/components/ui/card";
 import { formatVacationRange, pluralize } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "../page-header";
 import { useSetNotified } from "./notice-panel";
 import { type EditableVacation, VacationDialog } from "./vacation-dialog";
 
@@ -66,23 +67,23 @@ export default function VacationsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Urlopy</h1>
-          <p className="text-muted-foreground text-sm">
-            Zaplanuj wolne. Zajęcia w tym czasie zostaną automatycznie odwołane.
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingVacation(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          Dodaj urlop
-        </Button>
-      </div>
+      <PageHeader
+        title="Urlopy"
+        description="Zaplanuj wolne. Zajęcia w tym czasie zostaną automatycznie odwołane."
+        actions={
+          <>
+            <Button
+              onClick={() => {
+                setEditingVacation(null);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="size-4" />
+              Dodaj urlop
+            </Button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
@@ -304,7 +305,12 @@ function StatCard({
           <Icon className="size-3.5" />
         </span>
       </div>
-      <span className={cn("font-semibold tabular-nums", small ? "text-lg" : "text-2xl")}>
+      <span
+        className={cn(
+          "font-bold tabular-nums tracking-tight",
+          small ? "text-lg" : "text-2xl",
+        )}
+      >
         {value}
       </span>
     </Card>

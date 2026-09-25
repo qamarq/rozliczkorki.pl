@@ -44,6 +44,7 @@ import { CollapsibleCard } from "@/components/collapsible-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +62,7 @@ import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
+import { PageHeader } from "./page-header";
 import { VacationNoticesPanel } from "./vacations/notice-panel";
 
 const NOTICE_LEAD_DAYS = 14;
@@ -234,23 +236,34 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid items-start gap-5 lg:grid-cols-12">
-        <div className="flex flex-col gap-5 lg:col-span-8">
-          <Card className="flex-row flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <div className="flex items-center gap-2">
+      <PageHeader
+        title={
+          <span className="capitalize">{format(month, "LLLL yyyy", { locale: pl })}</span>
+        }
+        description="Kalendarz lekcji. Kliknij dzień, żeby dodać zajęcia."
+        actions={
+          <>
+            <div className="bg-card ring-foreground/10 flex items-center gap-0.5 rounded-lg p-0.5 ring-1">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
+                aria-label="Poprzedni miesiąc"
                 onClick={() => setMonth((m) => subMonths(m, 1))}
               >
                 <ChevronLeft className="size-4" />
               </Button>
-              <h1 className="w-40 text-center text-lg font-semibold capitalize">
-                {format(month, "LLLL yyyy", { locale: pl })}
-              </h1>
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
+                disabled={isSameMonth(month, today)}
+                onClick={() => setMonth(new Date())}
+              >
+                Dziś
+              </Button>
+              <Button
+                variant="ghost"
                 size="icon"
+                aria-label="Następny miesiąc"
                 onClick={() => setMonth((m) => addMonths(m, 1))}
               >
                 <ChevronRight className="size-4" />
@@ -260,12 +273,18 @@ export function CalendarView() {
               <Plus className="size-4" />
               Dodaj zajęcia
             </Button>
-          </Card>
+          </>
+        }
+      />
 
-          <div className="border-border-solid overflow-hidden rounded-xl border">
-            <div className="bg-secondary text-muted-foreground grid grid-cols-7 text-xs font-semibold">
+      <MonthSummary month={month} />
+
+      <div className="grid items-start gap-5 lg:grid-cols-12">
+        <div className="flex flex-col gap-5 lg:col-span-8">
+          <div className="border-border-solid overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgb(21_25_53/0.04),0_14px_30px_-22px_rgb(21_25_53/0.4)]">
+            <div className="bg-secondary text-muted-foreground grid grid-cols-7 text-[11px] font-semibold uppercase tracking-[0.08em]">
               {WEEKDAYS.map((day) => (
-                <div key={day} className="px-2 py-2 text-center capitalize">
+                <div key={day} className="px-2 py-2.5 text-center">
                   {day}
                 </div>
               ))}
@@ -309,7 +328,7 @@ export function CalendarView() {
                       <span className="flex items-center">
                         <span
                           className={cn(
-                            "text-[11px] font-semibold tabular-nums group-hover:hidden",
+                            "text-[11px] font-semibold tabular-nums group-hover:hidden max-sm:hidden",
                             dayTotal === null
                               ? "text-muted-foreground/50"
                               : dayTotal.settled
@@ -483,8 +502,8 @@ function ActionPanel({
       aside={<Badge variant="secondary">{lessons.length}</Badge>}
     >
       {lessons.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Wszystko odhaczone i rozliczone. 🎉
+        <p className="font-hand text-success text-[22px] leading-tight">
+          Wszystko odhaczone i rozliczone ✓
         </p>
       )}
       <div className="flex flex-col gap-2">
@@ -602,18 +621,114 @@ function ActionPanel({
   );
 }
 
+function MonthSummary({ month }: { month: Date }) {
+  const { data, isLoading } = trpc.stats.summary.useQuery({
+    from: startOfMonth(month).toISOString(),
+    to: endOfMonth(month).toISOString(),
+  });
+
+  const paid = data?.paid ?? 0;
+  const unpaid = data?.unpaid ?? 0;
+  const payout = data?.awaitingPayout ?? 0;
+  const planned = Math.max(0, (data?.theoretical ?? 0) - paid - unpaid - payout);
+  const total = paid + unpaid + payout + planned;
+  const lessonCount = (data?.completedCount ?? 0) + (data?.scheduledCount ?? 0);
+
+  const parts = [
+    {
+      key: "paid",
+      label: "Opłacone",
+      value: paid,
+      text: "text-success",
+      bar: "bg-success",
+    },
+    {
+      key: "unpaid",
+      label: "Do zapłaty",
+      value: unpaid,
+      text: "text-warning",
+      bar: "bg-warning",
+    },
+    ...(payout > 0
+      ? [
+          {
+            key: "payout",
+            label: "Do wypłaty ze szkółek",
+            value: payout,
+            text: "text-foreground",
+            bar: "bg-chart-5",
+          },
+        ]
+      : []),
+    {
+      key: "planned",
+      label: "Zaplanowane",
+      value: planned,
+      text: "text-foreground",
+      bar: "bg-muted-foreground/35",
+    },
+  ];
+
+  return (
+    <Card className="gap-4 p-5">
+      <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:flex sm:flex-wrap sm:gap-x-10">
+          {parts.map((part) => (
+            <div key={part.key} className="flex flex-col gap-1">
+              <span className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
+                <span className={cn("size-2 rounded-full", part.bar)} />
+                {part.label}
+              </span>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <span
+                  className={cn(
+                    "text-2xl font-bold tabular-nums tracking-tight",
+                    part.text,
+                  )}
+                >
+                  {formatPLN(part.value)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        {lessonCount > 0 && (
+          <span className="text-muted-foreground text-sm tabular-nums">
+            Odbyte: {data?.completedCount ?? 0} z {lessonCount}
+          </span>
+        )}
+      </div>
+      <div className="bg-secondary flex h-2 gap-0.5 overflow-hidden rounded-full">
+        {total > 0 &&
+          parts.map(
+            (part) =>
+              part.value > 0 && (
+                <span
+                  key={part.key}
+                  className={cn("h-full transition-[width] duration-700", part.bar)}
+                  style={{ width: `${(part.value / total) * 100}%` }}
+                />
+              ),
+          )}
+      </div>
+    </Card>
+  );
+}
+
 function StatsPromoCard() {
   return (
     <Link
       href="/dashboard/stats"
-      className="group/promo focus-visible:ring-ring flex items-center gap-3 rounded-xl bg-[linear-gradient(135deg,color-mix(in_oklab,var(--brand-from)_68%,black),color-mix(in_oklab,var(--brand-to)_68%,black))] p-4 text-white transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2"
+      className="group/promo bg-inverse text-inverse-foreground ring-inverse-border focus-visible:ring-ring flex items-center gap-3 rounded-2xl p-4 ring-1 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 motion-reduce:hover:translate-y-0"
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
+      <span className="bg-inverse-foreground/10 flex size-9 shrink-0 items-center justify-center rounded-lg">
         <LineChart className="size-4.5" />
       </span>
       <span className="flex flex-col">
         <span className="text-sm font-semibold">Finanse i statystyki</span>
-        <span className="text-xs text-white/75">
+        <span className="text-inverse-foreground/70 text-xs">
           Przychody, prognoza i zaległości w jednym miejscu
         </span>
       </span>
