@@ -41,7 +41,6 @@ import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useMemo, useState } from "react";
 import { CollapsibleCard } from "@/components/collapsible-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -432,10 +431,10 @@ export function CalendarView() {
         </div>
 
         <div className="flex flex-col gap-5 lg:col-span-4">
-          <StatsPromoCard />
           {pendingNotices.length > 0 && <VacationNoticesPanel pending={pendingNotices} />}
           <ActionPanel
             lessons={actionLessons}
+            today={today}
             onOpen={(day, id) => openEditDialog(day, id)}
           />
           <CalendarLegend />
@@ -465,13 +464,32 @@ function needsAction(lesson: LessonRow) {
 
 const PAYMENT_METHOD_LABELS = { cash: "gotówka", transfer: "przelew" } as const;
 
+const ACTION_LIMIT = 5;
+
+const ACTION_GROUPS = [
+  { key: "overdue", label: "Zaległe płatności", dot: "bg-destructive" },
+  { key: "ended", label: "Po zajęciach", dot: "bg-warning" },
+  { key: "today", label: "Dziś", dot: "bg-primary" },
+] as const;
+
+type ActionGroup = (typeof ACTION_GROUPS)[number]["key"];
+
+function actionGroup(lesson: LessonRow, today: Date): ActionGroup {
+  if (lesson.tone === "overdue") return "overdue";
+  if (new Date(lesson.endsAt) <= today) return "ended";
+  return "today";
+}
+
 function ActionPanel({
   lessons,
+  today,
   onOpen,
 }: {
   lessons: LessonRow[];
+  today: Date;
   onOpen: (day: Date, id: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const utils = trpc.useUtils();
   const invalidate = () => {
     utils.lessons.range.invalidate();
@@ -494,130 +512,210 @@ function ActionPanel({
   const setPaid = trpc.lessons.update.useMutation({ onSuccess: invalidate });
   const pending = setCompleted.isPending || setPaid.isPending;
 
+  const toCollect = lessons
+    .filter((l) => !l.settled && !isSchoolLesson(l) && new Date(l.endsAt) <= today)
+    .reduce((sum, l) => sum + l.amountDue, 0);
+
+  const grouped = ACTION_GROUPS.map((group) => ({
+    ...group,
+    items: lessons.filter((l) => actionGroup(l, today) === group.key),
+  })).filter((group) => group.items.length > 0);
+  const groups = grouped.map((group, index) => {
+    const before = grouped
+      .slice(0, index)
+      .reduce((sum, previous) => sum + previous.items.length, 0);
+    const visible = expanded
+      ? group.items
+      : group.items.slice(0, Math.max(0, ACTION_LIMIT - before));
+    return { ...group, visible };
+  });
+  const hidden = lessons.length - groups.reduce((sum, g) => sum + g.visible.length, 0);
+
   return (
     <CollapsibleCard
       id="action-panel"
       title="Do zrobienia"
       icon={<ListChecks className="text-warning size-4" />}
-      aside={<Badge variant="secondary">{lessons.length}</Badge>}
+      aside={
+        lessons.length > 0 && (
+          <span className="bg-owed-soft text-warning rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums">
+            {lessons.length}
+          </span>
+        )
+      }
     >
-      {lessons.length === 0 && (
+      {lessons.length === 0 ? (
         <p className="font-hand text-success text-[22px] leading-tight">
           Wszystko odhaczone i rozliczone ✓
         </p>
-      )}
-      <div className="flex flex-col gap-2">
-        {lessons.map((lesson) => {
-          const completed = lesson.status === "completed";
-          const school = isSchoolLesson(lesson);
-          return (
-            <div
-              key={lesson.id}
-              className="border-border-solid flex flex-col gap-2 rounded-lg border px-3 py-2"
-            >
-              <button
-                onClick={() => onOpen(new Date(lesson.startsAt), lesson.id)}
-                className="flex flex-col items-start text-left"
-              >
-                <span className="text-sm font-medium">{lesson.student?.name}</span>
-                <span className="text-muted-foreground text-xs tabular-nums">
-                  {isToday(new Date(lesson.startsAt))
-                    ? format(new Date(lesson.startsAt), "'dziś' HH:mm")
-                    : format(new Date(lesson.startsAt), "d MMM, HH:mm", {
-                        locale: pl,
-                      })}{" "}
-                  · {formatPLN(lesson.settled ? lesson.price : lesson.amountDue)}
-                </span>
-              </button>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  size="sm"
-                  variant={completed ? "secondary" : "outline"}
-                  disabled={pending}
-                  className={cn(completed && "text-success")}
-                  onClick={() =>
-                    setCompleted.mutate({
-                      id: lesson.id,
-                      status: completed ? "scheduled" : "completed",
-                    })
-                  }
-                >
-                  <Check className={cn("size-3.5", !completed && "opacity-30")} />
-                  Odbyte
-                </Button>
-
-                {school ? (
-                  <span className="text-muted-foreground flex items-center justify-center gap-1.5 text-xs">
-                    <Landmark className="size-3.5" />
-                    Wypłata ze szkółki
-                  </span>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant={lesson.settled ? "secondary" : "outline"}
-                        disabled={pending}
-                        className={cn(lesson.settled && "text-success")}
-                      >
-                        <Banknote
-                          className={cn("size-3.5", !lesson.settled && "opacity-30")}
-                        />
-                        {lesson.settled && lesson.paid && lesson.paymentMethod
-                          ? `Opłacone · ${PAYMENT_METHOD_LABELS[lesson.paymentMethod]}`
-                          : "Opłacone"}
-                        <ChevronDown className="size-3.5 opacity-60" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setPaid.mutate({
-                            id: lesson.id,
-                            paid: true,
-                            paymentMethod: "cash",
-                          })
-                        }
-                      >
-                        <Banknote className="size-4" />
-                        Gotówka
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setPaid.mutate({
-                            id: lesson.id,
-                            paid: true,
-                            paymentMethod: "transfer",
-                          })
-                        }
-                      >
-                        <Landmark className="size-4" />
-                        Przelew
-                      </DropdownMenuItem>
-                      {lesson.paid && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            setPaid.mutate({
-                              id: lesson.id,
-                              paid: false,
-                              paymentMethod: null,
-                            })
-                          }
-                        >
-                          <Ban className="size-4" />
-                          Nieopłacone
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
+      ) : (
+        <>
+          {toCollect > 0 && (
+            <div className="bg-owed-soft flex items-baseline justify-between gap-3 rounded-[10px] px-3 py-2.5">
+              <span className="text-sm">Do odebrania</span>
+              <span className="text-warning text-lg font-bold tabular-nums">
+                {formatPLN(toCollect)}
+              </span>
             </div>
-          );
-        })}
-      </div>
+          )}
+
+          <div className="flex flex-col gap-4">
+            {groups.map((group) =>
+              group.visible.length === 0 ? null : (
+                <section key={group.key} className="flex flex-col">
+                  <h3 className="text-muted-foreground flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                    <span className={cn("size-1.5 rounded-full", group.dot)} />
+                    {group.label}
+                    <span className="ml-auto tabular-nums">{group.items.length}</span>
+                  </h3>
+                  <ul className="divide-border flex flex-col divide-y">
+                    {group.visible.map((lesson) => (
+                      <ActionRow
+                        key={lesson.id}
+                        lesson={lesson}
+                        overdue={group.key === "overdue"}
+                        pending={pending}
+                        onOpen={onOpen}
+                        onToggleCompleted={(completed) =>
+                          setCompleted.mutate({
+                            id: lesson.id,
+                            status: completed ? "scheduled" : "completed",
+                          })
+                        }
+                        onSetPaid={(paid, paymentMethod) =>
+                          setPaid.mutate({ id: lesson.id, paid, paymentMethod })
+                        }
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ),
+            )}
+          </div>
+
+          {(hidden > 0 || expanded) && lessons.length > ACTION_LIMIT && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground self-center"
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? "Zwiń listę" : `Pokaż jeszcze ${hidden}`}
+              <ChevronDown
+                className={cn("size-3.5 transition-transform", expanded && "rotate-180")}
+              />
+            </Button>
+          )}
+        </>
+      )}
     </CollapsibleCard>
+  );
+}
+
+function ActionRow({
+  lesson,
+  overdue,
+  pending,
+  onOpen,
+  onToggleCompleted,
+  onSetPaid,
+}: {
+  lesson: LessonRow;
+  overdue: boolean;
+  pending: boolean;
+  onOpen: (day: Date, id: string) => void;
+  onToggleCompleted: (completed: boolean) => void;
+  onSetPaid: (paid: boolean, paymentMethod: "cash" | "transfer" | null) => void;
+}) {
+  const completed = lesson.status === "completed";
+  const school = isSchoolLesson(lesson);
+  const startsAt = new Date(lesson.startsAt);
+
+  return (
+    <li className="flex flex-col gap-2.5 py-3 last:pb-0">
+      <button
+        onClick={() => onOpen(startsAt, lesson.id)}
+        className="group/row flex items-start justify-between gap-3 text-left"
+      >
+        <span className="flex min-w-0 flex-col">
+          <span className="group-hover/row:text-accent-foreground truncate text-sm font-semibold transition-colors">
+            {lesson.student?.name}
+          </span>
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {isToday(startsAt)
+              ? format(startsAt, "'dziś,' HH:mm")
+              : format(startsAt, "EEEE, d MMM · HH:mm", { locale: pl })}
+          </span>
+        </span>
+        <span
+          className={cn(
+            "shrink-0 text-sm font-semibold tabular-nums",
+            lesson.settled
+              ? "text-success"
+              : overdue
+                ? "text-destructive"
+                : school
+                  ? "text-muted-foreground"
+                  : "text-warning",
+          )}
+        >
+          {formatPLN(lesson.settled ? lesson.price : lesson.amountDue)}
+        </span>
+      </button>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          size="sm"
+          variant={completed ? "secondary" : "outline"}
+          disabled={pending}
+          className={cn("rounded-[8px]", completed && "text-success")}
+          onClick={() => onToggleCompleted(completed)}
+        >
+          <Check className={cn("size-3.5", !completed && "opacity-30")} />
+          Odbyte
+        </Button>
+
+        {school ? (
+          <span className="text-muted-foreground flex items-center justify-center gap-1.5 text-xs">
+            <Landmark className="size-3.5" />
+            Wypłata ze szkółki
+          </span>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant={lesson.settled ? "secondary" : "outline"}
+                disabled={pending}
+                className={cn("rounded-[8px]", lesson.settled && "text-success")}
+              >
+                <Banknote className={cn("size-3.5", !lesson.settled && "opacity-30")} />
+                {lesson.settled && lesson.paid && lesson.paymentMethod
+                  ? `Opłacone · ${PAYMENT_METHOD_LABELS[lesson.paymentMethod]}`
+                  : "Opłacone"}
+                <ChevronDown className="size-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSetPaid(true, "cash")}>
+                <Banknote className="size-4" />
+                Gotówka
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSetPaid(true, "transfer")}>
+                <Landmark className="size-4" />
+                Przelew
+              </DropdownMenuItem>
+              {lesson.paid && (
+                <DropdownMenuItem onClick={() => onSetPaid(false, null)}>
+                  <Ban className="size-4" />
+                  Nieopłacone
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </li>
   );
 }
 
@@ -671,6 +769,19 @@ function MonthSummary({ month }: { month: Date }) {
 
   return (
     <Card className="gap-4 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <LineChart className="text-muted-foreground size-4" />
+          Finanse miesiąca
+        </h2>
+        <Link
+          href="/dashboard/stats"
+          className="text-accent-foreground group/stats inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+        >
+          Wszystkie statystyki
+          <ArrowRight className="size-4 transition-transform group-hover/stats:translate-x-0.5" />
+        </Link>
+      </div>
       <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
         <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:flex sm:flex-wrap sm:gap-x-10">
           {parts.map((part) => (
@@ -714,26 +825,6 @@ function MonthSummary({ month }: { month: Date }) {
           )}
       </div>
     </Card>
-  );
-}
-
-function StatsPromoCard() {
-  return (
-    <Link
-      href="/dashboard/stats"
-      className="group/promo bg-inverse text-inverse-foreground ring-inverse-border focus-visible:ring-ring flex items-center gap-3 rounded-2xl p-4 ring-1 transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 motion-reduce:hover:translate-y-0"
-    >
-      <span className="bg-inverse-foreground/10 flex size-9 shrink-0 items-center justify-center rounded-lg">
-        <LineChart className="size-4.5" />
-      </span>
-      <span className="flex flex-col">
-        <span className="text-sm font-semibold">Finanse i statystyki</span>
-        <span className="text-inverse-foreground/70 text-xs">
-          Przychody, prognoza i zaległości w jednym miejscu
-        </span>
-      </span>
-      <ArrowRight className="ml-auto size-4 shrink-0 transition-transform group-hover/promo:translate-x-0.5" />
-    </Link>
   );
 }
 
