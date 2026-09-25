@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 
 export default function RegisterPage() {
@@ -129,6 +130,12 @@ export default function RegisterPage() {
                           router.push("/dashboard");
                           router.refresh();
                         }}
+                        onError={(message) => toast.error(message)}
+                      />
+                      <AppleSignInButton
+                        callbackURL="/dashboard"
+                        label="Kontynuuj przez Apple"
+                        onClick={() => rememberSignupMethod("apple")}
                         onError={(message) => toast.error(message)}
                       />
                     </Field>

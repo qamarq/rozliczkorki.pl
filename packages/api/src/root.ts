@@ -1,5 +1,4 @@
 import { authRouter } from "./routers/auth";
-import { iosWaitlistRouter } from "./routers/iosWaitlist";
 import { lessonsRouter } from "./routers/lessons";
 import { pushTokensRouter } from "./routers/pushTokens";
 import { recurringRouter } from "./routers/recurring";
@@ -18,7 +17,6 @@ export const appRouter = router({
   recurring: recurringRouter,
   stats: statsRouter,
   pushTokens: pushTokensRouter,
-  iosWaitlist: iosWaitlistRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AppleIcon } from "@/components/apple-icon";
 import { GoogleIcon } from "@/components/google-icon";
 import {
   AlertDialog,
@@ -374,7 +375,7 @@ function SecuritySection() {
       {passwordInfo && !passwordInfo.hasPassword ? (
         <SectionCard
           title="Ustaw hasło"
-          description="Konto założone przez Google nie ma hasła. Ustaw je, żeby logować się też e-mailem."
+          description="Konto założone przez Google lub Apple nie ma hasła. Ustaw je, żeby logować się też e-mailem."
         >
           <form
             onSubmit={(e) => {
@@ -492,6 +493,13 @@ function SecuritySection() {
   );
 }
 
+const SOCIAL_PROVIDERS = {
+  google: { label: "Google", Icon: GoogleIcon },
+  apple: { label: "Apple", Icon: AppleIcon },
+} as const;
+
+type SocialProvider = keyof typeof SOCIAL_PROVIDERS;
+
 function AccountsSection() {
   const { data: accounts = [], refetch: load } = useQuery({
     queryKey: ["accounts"],
@@ -501,21 +509,19 @@ function AccountsSection() {
     },
   });
 
-  const google = accounts.find((a) => a.providerId === "google");
   const credential = accounts.find((a) => a.providerId === "credential");
 
-  async function onLinkGoogle() {
-    await authClient.linkSocial({ provider: "google", callbackURL: "/dashboard" });
+  async function onLink(provider: SocialProvider) {
+    await authClient.linkSocial({ provider, callbackURL: "/dashboard" });
   }
 
-  async function onUnlinkGoogle() {
-    if (!google) return;
-    const { error } = await authClient.unlinkAccount({ accountId: google.id });
+  async function onUnlink(provider: SocialProvider, accountId: string) {
+    const { error } = await authClient.unlinkAccount({ accountId });
     if (error) {
       toast.error(error.message ?? "Nie udało się odłączyć konta");
       return;
     }
-    toast.success("Odłączono konto Google");
+    toast.success(`Odłączono konto ${SOCIAL_PROVIDERS[provider].label}`);
     load();
   }
 
@@ -525,36 +531,42 @@ function AccountsSection() {
       description="Sposoby logowania podpięte do tego konta."
     >
       <div className="flex flex-col gap-2">
-        <Row>
-          <div className="flex min-w-0 items-center gap-2 text-sm">
-            <GoogleIcon className="size-4 shrink-0" />
-            <span className="font-medium">Google</span>
-            {google && (
-              <span className="text-muted-foreground shrink-0 text-xs">
-                · podłączone {relative(google.createdAt)}
-              </span>
-            )}
-          </div>
-          {google ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onUnlinkGoogle}
-              disabled={accounts.length < 2}
-              title={
-                accounts.length < 2
-                  ? "To jedyny sposób logowania, najpierw ustaw hasło"
-                  : undefined
-              }
-            >
-              Odłącz
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" onClick={onLinkGoogle}>
-              Podłącz
-            </Button>
-          )}
-        </Row>
+        {(Object.keys(SOCIAL_PROVIDERS) as SocialProvider[]).map((provider) => {
+          const { label, Icon } = SOCIAL_PROVIDERS[provider];
+          const linked = accounts.find((a) => a.providerId === provider);
+          return (
+            <Row key={provider}>
+              <div className="flex min-w-0 items-center gap-2 text-sm">
+                <Icon className="size-4 shrink-0" />
+                <span className="font-medium">{label}</span>
+                {linked && (
+                  <span className="text-muted-foreground shrink-0 text-xs">
+                    · podłączone {relative(linked.createdAt)}
+                  </span>
+                )}
+              </div>
+              {linked ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onUnlink(provider, linked.id)}
+                  disabled={accounts.length < 2}
+                  title={
+                    accounts.length < 2
+                      ? "To jedyny sposób logowania, najpierw ustaw hasło"
+                      : undefined
+                  }
+                >
+                  Odłącz
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => onLink(provider)}>
+                  Podłącz
+                </Button>
+              )}
+            </Row>
+          );
+        })}
 
         <Row>
           <div className="flex min-w-0 items-center gap-2 text-sm">

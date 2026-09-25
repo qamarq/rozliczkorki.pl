@@ -35,7 +35,13 @@ function takeSignupMethod(): SignupMethod {
   try {
     const stored = window.sessionStorage.getItem(SIGNUP_METHOD_KEY);
     window.sessionStorage.removeItem(SIGNUP_METHOD_KEY);
-    if (stored === "email" || stored === "google" || stored === "passkey") return stored;
+    if (
+      stored === "email" ||
+      stored === "google" ||
+      stored === "apple" ||
+      stored === "passkey"
+    )
+      return stored;
   } catch {
     // Fall through to the default below.
   }

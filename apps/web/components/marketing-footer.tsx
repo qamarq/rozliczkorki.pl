@@ -2,7 +2,7 @@ import { Github } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { AppStoreIcon, GooglePlayIcon } from "@/components/store-icons";
-import { GITHUB_URL, GOOGLE_PLAY_URL } from "@/lib/site";
+import { APP_STORE_URL, GITHUB_URL, GOOGLE_PLAY_URL } from "@/lib/site";
 
 const COLUMNS = [
   {
@@ -11,6 +11,7 @@ const COLUMNS = [
       { label: "Funkcje", href: "/#funkcje" },
       { label: "Jak to działa", href: "/#jak-to-dziala" },
       { label: "Aplikacja Android", href: GOOGLE_PLAY_URL, external: true },
+      { label: "Aplikacja iOS", href: APP_STORE_URL, external: true },
       { label: "FAQ", href: "/#faq" },
     ],
   },
@@ -75,13 +76,15 @@ export function MarketingFooter() {
               >
                 <GooglePlayIcon className="size-5" />
               </a>
-              <span
-                aria-label="App Store · wkrótce"
-                title="App Store · wkrótce"
-                className="text-muted-foreground/40 cursor-default"
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="App Store"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <AppStoreIcon className="size-5 rounded-[22%]" />
-              </span>
+              </a>
             </div>
           </div>
 

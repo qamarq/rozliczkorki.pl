@@ -17,7 +17,7 @@ const FAQ = [
   },
   {
     q: "Czy działa na telefonie?",
-    a: "Tak. Aplikacja na Androida jest już w Google Play, a wersja webowa działa na każdym urządzeniu. Nad iOS-em pracujemy.",
+    a: "Tak. Aplikacja jest w Google Play na Androida i w App Store na iPhone'a, a wersja webowa działa na każdym urządzeniu.",
   },
   {
     q: "Co z moimi danymi, jeśli zrezygnuję?",

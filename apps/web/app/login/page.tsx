@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 
 export default function LoginPage() {
@@ -104,7 +105,16 @@ export default function LoginPage() {
                     }}
                     onError={(message) => toast.error(message)}
                   />
-                  <Button variant="outline" onClick={onPasskey} type="button">
+                  <AppleSignInButton
+                    callbackURL="/dashboard"
+                    onError={(message) => toast.error(message)}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={onPasskey}
+                    type="button"
+                    className="sm:col-span-2"
+                  >
                     <KeyRound data-icon="inline-start" />
                     Klucz dostępu
                   </Button>

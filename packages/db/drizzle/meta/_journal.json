@@ -57,6 +57,13 @@
       "when": 1789677589617,
       "tag": "0007_schools_and_payouts",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790371161581,
+      "tag": "0008_drop_ios_waitlist",
+      "breakpoints": true
     }
   ]
 }
