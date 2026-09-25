@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 
 export default function RegisterPage() {
@@ -71,7 +70,7 @@ export default function RegisterPage() {
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
       >
-        <div className="bg-primary absolute -top-32 left-1/4 size-[28rem] rounded-full opacity-25 blur-[110px]" />
+        <div className="bg-primary size-112 absolute -top-32 left-1/4 rounded-full opacity-25 blur-[110px]" />
         <div className="bg-success absolute -right-24 bottom-0 size-96 rounded-full opacity-20 blur-[110px]" />
       </div>
 
@@ -132,12 +131,12 @@ export default function RegisterPage() {
                         }}
                         onError={(message) => toast.error(message)}
                       />
-                      <AppleSignInButton
+                      {/* <AppleSignInButton
                         callbackURL="/dashboard"
                         label="Kontynuuj przez Apple"
                         onClick={() => rememberSignupMethod("apple")}
                         onError={(message) => toast.error(message)}
-                      />
+                      /> */}
                     </Field>
 
                     <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card *:data-[slot=separator]:bg-border-solid">
