@@ -8,7 +8,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { cn } from "cn";
-import { SITE_URL } from "@/lib/site";
+import { APP_STORE_ID, SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-inter-sans",
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     template: "%s",
   },
   description: "Prosty tracker korepetycji: kalendarz, płatności, zarobki.",
+  itunes: { appId: APP_STORE_ID },
   openGraph: {
     siteName: "Rozlicz Korki",
     locale: "pl_PL",

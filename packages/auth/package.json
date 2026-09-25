@@ -5,6 +5,9 @@
   "license": "AGPL-3.0-only",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "apple:secret": "node scripts/apple-client-secret.mjs"
+  },
   "dependencies": {
     "@better-auth/expo": "^1.7.3",
     "@better-auth/passkey": "1.7.3",

@@ -53,7 +53,7 @@ export default async function MarketingPage() {
               </span>
               Android jest w Google Play
               <span className="text-border-solid">/</span>
-              <span className="font-mono-ui text-xs">iOS w drodze</span>
+              <span className="font-mono-ui text-xs">iOS w App Store</span>
             </p>
             <h1
               className="mk-rise text-balance text-[2.75rem] font-bold leading-[1.02] tracking-[-0.03em] sm:text-6xl"
@@ -118,7 +118,7 @@ export default async function MarketingPage() {
               index="I"
               eyebrow="Aplikacja mobilna"
               title="Korki masz w kieszeni, nie w laptopie."
-              description="Android jest już w Google Play. Te same zajęcia, te same statystyki, plus push przed lekcją i odklikanie płatności zaraz po niej."
+              description="Android w Google Play, iPhone w App Store. Te same zajęcia, te same statystyki, plus push przed lekcją i odklikanie płatności zaraz po niej."
             />
             <ul className="text-muted-foreground grid gap-2 text-sm sm:grid-cols-2">
               <AppPoint>Powiadomienia push przed zajęciami</AppPoint>

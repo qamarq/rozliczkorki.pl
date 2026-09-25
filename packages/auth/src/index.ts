@@ -14,10 +14,13 @@ import { nextCookies } from "better-auth/next-js";
 import { oneTap } from "better-auth/plugins";
 import { actionEmail, sendEmail } from "./email";
 
-const trustedOrigins = (process.env.TRUSTED_ORIGINS ?? "")
-  .split(",")
-  .map((origin: string) => origin.trim())
-  .filter(Boolean);
+const trustedOrigins = [
+  ...(process.env.TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((origin: string) => origin.trim())
+    .filter(Boolean),
+  "https://appleid.apple.com",
+];
 
 // Android apps sign WebAuthn requests with android:apk-key-hash:<base64url SHA-256 of the signing cert>.
 const ANDROID_APK_KEY_HASHES = [
@@ -33,6 +36,8 @@ const passkeyOrigins = [
 ];
 
 const IOS_BUNDLE_ID = "pl.rozliczkorki.app";
+
+const appleClientId = process.env.APPLE_CLIENT_ID ?? IOS_BUNDLE_ID;
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -131,9 +136,10 @@ export const auth = betterAuth({
       ? { google: { clientId: googleClientId, clientSecret: googleClientSecret } }
       : {}),
     apple: {
-      clientId: process.env.APPLE_CLIENT_ID ?? IOS_BUNDLE_ID,
+      clientId: appleClientId,
       clientSecret: process.env.APPLE_CLIENT_SECRET ?? "",
       appBundleIdentifier: IOS_BUNDLE_ID,
+      audience: [...new Set([IOS_BUNDLE_ID, appleClientId])],
     },
   },
   trustedOrigins,

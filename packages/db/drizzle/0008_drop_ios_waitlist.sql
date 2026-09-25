@@ -1,0 +1,1 @@
+DROP TABLE "ios_waitlist_votes" CASCADE;
