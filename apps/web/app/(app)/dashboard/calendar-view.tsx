@@ -41,9 +41,9 @@ import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useMemo, useState } from "react";
 import { CollapsibleCard } from "@/components/collapsible-card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +61,7 @@ import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { LessonDialog } from "./lesson-dialog";
+import { PageHeader } from "./page-header";
 import { VacationNoticesPanel } from "./vacations/notice-panel";
 
 const NOTICE_LEAD_DAYS = 14;
@@ -234,23 +235,34 @@ export function CalendarView() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid items-start gap-5 lg:grid-cols-12">
-        <div className="flex flex-col gap-5 lg:col-span-8">
-          <Card className="flex-row flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <div className="flex items-center gap-2">
+      <PageHeader
+        title={
+          <span className="capitalize">{format(month, "LLLL yyyy", { locale: pl })}</span>
+        }
+        description="Kalendarz lekcji. Kliknij dzień, żeby dodać zajęcia."
+        actions={
+          <>
+            <div className="bg-card ring-foreground/10 flex items-center gap-0.5 rounded-lg p-0.5 ring-1">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
+                aria-label="Poprzedni miesiąc"
                 onClick={() => setMonth((m) => subMonths(m, 1))}
               >
                 <ChevronLeft className="size-4" />
               </Button>
-              <h1 className="w-40 text-center text-lg font-semibold capitalize">
-                {format(month, "LLLL yyyy", { locale: pl })}
-              </h1>
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
+                disabled={isSameMonth(month, today)}
+                onClick={() => setMonth(new Date())}
+              >
+                Dziś
+              </Button>
+              <Button
+                variant="ghost"
                 size="icon"
+                aria-label="Następny miesiąc"
                 onClick={() => setMonth((m) => addMonths(m, 1))}
               >
                 <ChevronRight className="size-4" />
@@ -260,12 +272,18 @@ export function CalendarView() {
               <Plus className="size-4" />
               Dodaj zajęcia
             </Button>
-          </Card>
+          </>
+        }
+      />
 
-          <div className="border-border-solid overflow-hidden rounded-xl border">
-            <div className="bg-secondary text-muted-foreground grid grid-cols-7 text-xs font-semibold">
+      <MonthSummary month={month} />
+
+      <div className="grid items-start gap-5 lg:grid-cols-12">
+        <div className="flex flex-col gap-5 lg:col-span-8">
+          <div className="border-border-solid overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgb(21_25_53/0.04),0_14px_30px_-22px_rgb(21_25_53/0.4)]">
+            <div className="bg-secondary text-muted-foreground grid grid-cols-7 text-[11px] font-semibold uppercase tracking-[0.08em]">
               {WEEKDAYS.map((day) => (
-                <div key={day} className="px-2 py-2 text-center capitalize">
+                <div key={day} className="px-2 py-2.5 text-center">
                   {day}
                 </div>
               ))}
@@ -309,7 +327,7 @@ export function CalendarView() {
                       <span className="flex items-center">
                         <span
                           className={cn(
-                            "text-[11px] font-semibold tabular-nums group-hover:hidden",
+                            "text-[11px] font-semibold tabular-nums group-hover:hidden max-sm:hidden",
                             dayTotal === null
                               ? "text-muted-foreground/50"
                               : dayTotal.settled
@@ -413,10 +431,10 @@ export function CalendarView() {
         </div>
 
         <div className="flex flex-col gap-5 lg:col-span-4">
-          <StatsPromoCard />
           {pendingNotices.length > 0 && <VacationNoticesPanel pending={pendingNotices} />}
           <ActionPanel
             lessons={actionLessons}
+            today={today}
             onOpen={(day, id) => openEditDialog(day, id)}
           />
           <CalendarLegend />
@@ -446,13 +464,32 @@ function needsAction(lesson: LessonRow) {
 
 const PAYMENT_METHOD_LABELS = { cash: "gotówka", transfer: "przelew" } as const;
 
+const ACTION_LIMIT = 5;
+
+const ACTION_GROUPS = [
+  { key: "overdue", label: "Zaległe płatności", dot: "bg-destructive" },
+  { key: "ended", label: "Po zajęciach", dot: "bg-warning" },
+  { key: "today", label: "Dziś", dot: "bg-primary" },
+] as const;
+
+type ActionGroup = (typeof ACTION_GROUPS)[number]["key"];
+
+function actionGroup(lesson: LessonRow, today: Date): ActionGroup {
+  if (lesson.tone === "overdue") return "overdue";
+  if (new Date(lesson.endsAt) <= today) return "ended";
+  return "today";
+}
+
 function ActionPanel({
   lessons,
+  today,
   onOpen,
 }: {
   lessons: LessonRow[];
+  today: Date;
   onOpen: (day: Date, id: string) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const utils = trpc.useUtils();
   const invalidate = () => {
     utils.lessons.range.invalidate();
@@ -475,150 +512,319 @@ function ActionPanel({
   const setPaid = trpc.lessons.update.useMutation({ onSuccess: invalidate });
   const pending = setCompleted.isPending || setPaid.isPending;
 
+  const toCollect = lessons
+    .filter((l) => !l.settled && !isSchoolLesson(l) && new Date(l.endsAt) <= today)
+    .reduce((sum, l) => sum + l.amountDue, 0);
+
+  const grouped = ACTION_GROUPS.map((group) => ({
+    ...group,
+    items: lessons.filter((l) => actionGroup(l, today) === group.key),
+  })).filter((group) => group.items.length > 0);
+  const groups = grouped.map((group, index) => {
+    const before = grouped
+      .slice(0, index)
+      .reduce((sum, previous) => sum + previous.items.length, 0);
+    const visible = expanded
+      ? group.items
+      : group.items.slice(0, Math.max(0, ACTION_LIMIT - before));
+    return { ...group, visible };
+  });
+  const hidden = lessons.length - groups.reduce((sum, g) => sum + g.visible.length, 0);
+
   return (
     <CollapsibleCard
       id="action-panel"
       title="Do zrobienia"
       icon={<ListChecks className="text-warning size-4" />}
-      aside={<Badge variant="secondary">{lessons.length}</Badge>}
+      aside={
+        lessons.length > 0 && (
+          <span className="bg-owed-soft text-warning rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums">
+            {lessons.length}
+          </span>
+        )
+      }
     >
-      {lessons.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Wszystko odhaczone i rozliczone. 🎉
+      {lessons.length === 0 ? (
+        <p className="font-hand text-success text-[22px] leading-tight">
+          Wszystko odhaczone i rozliczone ✓
         </p>
-      )}
-      <div className="flex flex-col gap-2">
-        {lessons.map((lesson) => {
-          const completed = lesson.status === "completed";
-          const school = isSchoolLesson(lesson);
-          return (
-            <div
-              key={lesson.id}
-              className="border-border-solid flex flex-col gap-2 rounded-lg border px-3 py-2"
-            >
-              <button
-                onClick={() => onOpen(new Date(lesson.startsAt), lesson.id)}
-                className="flex flex-col items-start text-left"
-              >
-                <span className="text-sm font-medium">{lesson.student?.name}</span>
-                <span className="text-muted-foreground text-xs tabular-nums">
-                  {isToday(new Date(lesson.startsAt))
-                    ? format(new Date(lesson.startsAt), "'dziś' HH:mm")
-                    : format(new Date(lesson.startsAt), "d MMM, HH:mm", {
-                        locale: pl,
-                      })}{" "}
-                  · {formatPLN(lesson.settled ? lesson.price : lesson.amountDue)}
-                </span>
-              </button>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  size="sm"
-                  variant={completed ? "secondary" : "outline"}
-                  disabled={pending}
-                  className={cn(completed && "text-success")}
-                  onClick={() =>
-                    setCompleted.mutate({
-                      id: lesson.id,
-                      status: completed ? "scheduled" : "completed",
-                    })
-                  }
-                >
-                  <Check className={cn("size-3.5", !completed && "opacity-30")} />
-                  Odbyte
-                </Button>
-
-                {school ? (
-                  <span className="text-muted-foreground flex items-center justify-center gap-1.5 text-xs">
-                    <Landmark className="size-3.5" />
-                    Wypłata ze szkółki
-                  </span>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant={lesson.settled ? "secondary" : "outline"}
-                        disabled={pending}
-                        className={cn(lesson.settled && "text-success")}
-                      >
-                        <Banknote
-                          className={cn("size-3.5", !lesson.settled && "opacity-30")}
-                        />
-                        {lesson.settled && lesson.paid && lesson.paymentMethod
-                          ? `Opłacone · ${PAYMENT_METHOD_LABELS[lesson.paymentMethod]}`
-                          : "Opłacone"}
-                        <ChevronDown className="size-3.5 opacity-60" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setPaid.mutate({
-                            id: lesson.id,
-                            paid: true,
-                            paymentMethod: "cash",
-                          })
-                        }
-                      >
-                        <Banknote className="size-4" />
-                        Gotówka
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setPaid.mutate({
-                            id: lesson.id,
-                            paid: true,
-                            paymentMethod: "transfer",
-                          })
-                        }
-                      >
-                        <Landmark className="size-4" />
-                        Przelew
-                      </DropdownMenuItem>
-                      {lesson.paid && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            setPaid.mutate({
-                              id: lesson.id,
-                              paid: false,
-                              paymentMethod: null,
-                            })
-                          }
-                        >
-                          <Ban className="size-4" />
-                          Nieopłacone
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
+      ) : (
+        <>
+          {toCollect > 0 && (
+            <div className="bg-owed-soft flex items-baseline justify-between gap-3 rounded-[10px] px-3 py-2.5">
+              <span className="text-sm">Do odebrania</span>
+              <span className="text-warning text-lg font-bold tabular-nums">
+                {formatPLN(toCollect)}
+              </span>
             </div>
-          );
-        })}
-      </div>
+          )}
+
+          <div className="flex flex-col gap-4">
+            {groups.map((group) =>
+              group.visible.length === 0 ? null : (
+                <section key={group.key} className="flex flex-col">
+                  <h3 className="text-muted-foreground flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                    <span className={cn("size-1.5 rounded-full", group.dot)} />
+                    {group.label}
+                    <span className="ml-auto tabular-nums">{group.items.length}</span>
+                  </h3>
+                  <ul className="divide-border flex flex-col divide-y">
+                    {group.visible.map((lesson) => (
+                      <ActionRow
+                        key={lesson.id}
+                        lesson={lesson}
+                        overdue={group.key === "overdue"}
+                        pending={pending}
+                        onOpen={onOpen}
+                        onToggleCompleted={(completed) =>
+                          setCompleted.mutate({
+                            id: lesson.id,
+                            status: completed ? "scheduled" : "completed",
+                          })
+                        }
+                        onSetPaid={(paid, paymentMethod) =>
+                          setPaid.mutate({ id: lesson.id, paid, paymentMethod })
+                        }
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ),
+            )}
+          </div>
+
+          {(hidden > 0 || expanded) && lessons.length > ACTION_LIMIT && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground self-center"
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? "Zwiń listę" : `Pokaż jeszcze ${hidden}`}
+              <ChevronDown
+                className={cn("size-3.5 transition-transform", expanded && "rotate-180")}
+              />
+            </Button>
+          )}
+        </>
+      )}
     </CollapsibleCard>
   );
 }
 
-function StatsPromoCard() {
+function ActionRow({
+  lesson,
+  overdue,
+  pending,
+  onOpen,
+  onToggleCompleted,
+  onSetPaid,
+}: {
+  lesson: LessonRow;
+  overdue: boolean;
+  pending: boolean;
+  onOpen: (day: Date, id: string) => void;
+  onToggleCompleted: (completed: boolean) => void;
+  onSetPaid: (paid: boolean, paymentMethod: "cash" | "transfer" | null) => void;
+}) {
+  const completed = lesson.status === "completed";
+  const school = isSchoolLesson(lesson);
+  const startsAt = new Date(lesson.startsAt);
+
   return (
-    <Link
-      href="/dashboard/stats"
-      className="group/promo focus-visible:ring-ring flex items-center gap-3 rounded-xl bg-[linear-gradient(135deg,color-mix(in_oklab,var(--brand-from)_68%,black),color-mix(in_oklab,var(--brand-to)_68%,black))] p-4 text-white transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2"
-    >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15">
-        <LineChart className="size-4.5" />
-      </span>
-      <span className="flex flex-col">
-        <span className="text-sm font-semibold">Finanse i statystyki</span>
-        <span className="text-xs text-white/75">
-          Przychody, prognoza i zaległości w jednym miejscu
+    <li className="flex flex-col gap-2.5 py-3 last:pb-0">
+      <button
+        onClick={() => onOpen(startsAt, lesson.id)}
+        className="group/row flex items-start justify-between gap-3 text-left"
+      >
+        <span className="flex min-w-0 flex-col">
+          <span className="group-hover/row:text-accent-foreground truncate text-sm font-semibold transition-colors">
+            {lesson.student?.name}
+          </span>
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {isToday(startsAt)
+              ? format(startsAt, "'dziś,' HH:mm")
+              : format(startsAt, "EEEE, d MMM · HH:mm", { locale: pl })}
+          </span>
         </span>
-      </span>
-      <ArrowRight className="ml-auto size-4 shrink-0 transition-transform group-hover/promo:translate-x-0.5" />
-    </Link>
+        <span
+          className={cn(
+            "shrink-0 text-sm font-semibold tabular-nums",
+            lesson.settled
+              ? "text-success"
+              : overdue
+                ? "text-destructive"
+                : school
+                  ? "text-muted-foreground"
+                  : "text-warning",
+          )}
+        >
+          {formatPLN(lesson.settled ? lesson.price : lesson.amountDue)}
+        </span>
+      </button>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          size="sm"
+          variant={completed ? "secondary" : "outline"}
+          disabled={pending}
+          className={cn("rounded-[8px]", completed && "text-success")}
+          onClick={() => onToggleCompleted(completed)}
+        >
+          <Check className={cn("size-3.5", !completed && "opacity-30")} />
+          Odbyte
+        </Button>
+
+        {school ? (
+          <span className="text-muted-foreground flex items-center justify-center gap-1.5 text-xs">
+            <Landmark className="size-3.5" />
+            Wypłata ze szkółki
+          </span>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant={lesson.settled ? "secondary" : "outline"}
+                disabled={pending}
+                className={cn("rounded-[8px]", lesson.settled && "text-success")}
+              >
+                <Banknote className={cn("size-3.5", !lesson.settled && "opacity-30")} />
+                {lesson.settled && lesson.paid && lesson.paymentMethod
+                  ? `Opłacone · ${PAYMENT_METHOD_LABELS[lesson.paymentMethod]}`
+                  : "Opłacone"}
+                <ChevronDown className="size-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSetPaid(true, "cash")}>
+                <Banknote className="size-4" />
+                Gotówka
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSetPaid(true, "transfer")}>
+                <Landmark className="size-4" />
+                Przelew
+              </DropdownMenuItem>
+              {lesson.paid && (
+                <DropdownMenuItem onClick={() => onSetPaid(false, null)}>
+                  <Ban className="size-4" />
+                  Nieopłacone
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function MonthSummary({ month }: { month: Date }) {
+  const { data, isLoading } = trpc.stats.summary.useQuery({
+    from: startOfMonth(month).toISOString(),
+    to: endOfMonth(month).toISOString(),
+  });
+
+  const paid = data?.paid ?? 0;
+  const unpaid = data?.unpaid ?? 0;
+  const payout = data?.awaitingPayout ?? 0;
+  const planned = Math.max(0, (data?.theoretical ?? 0) - paid - unpaid - payout);
+  const total = paid + unpaid + payout + planned;
+  const lessonCount = (data?.completedCount ?? 0) + (data?.scheduledCount ?? 0);
+
+  const parts = [
+    {
+      key: "paid",
+      label: "Opłacone",
+      value: paid,
+      text: "text-success",
+      bar: "bg-success",
+    },
+    {
+      key: "unpaid",
+      label: "Do zapłaty",
+      value: unpaid,
+      text: "text-warning",
+      bar: "bg-warning",
+    },
+    ...(payout > 0
+      ? [
+          {
+            key: "payout",
+            label: "Do wypłaty ze szkółek",
+            value: payout,
+            text: "text-foreground",
+            bar: "bg-chart-5",
+          },
+        ]
+      : []),
+    {
+      key: "planned",
+      label: "Zaplanowane",
+      value: planned,
+      text: "text-foreground",
+      bar: "bg-muted-foreground/35",
+    },
+  ];
+
+  return (
+    <Card className="gap-4 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <LineChart className="text-muted-foreground size-4" />
+          Finanse miesiąca
+        </h2>
+        <Link
+          href="/dashboard/stats"
+          className="text-accent-foreground group/stats inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline"
+        >
+          Wszystkie statystyki
+          <ArrowRight className="size-4 transition-transform group-hover/stats:translate-x-0.5" />
+        </Link>
+      </div>
+      <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:flex sm:flex-wrap sm:gap-x-10">
+          {parts.map((part) => (
+            <div key={part.key} className="flex flex-col gap-1">
+              <span className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
+                <span className={cn("size-2 rounded-full", part.bar)} />
+                {part.label}
+              </span>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <span
+                  className={cn(
+                    "text-2xl font-bold tabular-nums tracking-tight",
+                    part.text,
+                  )}
+                >
+                  {formatPLN(part.value)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+        {lessonCount > 0 && (
+          <span className="text-muted-foreground text-sm tabular-nums">
+            Odbyte: {data?.completedCount ?? 0} z {lessonCount}
+          </span>
+        )}
+      </div>
+      <div className="bg-secondary flex h-2 gap-0.5 overflow-hidden rounded-full">
+        {total > 0 &&
+          parts.map(
+            (part) =>
+              part.value > 0 && (
+                <span
+                  key={part.key}
+                  className={cn("h-full transition-[width] duration-700", part.bar)}
+                  style={{ width: `${(part.value / total) * 100}%` }}
+                />
+              ),
+          )}
+      </div>
+    </Card>
   );
 }
 

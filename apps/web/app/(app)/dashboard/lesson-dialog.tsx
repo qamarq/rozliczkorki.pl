@@ -1,7 +1,8 @@
 "use client";
 
 import { format } from "date-fns";
-import { TreePalm } from "lucide-react";
+import { pl } from "date-fns/locale";
+import { Trash2, TreePalm } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -17,13 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -50,11 +45,14 @@ import { trackLessonCheckedOff, trackLessonScheduled } from "@repo/analytics";
 import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { ACTION, FIELD, FormCard, FormDialogContent, SELECT, Segmented } from "./form-ui";
 
 function defaultRecurringEndDate() {
   const nextYear = new Date().getFullYear() + 1;
   return format(new Date(nextYear, 5, 30), "yyyy-MM-dd");
 }
+
+const DURATION_PRESETS = [45, 60, 90, 120];
 
 function lessonsCount(n: number) {
   return pluralize(n, "zajęcia", "zajęcia", "zajęć");
@@ -328,6 +326,14 @@ export function LessonDialog({
     deleteLesson.mutate({ id: editing.id, applyToFuture });
   }
 
+  const studentName = students.find((s) => s.id === studentId)?.name;
+  const startsAtPreview = dateStr ? new Date(`${dateStr}T${timeStr || "00:00"}`) : null;
+  const validStart = startsAtPreview && !Number.isNaN(startsAtPreview.getTime());
+  const whenLabel = validStart
+    ? format(startsAtPreview, "EEEE, d MMMM · HH:mm", { locale: pl })
+    : "";
+  const weekdayLabel = validStart ? format(startsAtPreview, "EEEE", { locale: pl }) : "";
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!studentId) {
@@ -380,17 +386,52 @@ export function LessonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{editing ? "Edytuj zajęcia" : "Nowe zajęcia"}</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={onSubmit} className="grid gap-x-6 gap-y-5 md:grid-cols-2">
-          <section className="flex flex-col gap-4">
-            <h3 className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-              Termin
-            </h3>
-
+      <FormDialogContent
+        className="sm:max-w-3xl"
+        title={editing ? "Edytuj zajęcia" : "Nowe zajęcia"}
+        description={
+          editing
+            ? [studentName, whenLabel].filter(Boolean).join(" · ")
+            : "Wybierz ucznia i termin. Płatność możesz odhaczyć później."
+        }
+        onSubmit={onSubmit}
+        footer={
+          <>
+            {editing ? (
+              <Button
+                type="button"
+                variant="destructive"
+                className={ACTION}
+                disabled={pending}
+                onClick={() => {
+                  if (editing.recurringRuleId) {
+                    setConfirmKind("delete");
+                  } else {
+                    performDelete(false);
+                  }
+                }}
+              >
+                <Trash2 data-icon="inline-start" />
+                Usuń
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" className={ACTION}>
+                  Anuluj
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={pending} className={ACTION}>
+                {editing ? "Zapisz" : "Dodaj zajęcia"}
+              </Button>
+            </div>
+          </>
+        }
+      >
+        <div className="grid gap-4 md:grid-cols-2 md:items-start">
+          <FormCard title="Termin">
             <div className="flex flex-col gap-2">
               <Label>Uczeń</Label>
               <Select
@@ -404,7 +445,7 @@ export function LessonDialog({
                   }
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={SELECT}>
                   <SelectValue placeholder="Wybierz ucznia" />
                 </SelectTrigger>
                 <SelectContent>
@@ -426,6 +467,7 @@ export function LessonDialog({
                   value={dateStr}
                   onChange={(e) => setDateStr(e.target.value)}
                   required
+                  className={FIELD}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -436,23 +478,26 @@ export function LessonDialog({
                   value={timeStr}
                   onChange={(e) => setTimeStr(e.target.value)}
                   required
-                  className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  className={cn(
+                    FIELD,
+                    "appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none",
+                  )}
                 />
               </div>
             </div>
 
             {vacationOnDate && (
-              <div className="bg-warning/10 text-warning flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
-                <TreePalm className="size-3.5" />
+              <div className="bg-owed-soft text-warning flex items-start gap-2 rounded-[10px] px-3 py-2 text-xs font-medium">
+                <TreePalm className="mt-px size-3.5 shrink-0" />
                 Masz wtedy urlop (
                 {formatVacationRange(vacationOnDate.startDate, vacationOnDate.endDate)}),
                 ale zajęcia dodadzą się normalnie
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="duration">Czas (min)</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="duration">Czas trwania (min)</Label>
+              <div className="flex gap-2">
                 <Input
                   id="duration"
                   type="number"
@@ -461,60 +506,75 @@ export function LessonDialog({
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
                   required
+                  className={cn(FIELD, "w-20 shrink-0")}
                 />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>Status</Label>
-                <Select
-                  value={status}
-                  onValueChange={(v) => setStatus(v as LessonStatus)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(LESSON_STATUS_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid flex-1 grid-cols-4 gap-1.5">
+                  {DURATION_PRESETS.map((minutes) => (
+                    <button
+                      key={minutes}
+                      type="button"
+                      onClick={() => setDurationMinutes(minutes)}
+                      aria-pressed={durationMinutes === minutes}
+                      className={cn(
+                        "focus-visible:ring-ring/50 h-10 rounded-[10px] border text-sm tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2",
+                        durationMinutes === minutes
+                          ? "border-primary bg-accent text-accent-foreground font-semibold"
+                          : "border-border-solid text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {minutes}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label>Forma zajęć</Label>
-              <Select value={mode} onValueChange={(v) => setMode(v as LessonMode)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(["in_person", "remote"] as const).map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {LESSON_MODE_LABELS[m]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Status</Label>
+              <Segmented
+                label="Status"
+                value={status}
+                onChange={setStatus}
+                options={(Object.keys(LESSON_STATUS_LABELS) as LessonStatus[]).map(
+                  (value) => ({ value, label: LESSON_STATUS_LABELS[value] }),
+                )}
+              />
             </div>
 
-            <div className="flex items-start gap-2">
+            <div className="flex flex-col gap-2">
+              <Label>Forma zajęć</Label>
+              <Segmented
+                label="Forma zajęć"
+                value={mode}
+                onChange={setMode}
+                options={(["in_person", "remote"] as const).map((value) => ({
+                  value,
+                  label: LESSON_MODE_LABELS[value],
+                }))}
+              />
+            </div>
+
+            <label
+              htmlFor="prorate"
+              className="border-border-solid hover:bg-secondary/50 flex cursor-pointer items-start gap-3 rounded-[10px] border p-3 transition-colors"
+            >
               <Checkbox
                 id="prorate"
                 checked={prorate}
                 onCheckedChange={(v) => setProrate(v === true)}
                 className="mt-0.5"
               />
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="prorate">Nalicz proporcjonalnie do czasu trwania</Label>
-                <p className="text-muted-foreground text-xs">
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">
+                  Nalicz proporcjonalnie do czasu trwania
+                </span>
+                <span className="text-muted-foreground text-xs">
                   {prorate
                     ? "Cena = stawka godzinowa × czas trwania / 60."
                     : "Domyślnie pełna stawka godzinowa niezależnie od czasu."}
-                </p>
-              </div>
-            </div>
+                </span>
+              </span>
+            </label>
 
             {editing?.recurringRuleId && (
               <div className="flex flex-col gap-2">
@@ -526,6 +586,7 @@ export function LessonDialog({
                   value={cycleEndDate}
                   disabled={!lastRecurringDate}
                   onChange={(e) => setCycleEndDate(e.target.value)}
+                  className={FIELD}
                 />
                 {cycleEndChanged && cycleEndPreview && (
                   <div className="flex flex-wrap gap-1.5">
@@ -555,10 +616,14 @@ export function LessonDialog({
 
             {!editing && (
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
+                <label
+                  htmlFor="recurring"
+                  className="border-border-solid hover:bg-secondary/50 flex cursor-pointer items-start gap-3 rounded-[10px] border p-3 transition-colors"
+                >
                   <Checkbox
                     id="recurring"
                     checked={recurring}
+                    className="mt-0.5"
                     onCheckedChange={(v) => {
                       const isChecked = v === true;
                       setRecurring(isChecked);
@@ -567,8 +632,15 @@ export function LessonDialog({
                       }
                     }}
                   />
-                  <Label htmlFor="recurring">Zajęcia cykliczne (co tydzień)</Label>
-                </div>
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium">Zajęcia cykliczne</span>
+                    <span className="text-muted-foreground text-xs">
+                      {weekdayLabel
+                        ? `Co tydzień: ${weekdayLabel}, ${timeStr}`
+                        : "Co tydzień w ten sam dzień i o tej samej godzinie."}
+                    </span>
+                  </span>
+                </label>
                 {recurring && (
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="recurringEnd">Do kiedy (opcjonalnie)</Label>
@@ -577,163 +649,139 @@ export function LessonDialog({
                       type="date"
                       value={recurringEndDate}
                       onChange={(e) => setRecurringEndDate(e.target.value)}
+                      className={FIELD}
                     />
                   </div>
                 )}
               </div>
             )}
-          </section>
+          </FormCard>
 
-          <section className="flex flex-col gap-4">
-            <h3 className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-              Rozliczenie
-            </h3>
-
-            <div className="bg-muted/40 flex flex-col gap-1.5 rounded-lg border p-3 text-xs">
-              <div className="text-muted-foreground flex justify-between">
-                <span>
-                  Cena zajęć
-                  {hourlyRate != null &&
-                    ` (${formatPLN(hourlyRate)}/h · ${durationMinutes} min)`}
-                </span>
-                <span className="tabular-nums">{formatPLN(currentPrice)}</span>
-              </div>
-              {carry !== 0 && (
-                <div className="text-muted-foreground flex justify-between">
+          <div className="flex flex-col gap-4">
+            <FormCard title="Rozliczenie">
+              <div className="flex flex-col gap-2 text-sm">
+                <div className="text-muted-foreground flex justify-between gap-3">
                   <span>
-                    {carry > 0
-                      ? "Nadpłata z poprzednich zajęć"
-                      : "Zaległość z poprzednich zajęć"}
+                    Cena zajęć
+                    {hourlyRate != null &&
+                      ` (${formatPLN(hourlyRate)}/h · ${durationMinutes} min)`}
                   </span>
-                  <span
-                    className={cn(
-                      "tabular-nums",
-                      carry > 0 ? "text-success" : "text-warning",
-                    )}
-                  >
-                    {carry > 0 ? "−" : "+"}
-                    {formatPLN(Math.abs(carry))}
+                  <span className="text-foreground tabular-nums">
+                    {formatPLN(currentPrice)}
                   </span>
                 </div>
+                {carry !== 0 && (
+                  <div className="text-muted-foreground flex justify-between gap-3">
+                    <span>
+                      {carry > 0
+                        ? "Nadpłata z poprzednich zajęć"
+                        : "Zaległość z poprzednich zajęć"}
+                    </span>
+                    <span
+                      className={cn(
+                        "tabular-nums",
+                        carry > 0 ? "text-success" : "text-warning",
+                      )}
+                    >
+                      {carry > 0 ? "−" : "+"}
+                      {formatPLN(Math.abs(carry))}
+                    </span>
+                  </div>
+                )}
+                <div className="border-border mt-1 flex items-baseline justify-between gap-3 border-t pt-3">
+                  <span className="font-medium">Do zapłaty</span>
+                  <span className="text-2xl font-bold tabular-nums tracking-tight">
+                    {formatPLN(amountDue)}
+                  </span>
+                </div>
+              </div>
+
+              {selectedStudent?.schoolId ? (
+                <div className="bg-secondary flex flex-col gap-1 rounded-[10px] p-3">
+                  <span className="text-sm font-medium">Rozlicza szkółka</span>
+                  <span className="text-muted-foreground text-xs">
+                    Status zmieni się sam, gdy zaznaczysz przelew w zakładce „Szkółki”.
+                  </span>
+                </div>
+              ) : (
+                <label
+                  htmlFor="paid"
+                  className={cn(
+                    "flex cursor-pointer items-center justify-between gap-3 rounded-[10px] border p-3 transition-colors",
+                    paid ? "border-success/40 bg-paid-soft" : "border-border-solid",
+                  )}
+                >
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium">Opłacone</span>
+                    <span className="text-muted-foreground text-xs">
+                      {paid ? "Płatność jest odnotowana." : "Uczeń jeszcze nie zapłacił."}
+                    </span>
+                  </span>
+                  <Switch id="paid" checked={paid} onCheckedChange={onPaidChange} />
+                </label>
               )}
-              <div className="flex justify-between border-t pt-1.5 text-sm font-semibold">
-                <span>Do zapłaty</span>
-                <span className="tabular-nums">{formatPLN(amountDue)}</span>
-              </div>
-            </div>
 
-            {selectedStudent?.schoolId ? (
-              <div className="bg-muted/40 flex flex-col gap-1 rounded-lg border p-3">
-                <span className="text-sm font-medium">Rozlicza szkółka</span>
-                <span className="text-muted-foreground text-xs">
-                  Status zmieni się sam, gdy zaznaczysz przelew w zakładce „Szkółki”.
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <Label htmlFor="paid">Opłacone</Label>
-                <Switch id="paid" checked={paid} onCheckedChange={onPaidChange} />
-              </div>
-            )}
-
-            {paid && !selectedStudent?.schoolId && (
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-2 gap-3">
+              {paid && !selectedStudent?.schoolId && (
+                <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-2">
                     <Label>Sposób płatności</Label>
-                    <Select
+                    <Segmented
+                      label="Sposób płatności"
                       value={paymentMethod}
-                      onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={setPaymentMethod}
+                      options={(
+                        Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]
+                      ).map((value) => ({ value, label: PAYMENT_METHOD_LABELS[value] }))}
+                    />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label>Wpłacona kwota</Label>
-                    <Select
+                    <Segmented
+                      label="Wpłacona kwota"
                       value={customAmount ? "custom" : "full"}
-                      onValueChange={(v) => setCustomAmount(v === "custom")}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="full">Pełna kwota</SelectItem>
-                        <SelectItem value="custom">Inna kwota</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => setCustomAmount(v === "custom")}
+                      options={[
+                        { value: "full", label: "Pełna kwota" },
+                        { value: "custom", label: "Inna kwota" },
+                      ]}
+                    />
                   </div>
+                  {customAmount && (
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder={`Kwota w zł, np. ${amountDue}`}
+                      value={paidAmount}
+                      onChange={(e) => setPaidAmount(e.target.value)}
+                      required
+                      className={FIELD}
+                    />
+                  )}
+                  {paymentDiff !== 0 && (
+                    <p className="text-muted-foreground text-xs">
+                      {paymentDiff > 0
+                        ? `Nadpłata ${formatPLN(paymentDiff)} zostanie odliczona od kolejnych zajęć ucznia.`
+                        : `Brakujące ${formatPLN(-paymentDiff)} zostanie doliczone do kolejnych zajęć ucznia.`}
+                    </p>
+                  )}
                 </div>
-                {customAmount && (
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    placeholder={`Kwota w zł, np. ${amountDue}`}
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(e.target.value)}
-                    required
-                  />
-                )}
-                {paymentDiff !== 0 && (
-                  <p className="text-muted-foreground text-xs">
-                    {paymentDiff > 0
-                      ? `Nadpłata ${formatPLN(paymentDiff)} zostanie odliczona od kolejnych zajęć ucznia.`
-                      : `Brakujące ${formatPLN(-paymentDiff)} zostanie doliczone do kolejnych zajęć ucznia.`}
-                  </p>
-                )}
-              </div>
-            )}
+              )}
+            </FormCard>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="notes">Notatki</Label>
+            <FormCard title="Notatki">
               <Textarea
                 id="notes"
+                aria-label="Notatki"
+                placeholder="Np. co przerobić następnym razem"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="min-h-20"
+                className="min-h-24 rounded-[10px]"
               />
-            </div>
-          </section>
-
-          <DialogFooter className="gap-2 sm:justify-between md:col-span-2">
-            {editing ? (
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={pending}
-                onClick={() => {
-                  if (editing.recurringRuleId) {
-                    setConfirmKind("delete");
-                  } else {
-                    performDelete(false);
-                  }
-                }}
-              >
-                Usuń
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Button
-              type="submit"
-              disabled={pending}
-              className="bg-brand-gradient text-white hover:opacity-90"
-            >
-              {editing ? "Zapisz" : "Dodaj"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+            </FormCard>
+          </div>
+        </div>
+      </FormDialogContent>
 
       <AlertDialog
         open={confirmKind !== null}

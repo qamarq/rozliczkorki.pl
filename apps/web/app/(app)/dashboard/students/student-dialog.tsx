@@ -1,17 +1,11 @@
 "use client";
 
 import { format } from "date-fns";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,12 +15,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { LESSON_MODE_LABELS, formatPLN, type LessonMode } from "@repo/shared";
 import { trackStudentAdded } from "@repo/analytics";
 import { flowDeps } from "@/lib/analytics";
 import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
+import {
+  ACTION,
+  FIELD,
+  FormCard,
+  FormDialogContent,
+  SELECT,
+  Segmented,
+} from "../form-ui";
 import { SchoolDialog } from "../schools/school-dialog";
 
 const PRIVATE = "private";
@@ -168,6 +170,12 @@ export function StudentDialog({
     });
   }
 
+  const showAddress = !selectedSchool && defaultMode !== "remote";
+  const today = format(new Date(), "yyyy-MM-dd");
+  const currentRateId = student?.rates
+    .filter((rate) => rate.effectiveFrom <= today)
+    .sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0]?.id;
+
   function onAddRate() {
     if (!studentId || !newRate) return;
     addRate.mutate({
@@ -179,54 +187,88 @@ export function StudentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{studentId ? "Edytuj ucznia" : "Nowy uczeń"}</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Imię i nazwisko</Label>
-            <Input
-              id="name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
-          {(() => {
-            const showAddress = !selectedSchool && defaultMode !== "remote";
-            return (
-              <div
-                className={showAddress ? "grid grid-cols-2 gap-3" : "flex flex-col gap-3"}
+      <FormDialogContent
+        className="sm:max-w-xl"
+        title={studentId ? "Edytuj ucznia" : "Nowy uczeń"}
+        description={
+          studentId
+            ? "Kontakt, miejsce zajęć i historia stawek."
+            : "Imię, stawka i miejsce zajęć. Resztę uzupełnisz później."
+        }
+        onSubmit={onSubmit}
+        footer={
+          <>
+            {studentId ? (
+              <Button
+                type="button"
+                variant="destructive"
+                className={ACTION}
+                onClick={() => deleteStudent.mutate({ id: studentId })}
               >
-                {showAddress && (
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="address">Adres</Label>
-                    <Input
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="np. ul. Kwiatowa 5, Warszawa"
-                    />
-                  </div>
-                )}
+                <Trash2 data-icon="inline-start" />
+                Usuń
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" className={ACTION}>
+                  Anuluj
+                </Button>
+              </DialogClose>
+              <Button type="submit" className={ACTION}>
+                {studentId ? "Zapisz" : "Dodaj ucznia"}
+              </Button>
+            </div>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <FormCard title="Uczeń">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="name">Imię i nazwisko</Label>
+              <Input
+                id="name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={FIELD}
+              />
+            </div>
+
+            <div
+              className={
+                showAddress ? "grid gap-3 sm:grid-cols-2" : "flex flex-col gap-3"
+              }
+            >
+              {showAddress && (
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="phone">Telefon (opcjonalnie)</Label>
+                  <Label htmlFor="address">Adres</Label>
                   <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="np. 601 234 567"
+                    id="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="np. ul. Kwiatowa 5, Warszawa"
+                    className={FIELD}
                   />
                 </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="phone">Telefon (opcjonalnie)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="np. 601 234 567"
+                  className={FIELD}
+                />
               </div>
-            );
-          })()}
+            </div>
+          </FormCard>
 
-          <div className="grid grid-cols-2 gap-3">
+          <FormCard title="Zajęcia">
             <div className="flex flex-col gap-2">
               <Label>Gdzie uczysz</Label>
               <Select
@@ -240,7 +282,7 @@ export function StudentDialog({
                   setSchoolId(value === PRIVATE ? null : value);
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={SELECT}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -265,132 +307,146 @@ export function StudentDialog({
                 </p>
               )}
             </div>
+
             <div className="flex flex-col gap-2">
               <Label>Domyślna forma</Label>
-              <Select
+              <Segmented
+                label="Domyślna forma"
                 value={defaultMode}
-                onValueChange={(v) => setDefaultMode(v as LessonMode)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(["in_person", "remote"] as const).map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {LESSON_MODE_LABELS[m]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={setDefaultMode}
+                options={(["in_person", "remote"] as const).map((value) => ({
+                  value,
+                  label: LESSON_MODE_LABELS[value],
+                }))}
+              />
             </div>
-          </div>
 
-          {studentId && (
-            <div className="bg-primary/10 text-primary flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
-              <CalendarRange className="size-3.5" />
-              Wydłużenie lub skrócenie cyklu zajęć: kliknij zajęcia w kalendarzu
-            </div>
-          )}
+            {studentId && (
+              <div className="bg-accent text-accent-foreground flex items-start gap-2 rounded-[10px] px-3 py-2 text-xs font-medium">
+                <CalendarRange className="mt-px size-3.5 shrink-0" />
+                Wydłużenie lub skrócenie cyklu zajęć: kliknij zajęcia w kalendarzu
+              </div>
+            )}
+          </FormCard>
 
           {!studentId && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="rate">Stawka za godzinę</Label>
-                <Input
-                  id="rate"
-                  type="number"
-                  min={1}
-                  step={1}
-                  required
-                  value={hourlyRate}
-                  onChange={(e) => setHourlyRate(Number(e.target.value))}
-                />
+            <FormCard title="Stawka">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="rate">Stawka za godzinę</Label>
+                  <div className="relative">
+                    <Input
+                      id="rate"
+                      type="number"
+                      min={1}
+                      step={1}
+                      required
+                      value={hourlyRate}
+                      onChange={(e) => setHourlyRate(Number(e.target.value))}
+                      className={cn(FIELD, "pr-12")}
+                    />
+                    <span className="text-muted-foreground pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm">
+                      zł/h
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="effectiveFrom">Obowiązuje od</Label>
+                  <Input
+                    id="effectiveFrom"
+                    type="date"
+                    required
+                    value={effectiveFrom}
+                    onChange={(e) => setEffectiveFrom(e.target.value)}
+                    className={FIELD}
+                  />
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="effectiveFrom">Obowiązuje od</Label>
-                <Input
-                  id="effectiveFrom"
-                  type="date"
-                  required
-                  value={effectiveFrom}
-                  onChange={(e) => setEffectiveFrom(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
-          {studentId && (
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <Label htmlFor="archived">Zarchiwizowany</Label>
-              <Switch id="archived" checked={archived} onCheckedChange={setArchived} />
-            </div>
+            </FormCard>
           )}
 
           {studentId && student && (
-            <>
-              <Separator />
-              <div className="flex flex-col gap-2">
-                <Label>Historia stawek</Label>
-                <div className="flex flex-col gap-1 text-sm">
-                  {student.rates.map((rate) => (
-                    <div
-                      key={rate.id}
-                      className="text-muted-foreground flex justify-between"
-                    >
-                      <span>od {format(new Date(rate.effectiveFrom), "dd.MM.yyyy")}</span>
-                      <span>{formatPLN(Number(rate.hourlyRate))}/h</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-end gap-2">
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Label htmlFor="newRate">Nowa stawka</Label>
+            <FormCard title="Stawki">
+              <ul className="divide-border -my-1 flex flex-col divide-y">
+                {student.rates.map((rate) => (
+                  <li
+                    key={rate.id}
+                    className="flex items-center justify-between gap-3 py-2.5 text-sm"
+                  >
+                    <span className="text-muted-foreground">
+                      od {format(new Date(rate.effectiveFrom), "dd.MM.yyyy")}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {rate.id === currentRateId && (
+                        <span className="bg-paid-soft text-success rounded-full px-2 py-0.5 text-xs font-semibold">
+                          obecna
+                        </span>
+                      )}
+                      <span className="font-semibold tabular-nums">
+                        {formatPLN(Number(rate.hourlyRate))}/h
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <div className="border-border flex flex-col gap-2 border-t pt-4">
+                <span className="text-sm font-medium">Nowa stawka</span>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="relative min-w-28 flex-1">
                     <Input
                       id="newRate"
                       type="number"
                       min={1}
+                      aria-label="Nowa stawka za godzinę"
+                      placeholder="np. 90"
                       value={newRate}
                       onChange={(e) => setNewRate(e.target.value)}
+                      className={cn(FIELD, "pr-12")}
                     />
+                    <span className="text-muted-foreground pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm">
+                      zł/h
+                    </span>
                   </div>
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Label htmlFor="newRateDate">Od</Label>
-                    <Input
-                      id="newRateDate"
-                      type="date"
-                      value={newRateDate}
-                      onChange={(e) => setNewRateDate(e.target.value)}
-                    />
-                  </div>
-                  <Button type="button" variant="outline" onClick={onAddRate}>
+                  <Input
+                    id="newRateDate"
+                    type="date"
+                    aria-label="Obowiązuje od"
+                    value={newRateDate}
+                    onChange={(e) => setNewRateDate(e.target.value)}
+                    className={cn(FIELD, "min-w-36 flex-1")}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={ACTION}
+                    onClick={onAddRate}
+                  >
                     Dodaj
                   </Button>
                 </div>
+                <p className="text-muted-foreground text-xs">
+                  Wcześniejsze zajęcia zostaną rozliczone po starej stawce.
+                </p>
               </div>
-            </>
+            </FormCard>
           )}
 
-          <DialogFooter className="gap-2 sm:justify-between">
-            {studentId ? (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => deleteStudent.mutate({ id: studentId })}
-              >
-                Usuń
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Button
-              type="submit"
-              className="bg-brand-gradient text-white hover:opacity-90"
+          {studentId && (
+            <label
+              htmlFor="archived"
+              className="bg-card ring-foreground/10 flex cursor-pointer items-center justify-between gap-3 rounded-2xl p-4 ring-1 sm:px-5"
             >
-              {studentId ? "Zapisz" : "Dodaj"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">Zarchiwizowany</span>
+                <span className="text-muted-foreground text-xs">
+                  Uczeń trafi do zakładki „Zarchiwizowani”.
+                </span>
+              </span>
+              <Switch id="archived" checked={archived} onCheckedChange={setArchived} />
+            </label>
+          )}
+        </div>
+      </FormDialogContent>
 
       <SchoolDialog
         open={schoolDialogOpen}

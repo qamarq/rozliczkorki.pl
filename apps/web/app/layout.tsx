@@ -4,14 +4,29 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TRPCProvider } from "@/lib/trpc/client";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import {
+  Caveat,
+  Instrument_Sans,
+  JetBrains_Mono,
+  Poltawski_Nowy,
+} from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { cn } from "cn";
 import { APP_STORE_ID, SITE_URL } from "@/lib/site";
 
-const inter = Inter({
-  variable: "--font-inter-sans",
+const sans = Instrument_Sans({
+  variable: "--font-instrument",
+  subsets: ["latin", "latin-ext"],
+});
+
+const display = Poltawski_Nowy({
+  variable: "--font-poltawski",
+  subsets: ["latin", "latin-ext"],
+});
+
+const hand = Caveat({
+  variable: "--font-caveat",
   subsets: ["latin", "latin-ext"],
 });
 
@@ -38,7 +53,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pl" suppressHydrationWarning>
-      <body className={cn(inter.className, mono.variable, "antialiased")}>
+      <body
+        className={cn(
+          sans.className,
+          sans.variable,
+          display.variable,
+          hand.variable,
+          mono.variable,
+          "antialiased",
+        )}
+      >
         <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
           <TooltipProvider>
             <TRPCProvider>

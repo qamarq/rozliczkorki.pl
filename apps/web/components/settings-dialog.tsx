@@ -8,13 +8,16 @@ import {
   KeyRound,
   Laptop,
   Link2,
+  Mail,
   Plus,
   Shield,
+  Smartphone,
   Trash2,
   TriangleAlert,
   User as UserIcon,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AppleIcon } from "@/components/apple-icon";
 import { GoogleIcon } from "@/components/google-icon";
@@ -29,38 +32,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
 import { clearHash, pushHash, replaceHash, useHash } from "@/hooks/use-hash";
 import { authClient, useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { pluralize } from "@repo/shared";
 
 type SessionRow = {
   id: string;
@@ -84,11 +70,36 @@ type AccountRow = {
 };
 
 const SECTIONS = [
-  { id: "profile", name: "Profil", icon: UserIcon },
-  { id: "security", name: "Logowanie", icon: Shield },
-  { id: "accounts", name: "Połączone konta", icon: Link2 },
-  { id: "sessions", name: "Aktywne sesje", icon: Laptop },
-  { id: "danger", name: "Usuwanie konta", icon: TriangleAlert },
+  {
+    id: "profile",
+    name: "Profil",
+    description: "Imię i adres e-mail przypisane do konta.",
+    icon: UserIcon,
+  },
+  {
+    id: "security",
+    name: "Logowanie",
+    description: "Hasło i klucze dostępu.",
+    icon: Shield,
+  },
+  {
+    id: "accounts",
+    name: "Połączone konta",
+    description: "Sposoby logowania podpięte do tego konta.",
+    icon: Link2,
+  },
+  {
+    id: "sessions",
+    name: "Aktywne sesje",
+    description: "Urządzenia, na których jesteś zalogowany(-a).",
+    icon: Laptop,
+  },
+  {
+    id: "danger",
+    name: "Usuwanie konta",
+    description: "Trwałe usunięcie konta razem ze wszystkimi danymi.",
+    icon: TriangleAlert,
+  },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -110,38 +121,116 @@ function relative(date: string) {
   return formatDistanceToNow(new Date(date), { addSuffix: true, locale: pl });
 }
 
+const INPUT = "bg-background h-10 rounded-[10px] px-3 md:text-sm";
+const ACTION = "h-10 shrink-0 rounded-[10px] px-4";
+
+function describeDevice(userAgent?: string | null) {
+  if (!userAgent) return { label: "Nieznane urządzenie", mobile: false };
+  if (/okhttp|Dalvik|CFNetwork|Expo/i.test(userAgent)) {
+    const platform = /okhttp|Dalvik|Android/i.test(userAgent) ? "Android" : "iPhone";
+    return { label: `Aplikacja RozliczKorki · ${platform}`, mobile: true };
+  }
+  const browser = /Edg\//.test(userAgent)
+    ? "Edge"
+    : /OPR\//.test(userAgent)
+      ? "Opera"
+      : /Firefox\//.test(userAgent)
+        ? "Firefox"
+        : /Chrome\//.test(userAgent)
+          ? "Chrome"
+          : /Safari\//.test(userAgent)
+            ? "Safari"
+            : null;
+  const os = /iPhone/.test(userAgent)
+    ? "iPhone"
+    : /iPad/.test(userAgent)
+      ? "iPad"
+      : /Android/.test(userAgent)
+        ? "Android"
+        : /Mac OS X/.test(userAgent)
+          ? "macOS"
+          : /Windows/.test(userAgent)
+            ? "Windows"
+            : /Linux/.test(userAgent)
+              ? "Linux"
+              : null;
+  const mobile = os === "iPhone" || os === "Android";
+  if (!browser && !os) return { label: userAgent, mobile };
+  return { label: [browser, os].filter(Boolean).join(" · "), mobile };
+}
+
 function SectionCard({
   title,
   description,
   action,
+  danger,
   children,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   action?: React.ReactNode;
+  danger?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-sm font-medium">{title}</h3>
-          {description && (
-            <p className="text-muted-foreground text-balance text-xs">{description}</p>
-          )}
+    <section
+      className={cn(
+        "bg-card ring-foreground/10 flex flex-col gap-4 rounded-2xl p-5 ring-1",
+        danger && "bg-destructive/[0.04] ring-destructive/30",
+      )}
+    >
+      {(title || action) && (
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            {title && <h3 className="text-[15px] font-semibold">{title}</h3>}
+            {description && (
+              <p className="text-muted-foreground text-pretty text-sm">{description}</p>
+            )}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      )}
       {children}
     </section>
   );
 }
 
-function Row({ children }: { children: React.ReactNode }) {
+function List({ children }: { children: React.ReactNode }) {
+  return <ul className="divide-border -my-1 flex flex-col divide-y">{children}</ul>;
+}
+
+function Row({
+  icon,
+  title,
+  meta,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  meta?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
   return (
-    <div className="border-border-solid flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+    <li className="flex items-center justify-between gap-3 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="bg-secondary text-muted-foreground grid size-9 shrink-0 place-items-center rounded-[10px] [&_svg]:size-4">
+          {icon}
+        </span>
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-sm font-medium">{title}</span>
+          {meta && <span className="text-muted-foreground truncate text-xs">{meta}</span>}
+        </div>
+      </div>
+      {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
+    </li>
+  );
+}
+
+function EmptyNote({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="border-border text-muted-foreground rounded-xl border border-dashed px-4 py-5 text-center text-sm">
       {children}
-    </div>
+    </p>
   );
 }
 
@@ -199,43 +288,47 @@ function ProfileSection() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <Avatar className="size-12 rounded-xl">
+    <div className="flex flex-col gap-4">
+      <section className="bg-card ring-foreground/10 flex items-center gap-4 rounded-2xl p-5 ring-1">
+        <Avatar className="size-14 rounded-2xl">
           <AvatarImage
             src={user?.image ?? undefined}
             alt={user?.name ?? ""}
-            className="rounded-xl"
+            className="rounded-2xl"
           />
-          <AvatarFallback className="rounded-xl">
+          <AvatarFallback className="rounded-2xl text-base">
             {user?.name?.slice(0, 2).toUpperCase() ?? "?"}
           </AvatarFallback>
         </Avatar>
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="truncate text-sm font-medium">{user?.name}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground truncate text-xs">{user?.email}</span>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="font-display truncate text-xl font-semibold leading-tight">
+            {user?.name}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground truncate text-sm">{user?.email}</span>
             {user?.emailVerified ? (
-              <Badge variant="secondary" className="gap-1">
-                <BadgeCheck className="size-3" />
+              <span className="bg-paid-soft text-success inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
+                <BadgeCheck className="size-3.5" />
                 Potwierdzony
-              </Badge>
+              </span>
             ) : (
-              <Badge variant="outline">Niepotwierdzony</Badge>
+              <span className="bg-owed-soft text-warning rounded-full px-2 py-0.5 text-xs font-semibold">
+                Niepotwierdzony
+              </span>
             )}
           </div>
         </div>
-      </div>
+      </section>
 
       {!user?.emailVerified && (
-        <Row>
-          <p className="text-muted-foreground text-balance text-xs">
+        <div className="bg-owed-soft flex flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4">
+          <p className="text-pretty text-sm">
             Potwierdź adres, żeby odzyskiwanie hasła i przypomnienia o lekcjach działały.
           </p>
-          <Button size="sm" variant="outline" onClick={onResendVerification}>
+          <Button variant="outline" className={ACTION} onClick={onResendVerification}>
             Wyślij link
           </Button>
-        </Row>
+        </div>
       )}
 
       <SectionCard title="Imię" description="Widoczne w panelu i w mailach.">
@@ -251,11 +344,11 @@ function ProfileSection() {
                   value={name}
                   onChange={(e) => setNameDraft(e.target.value)}
                   required
+                  className={INPUT}
                 />
                 <Button
                   type="submit"
-                  variant="outline"
-                  className="shrink-0"
+                  className={ACTION}
                   disabled={savingName || name === user?.name || !name}
                 >
                   {savingName ? "Zapisywanie…" : "Zapisz"}
@@ -282,11 +375,12 @@ function ProfileSection() {
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   required
+                  className={INPUT}
                 />
                 <Button
                   type="submit"
                   variant="outline"
-                  className="shrink-0"
+                  className={ACTION}
                   disabled={savingEmail}
                 >
                   {savingEmail ? "Wysyłanie…" : "Zmień"}
@@ -299,7 +393,6 @@ function ProfileSection() {
     </div>
   );
 }
-
 function SecuritySection() {
   const utils = trpc.useUtils();
   const { data: passwordInfo } = trpc.auth.hasPassword.useQuery();
@@ -371,7 +464,7 @@ function SecuritySection() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {passwordInfo && !passwordInfo.hasPassword ? (
         <SectionCard
           title="Ustaw hasło"
@@ -397,11 +490,11 @@ function SecuritySection() {
                     autoComplete="new-password"
                     value={newAccountPassword}
                     onChange={(e) => setNewAccountPassword(e.target.value)}
+                    className={INPUT}
                   />
                   <Button
                     type="submit"
-                    variant="outline"
-                    className="shrink-0"
+                    className={ACTION}
                     disabled={setPassword.isPending}
                   >
                     {setPassword.isPending ? "Zapisywanie…" : "Ustaw"}
@@ -418,7 +511,7 @@ function SecuritySection() {
         >
           <form onSubmit={onChangePassword}>
             <FieldGroup>
-              <Field className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="current-password">Obecne hasło</FieldLabel>
                   <Input
@@ -427,6 +520,7 @@ function SecuritySection() {
                     autoComplete="current-password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
+                    className={INPUT}
                   />
                 </Field>
                 <Field>
@@ -437,16 +531,15 @@ function SecuritySection() {
                     autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
+                    className={INPUT}
                   />
                 </Field>
-              </Field>
-              <Field>
-                <div>
-                  <Button type="submit" variant="outline" disabled={savingPassword}>
-                    {savingPassword ? "Zapisywanie…" : "Zmień hasło"}
-                  </Button>
-                </div>
-              </Field>
+              </div>
+              <div>
+                <Button type="submit" className={ACTION} disabled={savingPassword}>
+                  {savingPassword ? "Zapisywanie…" : "Zmień hasło"}
+                </Button>
+              </div>
             </FieldGroup>
           </form>
         </SectionCard>
@@ -456,43 +549,45 @@ function SecuritySection() {
         title="Klucze dostępu"
         description="Face ID, Touch ID albo klucz sprzętowy zamiast hasła."
         action={
-          <Button size="sm" onClick={onAddPasskey} disabled={addingPasskey}>
+          <Button
+            variant="outline"
+            className={ACTION}
+            onClick={onAddPasskey}
+            disabled={addingPasskey}
+          >
             <Plus data-icon="inline-start" />
             Dodaj klucz
           </Button>
         }
       >
-        <div className="flex flex-col gap-2">
-          {passkeys.length === 0 && (
-            <p className="text-muted-foreground text-sm">
-              Nie masz jeszcze zapisanego klucza dostępu.
-            </p>
-          )}
-          {passkeys.map((p) => (
-            <Row key={p.id}>
-              <div className="flex min-w-0 items-center gap-2 text-sm">
-                <KeyRound className="text-muted-foreground size-4 shrink-0" />
-                <span className="truncate font-medium">{p.name || "Klucz dostępu"}</span>
-                <span className="text-muted-foreground shrink-0 text-xs">
-                  · dodano {relative(p.createdAt)}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onDeletePasskey(p.id)}
-                title="Usuń klucz"
+        {passkeys.length === 0 ? (
+          <EmptyNote>Nie masz jeszcze zapisanego klucza dostępu.</EmptyNote>
+        ) : (
+          <List>
+            {passkeys.map((p) => (
+              <Row
+                key={p.id}
+                icon={<KeyRound />}
+                title={p.name || "Klucz dostępu"}
+                meta={`Dodano ${relative(p.createdAt)}`}
               >
-                <Trash2 className="text-destructive" />
-              </Button>
-            </Row>
-          ))}
-        </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => onDeletePasskey(p.id)}
+                  title="Usuń klucz"
+                  aria-label="Usuń klucz"
+                >
+                  <Trash2 className="text-destructive" />
+                </Button>
+              </Row>
+            ))}
+          </List>
+        )}
       </SectionCard>
     </div>
   );
 }
-
 const SOCIAL_PROVIDERS = {
   google: { label: "Google", Icon: GoogleIcon },
   apple: { label: "Apple", Icon: AppleIcon },
@@ -526,25 +621,18 @@ function AccountsSection() {
   }
 
   return (
-    <SectionCard
-      title="Połączone konta"
-      description="Sposoby logowania podpięte do tego konta."
-    >
-      <div className="flex flex-col gap-2">
+    <SectionCard>
+      <List>
         {(Object.keys(SOCIAL_PROVIDERS) as SocialProvider[]).map((provider) => {
           const { label, Icon } = SOCIAL_PROVIDERS[provider];
           const linked = accounts.find((a) => a.providerId === provider);
           return (
-            <Row key={provider}>
-              <div className="flex min-w-0 items-center gap-2 text-sm">
-                <Icon className="size-4 shrink-0" />
-                <span className="font-medium">{label}</span>
-                {linked && (
-                  <span className="text-muted-foreground shrink-0 text-xs">
-                    · podłączone {relative(linked.createdAt)}
-                  </span>
-                )}
-              </div>
+            <Row
+              key={provider}
+              icon={<Icon />}
+              title={label}
+              meta={linked ? `Podłączone ${relative(linked.createdAt)}` : "Niepodłączone"}
+            >
               {linked ? (
                 <Button
                   variant="ghost"
@@ -568,21 +656,30 @@ function AccountsSection() {
           );
         })}
 
-        <Row>
-          <div className="flex min-w-0 items-center gap-2 text-sm">
-            <KeyRound className="text-muted-foreground size-4 shrink-0" />
-            <span className="font-medium">E-mail i hasło</span>
-          </div>
-          <Badge variant={credential ? "secondary" : "outline"}>
+        <Row
+          icon={<Mail />}
+          title="E-mail i hasło"
+          meta={
+            credential ? "Możesz logować się hasłem" : "Ustaw hasło w zakładce Logowanie"
+          }
+        >
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-xs font-semibold",
+              credential
+                ? "bg-paid-soft text-success"
+                : "bg-secondary text-muted-foreground",
+            )}
+          >
             {credential ? "Aktywne" : "Brak hasła"}
-          </Badge>
+          </span>
         </Row>
-      </div>
+      </List>
     </SectionCard>
   );
 }
-
 function SessionsSection() {
+  const { data: current } = useSession();
   const [revokingAll, setRevokingAll] = useState(false);
 
   const { data: sessions = [], refetch: load } = useQuery({
@@ -612,12 +709,12 @@ function SessionsSection() {
 
   return (
     <SectionCard
-      title="Aktywne sesje"
-      description="Urządzenia, na których jesteś zalogowany(-a)."
+      title={pluralize(sessions.length, "urządzenie", "urządzenia", "urządzeń")}
+      description="Bieżące urządzenie jest oznaczone."
       action={
         <Button
           variant="outline"
-          size="sm"
+          className={ACTION}
           onClick={onRevokeOthers}
           disabled={revokingAll || sessions.length < 2}
         >
@@ -625,38 +722,43 @@ function SessionsSection() {
         </Button>
       }
     >
-      <div className="flex flex-col gap-2">
-        {sessions.length === 0 && (
-          <p className="text-muted-foreground text-sm">Brak aktywnych sesji.</p>
-        )}
-        {sessions.map((s) => (
-          <Row key={s.id}>
-            <div className="flex min-w-0 items-center gap-2 text-sm">
-              <Laptop className="text-muted-foreground size-4 shrink-0" />
-              <div className="flex min-w-0 flex-col">
-                <span className="line-clamp-1 break-all font-medium">
-                  {s.userAgent ?? "Nieznane urządzenie"}
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  {relative(s.createdAt)}
-                </span>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => onRevoke(s.token)}
-              title="Wyloguj to urządzenie"
-            >
-              <Trash2 className="text-destructive" />
-            </Button>
-          </Row>
-        ))}
-      </div>
+      {sessions.length === 0 ? (
+        <EmptyNote>Brak aktywnych sesji.</EmptyNote>
+      ) : (
+        <List>
+          {sessions.map((s) => {
+            const device = describeDevice(s.userAgent);
+            const isCurrent = current?.session.id === s.id;
+            return (
+              <Row
+                key={s.id}
+                icon={device.mobile ? <Smartphone /> : <Laptop />}
+                title={<span title={s.userAgent ?? undefined}>{device.label}</span>}
+                meta={`Zalogowano ${relative(s.createdAt)}`}
+              >
+                {isCurrent ? (
+                  <span className="bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
+                    To urządzenie
+                  </span>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => onRevoke(s.token)}
+                    title="Wyloguj to urządzenie"
+                    aria-label="Wyloguj to urządzenie"
+                  >
+                    <Trash2 className="text-destructive" />
+                  </Button>
+                )}
+              </Row>
+            );
+          })}
+        </List>
+      )}
     </SectionCard>
   );
 }
-
 function DangerSection() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -675,24 +777,22 @@ function DangerSection() {
 
   return (
     <SectionCard
+      danger
       title="Usunięcie konta"
       description="Znikną wszystkie lekcje, stawki i dane uczniów. Tej operacji nie da się cofnąć."
     >
-      <div className="border-destructive/40 bg-destructive/5 flex flex-col gap-3 rounded-lg border p-4">
-        <p className="text-muted-foreground text-balance text-xs">
-          Dla bezpieczeństwa wyślemy na Twój adres e-mail link potwierdzający. Konto
-          zostanie usunięte dopiero po kliknięciu w niego.
-        </p>
-        <Button
-          variant="destructive"
-          size="sm"
-          className="self-start"
-          onClick={() => setConfirmOpen(true)}
-        >
-          <Trash2 data-icon="inline-start" />
-          Usuń konto
-        </Button>
-      </div>
+      <p className="text-muted-foreground text-pretty text-sm">
+        Dla bezpieczeństwa wyślemy na Twój adres e-mail link potwierdzający. Konto
+        zostanie usunięte dopiero po kliknięciu w niego.
+      </p>
+      <Button
+        variant="destructive"
+        className={cn(ACTION, "self-start")}
+        onClick={() => setConfirmOpen(true)}
+      >
+        <Trash2 data-icon="inline-start" />
+        Usuń konto
+      </Button>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
@@ -718,11 +818,11 @@ function DangerSection() {
     </SectionCard>
   );
 }
-
 export function SettingsDialog() {
   const hashSection = sectionFromHash(useHash());
   const section = hashSection ?? DEFAULT_SECTION;
   const active = SECTIONS.find((s) => s.id === section)!;
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   function selectSection(id: SectionId) {
     replaceHash(`${SETTINGS_HASH}/${id}`);
@@ -735,64 +835,87 @@ export function SettingsDialog() {
         if (!next) clearHash();
       }}
     >
-      <DialogContent className="overflow-hidden p-0 md:max-h-[600px] md:max-w-[900px] lg:max-w-[980px]">
+      <DialogContent
+        showCloseButton={false}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          headingRef.current?.focus();
+        }}
+        className="bg-background gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[940px]"
+      >
         <DialogTitle className="sr-only">Ustawienia konta</DialogTitle>
         <DialogDescription className="sr-only">
           Profil, logowanie, połączone konta i aktywne sesje.
         </DialogDescription>
 
-        <SidebarProvider className="min-h-0 items-start">
-          <Sidebar collapsible="none" className="hidden md:flex">
-            <SidebarContent>
-              <SidebarGroup>
-                <SidebarGroupContent>
-                  <SidebarGroupLabel>Ustawienia</SidebarGroupLabel>
-                  <SidebarMenu>
-                    {SECTIONS.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <SidebarMenuItem key={item.id}>
-                          <SidebarMenuButton
-                            isActive={item.id === section}
-                            onClick={() => selectSection(item.id)}
-                            className="h-9 gap-3 rounded-lg px-3"
-                          >
-                            <Icon />
-                            <span>{item.name}</span>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </SidebarContent>
-          </Sidebar>
+        <div className="grid h-[min(640px,85svh)] md:grid-cols-[230px_minmax(0,1fr)]">
+          <aside className="bg-sidebar border-border hidden flex-col gap-1 border-r p-3 md:flex">
+            <p className="text-muted-foreground px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-[0.08em]">
+              Ustawienia
+            </p>
+            {SECTIONS.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.id === section;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => selectSection(item.id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "flex h-10 items-center gap-3 rounded-[10px] px-3 text-left text-sm transition-colors [&_svg]:size-4 [&_svg]:shrink-0",
+                    item.id === "danger" && "mt-auto",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+                    item.id === "danger" && !isActive && "hover:text-destructive",
+                  )}
+                >
+                  <Icon />
+                  {item.name}
+                </button>
+              );
+            })}
+          </aside>
 
-          <main className="flex h-[75svh] min-w-0 flex-1 flex-col overflow-hidden md:h-[600px]">
-            <header className="flex h-14 shrink-0 items-center gap-2 px-4 md:h-16">
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">Ustawienia</BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>{active.name}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+          <main className="flex min-h-0 min-w-0 flex-col">
+            <header className="flex items-start justify-between gap-4 px-5 pb-4 pt-5 md:px-8 md:pt-7">
+              <div className="flex min-w-0 flex-col gap-1">
+                <h2
+                  ref={headingRef}
+                  tabIndex={-1}
+                  className="font-display text-2xl font-semibold leading-tight outline-none md:text-[1.75rem]"
+                >
+                  {active.name}
+                </h2>
+                <p className="text-muted-foreground text-pretty text-sm">
+                  {active.description}
+                </p>
+              </div>
+              <DialogClose asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="-mr-2 -mt-1 shrink-0"
+                  aria-label="Zamknij ustawienia"
+                >
+                  <X />
+                </Button>
+              </DialogClose>
             </header>
 
-            <nav className="flex shrink-0 gap-1 overflow-x-auto px-4 pb-2 md:hidden">
+            <nav className="border-border flex shrink-0 gap-1.5 overflow-x-auto border-b px-5 pb-3 md:hidden">
               {SECTIONS.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => selectSection(item.id)}
+                  aria-current={item.id === section ? "page" : undefined}
                   className={cn(
-                    "shrink-0 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                    "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                     item.id === section
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-muted-foreground hover:bg-accent",
+                      : "bg-secondary text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {item.name}
@@ -800,7 +923,10 @@ export function SettingsDialog() {
               ))}
             </nav>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 pt-1">
+            <div
+              key={section}
+              className="animate-in fade-in-0 slide-in-from-bottom-1 min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-4 duration-300 motion-reduce:animate-none md:px-8 md:pb-8"
+            >
               {section === "profile" && <ProfileSection />}
               {section === "security" && <SecuritySection />}
               {section === "accounts" && <AccountsSection />}
@@ -808,7 +934,7 @@ export function SettingsDialog() {
               {section === "danger" && <DangerSection />}
             </div>
           </main>
-        </SidebarProvider>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,7 +1,5 @@
-import { Github } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import { AppStoreIcon, GooglePlayIcon } from "@/components/store-icons";
 import { APP_STORE_URL, GITHUB_URL, GOOGLE_PLAY_URL } from "@/lib/site";
 
 const COLUMNS = [
@@ -9,10 +7,9 @@ const COLUMNS = [
     title: "Produkt",
     links: [
       { label: "Funkcje", href: "/#funkcje" },
-      { label: "Jak to działa", href: "/#jak-to-dziala" },
-      { label: "Aplikacja Android", href: GOOGLE_PLAY_URL, external: true },
-      { label: "Aplikacja iOS", href: APP_STORE_URL, external: true },
-      { label: "FAQ", href: "/#faq" },
+      { label: "Aplikacja na iPhone'a", href: APP_STORE_URL, external: true },
+      { label: "Aplikacja na Androida", href: GOOGLE_PLAY_URL, external: true },
+      { label: "Pytania", href: "/#faq" },
     ],
   },
   {
@@ -34,125 +31,78 @@ const COLUMNS = [
   },
 ];
 
+const LINK_CLASS = "hover:text-primary transition-colors";
+
 export function MarketingFooter() {
   return (
-    <footer className="border-border-solid bg-card/40 relative overflow-hidden rounded-3xl border">
-      <div className="border-border-solid bg-card relative z-10 m-3 rounded-2xl border p-6 sm:m-5 sm:p-10">
-        <div className="flex flex-col justify-between gap-10 lg:flex-row">
-          <div className="flex max-w-sm flex-col gap-4">
-            <Link href="/" className="flex items-center gap-2">
-              <Logo className="size-7" />
-              <span className="text-lg font-bold tracking-tight">RozliczKorki</span>
-            </Link>
-            <p className="text-muted-foreground text-pretty text-sm leading-relaxed">
-              Kalendarz, płatności i zarobki korepetytora w jednym miejscu. Zamiast
-              zeszytu, arkusza i liczenia z pamięci.
-            </p>
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="border-border-solid text-muted-foreground hover:text-foreground flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors"
-            >
-              <Github className="size-3.5" />
-              Open source na GitHubie
-            </a>
-            <div className="flex items-center gap-3">
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="GitHub"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Github className="size-5" />
-              </a>
-              <a
-                href={GOOGLE_PLAY_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Google Play"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <GooglePlayIcon className="size-5" />
-              </a>
-              <a
-                href={APP_STORE_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="App Store"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <AppStoreIcon className="size-5 rounded-[22%]" />
-              </a>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:gap-14">
-            {COLUMNS.map((col) => (
-              <div key={col.title} className="flex flex-col gap-3">
-                <span className="text-sm font-semibold">{col.title}</span>
-                <ul className="flex flex-col gap-2">
-                  {col.links.map((link) => (
-                    <li key={link.label}>
-                      {link.external ? (
-                        <a
-                          href={link.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                        >
-                          {link.label}
-                        </a>
-                      ) : (
-                        <Link
-                          href={link.href}
-                          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                        >
-                          {link.label}
-                        </Link>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+    <footer className="border-border-solid border-t pb-10 pt-12 text-[15px]">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div className="col-span-2 flex max-w-xs flex-col gap-4 lg:col-span-1">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 text-lg font-bold tracking-tight"
+          >
+            <Logo className="size-8" />
+            RozliczKorki
+          </Link>
+          <p className="text-muted-foreground text-pretty">
+            Kalendarz, płatności i zarobki korepetytora w jednym miejscu. Zamiast zeszytu,
+            arkusza i liczenia z pamięci.
+          </p>
         </div>
 
-        <div className="border-border-solid text-muted-foreground mt-10 flex flex-wrap items-center justify-between gap-3 border-t pt-6 text-xs">
-          <span>
-            © {new Date().getFullYear()} RozliczKorki. Kod na licencji{" "}
-            <a
-              href={`${GITHUB_URL}/blob/main/LICENSE`}
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-foreground transition-colors hover:underline"
-            >
-              AGPL-3.0
-            </a>
-            .
-          </span>
-          <span className="font-mono-ui">
-            Made with ❤️ by{" "}
-            <Link
-              href="https://kamilmarczak.pl"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-foreground transition-colors hover:underline"
-            >
-              Kamil Marczak
-            </Link>
-          </span>
-        </div>
+        {COLUMNS.map((column) => (
+          <div key={column.title} className="flex flex-col gap-3">
+            <h2 className="text-muted-foreground font-body text-xs font-semibold uppercase tracking-[0.08em]">
+              {column.title}
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {column.links.map((link) => (
+                <li key={link.label}>
+                  {link.external ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={LINK_CLASS}
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link href={link.href} className={LINK_CLASS}>
+                      {link.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
 
-      <div
-        aria-hidden
-        className="pointer-events-none relative -mt-10 h-28 select-none overflow-hidden sm:-mt-14 sm:h-44"
-      >
-        <span className="from-foreground/12 mask-fade-b absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap bg-gradient-to-b to-transparent bg-clip-text text-[19vw] font-bold leading-none tracking-tighter text-transparent lg:text-[9.25rem]">
-          RozliczKorki
+      <div className="border-border text-muted-foreground mt-12 flex flex-wrap items-center justify-between gap-3 border-t pt-6 text-sm">
+        <span>
+          © {new Date().getFullYear()} RozliczKorki. Kod na licencji{" "}
+          <a
+            href={`${GITHUB_URL}/blob/main/LICENSE`}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-foreground underline-offset-4 transition-colors hover:underline"
+          >
+            AGPL-3.0
+          </a>
+          .
+        </span>
+        <span>
+          Made with ❤️ by{" "}
+          <a
+            href="https://kamilmarczak.pl"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-foreground underline-offset-4 transition-colors hover:underline"
+          >
+            Kamil Marczak
+          </a>
         </span>
       </div>
     </footer>

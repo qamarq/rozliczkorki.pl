@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
+import type { CSSProperties } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { MarketingFooter } from "@/components/marketing-footer";
 import { MarketingHeader } from "@/components/marketing-header";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Cta } from "@/components/marketing/cta";
+import { PageTransition } from "@/components/marketing/page-transition";
+import { Reveal } from "@/components/marketing/reveal";
 import { formatDate, getAllPosts } from "@/lib/blog";
+import { getServerSession } from "@/lib/auth-server";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata = {
@@ -15,63 +18,84 @@ export const metadata = {
 };
 
 export default async function BlogIndexPage() {
-  const posts = await getAllPosts();
+  const [session, posts] = await Promise.all([getServerSession(), getAllPosts()]);
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-16 px-6 py-10">
-      <MarketingHeader />
-
-      <div className="flex flex-col gap-3">
-        <h1 className="text-4xl font-bold tracking-tight">Blog</h1>
-        <p className="text-muted-foreground max-w-2xl text-pretty text-lg">
-          Podatki, rozliczenia i organizacja pracy korepetytora. Konkretnie, z podstawą
-          prawną i linkami do źródeł.
-        </p>
+    <PageTransition>
+      <div className="site-container">
+        <MarketingHeader />
       </div>
 
-      <div className="flex flex-col gap-4">
-        {posts.length === 0 && (
-          <p className="text-muted-foreground">Pierwsze wpisy pojawią się wkrótce.</p>
+      <div className="site-container pb-20 pt-10 sm:pt-16">
+        <div className="flex max-w-2xl flex-col gap-4">
+          <h1 className="font-display mk-rise text-5xl font-semibold leading-none tracking-[-0.018em] sm:text-6xl">
+            Blog
+          </h1>
+          <p
+            className="text-muted-foreground mk-rise text-pretty text-lg sm:text-xl"
+            style={{ "--i": 1 } as CSSProperties}
+          >
+            Podatki, rozliczenia i organizacja pracy korepetytora. Konkretnie, z podstawą
+            prawną i linkami do źródeł.
+          </p>
+        </div>
+
+        {posts.length === 0 ? (
+          <p className="text-muted-foreground mt-14">
+            Pierwsze wpisy pojawią się wkrótce.
+          </p>
+        ) : (
+          <Reveal className="border-border-solid divide-border-solid mt-14 divide-y border-y">
+            {posts.map((post, i) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                className="mk-reveal group grid gap-3 py-8 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:items-baseline sm:gap-7"
+                style={{ "--i": i } as CSSProperties}
+              >
+                <time dateTime={post.date} className="text-muted-foreground text-sm">
+                  {formatDate(post.date)}
+                </time>
+                <div className="flex flex-col gap-3">
+                  <h2 className="group-hover:text-accent-foreground text-balance text-[1.7rem] font-semibold leading-tight transition-colors">
+                    {post.title}
+                  </h2>
+                  <p className="text-muted-foreground max-w-2xl text-pretty">
+                    {post.description}
+                  </p>
+                  {post.tags.length > 0 && (
+                    <ul className="flex flex-wrap gap-2">
+                      {post.tags.map((tag) => (
+                        <li
+                          key={tag}
+                          className="bg-secondary text-secondary-foreground rounded-full px-2.5 py-0.5 text-xs font-medium"
+                        >
+                          {tag}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <span className="text-muted-foreground group-hover:text-foreground flex items-center gap-1 whitespace-nowrap text-sm transition-colors">
+                  {post.readingTime} min czytania
+                  <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </Reveal>
         )}
 
-        {posts.map((post) => (
-          <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-            <Card className="border-border-solid hover:border-primary/50 transition-colors">
-              <CardHeader className="gap-2">
-                <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-xs">
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays className="size-3.5" />
-                    <time dateTime={post.date}>{formatDate(post.date)}</time>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock3 className="size-3.5" />
-                    {post.readingTime} min czytania
-                  </span>
-                </div>
-                <CardTitle className="group-hover:text-primary text-xl transition-colors">
-                  {post.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <p className="text-muted-foreground text-pretty">{post.description}</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {post.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
-                  <span className="text-primary ml-auto flex items-center gap-1 text-sm font-medium">
-                    Czytaj
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        <div className="pt-24">
+          <Cta
+            href={session ? "/dashboard" : "/register"}
+            label={session ? "Przejdź do panelu" : "Załóż konto za darmo"}
+          />
+        </div>
       </div>
 
-      <MarketingFooter />
-    </div>
+      <div className="site-container">
+        <MarketingFooter />
+      </div>
+    </PageTransition>
   );
 }

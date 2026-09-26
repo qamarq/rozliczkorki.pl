@@ -39,6 +39,7 @@ import {
 } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "../../page-header";
 import { SchoolDialog } from "../school-dialog";
 
 const STATUS_CLASS: Record<PayoutStatus, string> = {
@@ -96,25 +97,23 @@ export default function SchoolDetailPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" asChild>
+      <PageHeader
+        leading={
+          <Button variant="outline" size="icon" asChild className="shrink-0">
             <Link href="/dashboard/schools" aria-label="Wróć do listy szkółek">
               <ArrowLeft className="size-4" />
             </Link>
           </Button>
-          <div>
-            <h1 className="text-lg font-semibold">{school.name}</h1>
-            <p className="text-muted-foreground text-sm">
-              {formatPayoutSchedule(school.payoutFrequency, school.payoutDay)}
-            </p>
-          </div>
-        </div>
-        <Button variant="outline" onClick={() => setEditOpen(true)}>
-          <Pencil className="size-4" />
-          Edytuj
-        </Button>
-      </div>
+        }
+        title={school.name}
+        description={formatPayoutSchedule(school.payoutFrequency, school.payoutDay)}
+        actions={
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            <Pencil className="size-4" />
+            Edytuj
+          </Button>
+        }
+      />
 
       <div className="grid items-start gap-4 lg:grid-cols-12">
         <div className="order-1 flex flex-col gap-4 lg:col-span-4">

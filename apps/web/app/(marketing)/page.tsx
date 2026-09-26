@@ -1,20 +1,22 @@
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { MarketingFooter } from "@/components/marketing-footer";
 import { MarketingHeader } from "@/components/marketing-header";
-import { Bento } from "@/components/marketing/bento";
 import { Cta } from "@/components/marketing/cta";
 import { Faq } from "@/components/marketing/faq";
-import { HeroVisual } from "@/components/marketing/hero-visual";
+import { Ledger } from "@/components/marketing/ledger";
+import { NotebookCompare } from "@/components/marketing/notebook-compare";
+import { OpenSource } from "@/components/marketing/open-source";
+import { PageTransition } from "@/components/marketing/page-transition";
 import { PanelLink } from "@/components/marketing/panel-link";
-import { PhoneVisual } from "@/components/marketing/phone-visual";
-import { Steps } from "@/components/marketing/steps";
+import { Reveal } from "@/components/marketing/reveal";
+import { SectionHeading } from "@/components/marketing/section-heading";
+import { Timeline } from "@/components/marketing/timeline";
 import { StoreButtons } from "@/components/store-buttons";
-import { Button } from "@/components/ui/button";
 import { formatDate, getAllPosts } from "@/lib/blog";
 import { getServerSession } from "@/lib/auth-server";
-import { SITE_URL } from "@/lib/site";
+import { APP_STORE_URL, SITE_URL } from "@/lib/site";
 
 export const metadata = {
   title: "RozliczKorki: kalendarz i rozliczenia korepetycji",
@@ -22,6 +24,8 @@ export const metadata = {
     "Prowadź korki bez zeszytu: kalendarz zajęć, odznaczanie płatności i podgląd zarobków na żywo. Za darmo, po polsku, na telefon i w przeglądarce.",
   alternates: { canonical: SITE_URL },
 };
+
+const FACTS = ["0 zł, bez karty", "iPhone, Android i przeglądarka", "Otwarty kod"];
 
 function d(i: number) {
   return { "--i": i } as CSSProperties;
@@ -31,221 +35,167 @@ export default async function MarketingPage() {
   const [session, posts] = await Promise.all([getServerSession(), getAllPosts()]);
   const latestPosts = posts.slice(0, 2);
   const ctaHref = session ? "/dashboard" : "/register";
-  const ctaLabel = session ? "Przejdź do panelu" : "Zacznij za darmo";
+  const ctaLabel = session ? "Przejdź do panelu" : "Załóż konto za darmo";
 
   return (
-    <div className="relative isolate overflow-x-clip">
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="bg-dotgrid mask-fade-radial absolute inset-x-0 top-0 h-[40rem] opacity-60" />
+    <PageTransition>
+      <div className="site-container">
+        <MarketingHeader />
       </div>
 
-      <div className="relative mx-auto flex max-w-5xl flex-col gap-28 px-6 py-8 sm:gap-36">
-        <MarketingHeader />
-
-        <section className="grid items-center gap-14 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
-          <div className="flex flex-col gap-6">
-            <p
-              className="mk-rise text-muted-foreground flex items-center gap-2 text-sm"
-              style={d(0)}
+      <section className="site-container grid items-center gap-12 pb-4 pt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16 lg:pt-14">
+        <div className="flex flex-col items-start">
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="mk-rise border-border bg-card text-muted-foreground hover:text-foreground inline-flex max-w-full items-center gap-2.5 rounded-full border py-1 pl-1 pr-3 text-sm transition-colors"
+            style={d(0)}
+          >
+            <span className="bg-accent text-accent-foreground shrink-0 rounded-full px-2.5 py-0.5 text-[12.5px] font-semibold">
+              Nowość
+            </span>
+            <span className="truncate">RozliczKorki jest już na iPhonie</span>
+          </a>
+          <h1
+            className="font-display mk-rise mt-6 text-balance text-[2.6rem] font-semibold leading-none tracking-[-0.018em] sm:text-6xl xl:text-[4.4rem]"
+            style={d(1)}
+          >
+            Zeszyt z&nbsp;korkami możesz już zamknąć.
+          </h1>
+          <p
+            className="text-muted-foreground mk-rise mt-6 max-w-xl text-pretty text-lg sm:text-[1.2rem]"
+            style={d(2)}
+          >
+            RozliczKorki pilnuje planu lekcji i płatności. Po zajęciach klikasz „odbyło
+            się” i „zapłacone”, a na koniec miesiąca wiesz, ile wpadło i kto jeszcze nie
+            zapłacił.
+          </p>
+          <div className="mk-rise mt-8" style={d(3)}>
+            <PanelLink
+              href={ctaHref}
+              className="bg-primary text-primary-foreground group inline-flex h-12 items-center gap-2 rounded-xl px-5 text-base font-semibold shadow-[0_10px_24px_-12px_rgb(79_70_229/0.7)] transition-[filter,box-shadow] hover:brightness-110"
             >
-              <span className="bg-success relative flex size-2 rounded-full">
-                <span className="bg-success mk-blink absolute inset-0 rounded-full blur-[2px]" />
-              </span>
-              Android jest w Google Play
-              <span className="text-border-solid">/</span>
-              <span className="font-mono-ui text-xs">iOS w App Store</span>
-            </p>
-            <h1
-              className="mk-rise text-balance text-[2.75rem] font-bold leading-[1.02] tracking-[-0.03em] sm:text-6xl"
-              style={d(1)}
-            >
-              Korki pod pełną kontrolą, bez zeszytu.
-            </h1>
-            <p
-              className="mk-rise text-muted-foreground max-w-md text-pretty text-lg"
-              style={d(2)}
-            >
-              Kalendarz zajęć, odklikiwanie lekcji i finanse, które liczą się same. Wiesz,
-              kto zapłacił, kto zalega i ile zarobisz w tym miesiącu.
-            </p>
-            <div className="mk-rise flex flex-wrap items-center gap-3" style={d(3)}>
-              <Button size="lg" className="h-11 px-5 text-base" asChild>
-                <PanelLink href={ctaHref}>
-                  {ctaLabel}
-                  <ArrowRight className="size-4" />
-                </PanelLink>
-              </Button>
-              <Button size="lg" variant="ghost" className="h-11 px-4 text-base" asChild>
-                <Link href="#jak-to-dziala">Jak to działa</Link>
-              </Button>
-            </div>
-            <dl
-              className="mk-rise font-mono-ui text-muted-foreground flex flex-wrap gap-x-6 gap-y-1 text-xs"
-              style={d(4)}
-            >
-              <div className="flex gap-1.5">
-                <dt>cena</dt>
-                <dd className="text-foreground">0 zł</dd>
-              </div>
-              <div className="flex gap-1.5">
-                <dt>karta</dt>
-                <dd className="text-foreground">nie</dd>
-              </div>
-              <div className="flex gap-1.5">
-                <dt>język</dt>
-                <dd className="text-foreground">polski</dd>
-              </div>
-              <div className="flex gap-1.5">
-                <dt>konfiguracja</dt>
-                <dd className="text-foreground">~5 min</dd>
-              </div>
-            </dl>
+              {ctaLabel}
+              <ArrowRight className="size-[18px] transition-transform group-hover:translate-x-0.5" />
+            </PanelLink>
           </div>
-
-          <HeroVisual />
-        </section>
-
-        <section
-          id="aplikacja"
-          className="border-border-solid relative grid scroll-mt-24 gap-12 overflow-hidden rounded-3xl border p-8 sm:p-12 lg:grid-cols-[1.05fr_auto] lg:items-center"
-        >
           <div
-            aria-hidden
-            className="bg-linegrid mask-fade-b absolute inset-0 -z-10 opacity-50"
-          />
-          <div className="flex flex-col gap-6">
-            <SectionHeading
-              index="I"
-              eyebrow="Aplikacja mobilna"
-              title="Korki masz w kieszeni, nie w laptopie."
-              description="Android w Google Play, iPhone w App Store. Te same zajęcia, te same statystyki, plus push przed lekcją i odklikanie płatności zaraz po niej."
-            />
-            <ul className="text-muted-foreground grid gap-2 text-sm sm:grid-cols-2">
-              <AppPoint>Powiadomienia push przed zajęciami</AppPoint>
-              <AppPoint>Odklikanie lekcji w dwa dotknięcia</AppPoint>
-              <AppPoint>Dane te same co w przeglądarce</AppPoint>
-              <AppPoint>Widżet z dzisiejszym planem</AppPoint>
-            </ul>
+            className="mk-rise mt-3 flex flex-wrap items-center gap-x-3 gap-y-2"
+            style={d(4)}
+          >
+            <span className="text-muted-foreground text-sm">albo pobierz aplikację:</span>
             <StoreButtons />
           </div>
+          <ul
+            className="text-muted-foreground mk-rise mt-6 flex flex-wrap gap-x-5 gap-y-1.5 text-sm"
+            style={d(5)}
+          >
+            {FACTS.map((fact) => (
+              <li key={fact} className="flex items-center gap-1.5">
+                <Check className="text-success size-4" strokeWidth={2.4} />
+                {fact}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          <PhoneVisual className="lg:pl-6" />
+        <div className="mk-rise" style={d(3)}>
+          <NotebookCompare />
+        </div>
+      </section>
+
+      <section id="funkcje" className="site-container scroll-mt-6 pt-24 sm:pt-28">
+        <SectionHeading
+          title="Przed lekcją, po lekcji i na koniec miesiąca."
+          description="Uczniów i zajęcia cykliczne wpisujesz raz, co zajmuje około pięciu minut. Potem aplikacja odzywa się tylko wtedy, kiedy jest potrzebna."
+        />
+        <Timeline />
+      </section>
+
+      <section className="site-container pb-24 pt-28 sm:pb-28 sm:pt-32">
+        <SectionHeading
+          title="Rzeczy, których zeszyt nie policzy."
+          description="Przydają się, kiedy uczniów jest więcej niż kilku, a część zajęć idzie przez szkołę językową."
+        />
+        <Ledger />
+      </section>
+
+      <OpenSource />
+
+      {latestPosts.length > 0 && (
+        <section className="site-container pt-24 sm:pt-28">
+          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+            <SectionHeading
+              title="Korki bez firmy, podatki i formalności."
+              description="Rozpisujemy to, o co pytacie najczęściej, z podstawą prawną i linkami do źródeł."
+            />
+            <Link
+              href="/blog"
+              className="text-accent-foreground group inline-flex items-center gap-1.5 font-semibold"
+            >
+              Wszystkie wpisy
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+          <Reveal className="border-border-solid divide-border-solid mt-11 divide-y border-y">
+            {latestPosts.map((post, i) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                className="mk-reveal group grid gap-2 py-7 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:items-baseline sm:gap-7"
+                style={d(i)}
+              >
+                <time dateTime={post.date} className="text-muted-foreground text-sm">
+                  {formatDate(post.date)}
+                </time>
+                <div>
+                  <h3 className="font-display group-hover:text-accent-foreground text-balance text-2xl font-semibold leading-tight transition-colors">
+                    {post.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 max-w-2xl text-pretty">
+                    {post.description}
+                  </p>
+                </div>
+                <span className="text-muted-foreground group-hover:text-foreground flex items-center gap-1 whitespace-nowrap text-sm transition-colors">
+                  {post.readingTime} min czytania
+                  <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </Reveal>
         </section>
+      )}
 
-        <section id="jak-to-dziala" className="flex scroll-mt-24 flex-col gap-12">
-          <SectionHeading
-            index="II"
-            eyebrow="Jak to działa"
-            title="Trzy kroki i masz spokój do końca semestru."
-            description="Konfiguracja zajmuje około pięciu minut. Potem zostaje Ci tylko odklikiwanie lekcji po zajęciach."
-          />
-          <Steps />
-        </section>
+      <section
+        id="faq"
+        className="site-container grid scroll-mt-6 gap-8 pt-24 sm:pt-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12"
+      >
+        <div className="flex flex-col gap-4">
+          <h2 className="font-display text-[2rem] font-semibold leading-[1.06] tracking-[-0.012em] sm:text-5xl">
+            Częste pytania.
+          </h2>
+          <p className="text-muted-foreground">
+            Nie ma tu odpowiedzi? Zajrzyj na{" "}
+            <Link
+              href="/blog"
+              className="text-accent-foreground underline-offset-4 hover:underline"
+            >
+              bloga
+            </Link>
+            .
+          </p>
+        </div>
+        <Faq />
+      </section>
 
-        <section id="funkcje" className="flex scroll-mt-24 flex-col gap-12">
-          <SectionHeading
-            index="III"
-            eyebrow="Funkcje"
-            title="Wszystko, czego korepetytor naprawdę potrzebuje."
-            description="Bez modułów, których nigdy nie otworzysz. Osiem rzeczy, które robią robotę."
-          />
-          <Bento />
-        </section>
-
-        {latestPosts.length > 0 && (
-          <section className="flex flex-col gap-12">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <SectionHeading
-                index="IV"
-                eyebrow="Blog"
-                title="Korki bez firmy, podatki, formalności."
-                description="Rozpisujemy to, o co pytacie najczęściej, z podstawą prawną i linkami do źródeł."
-              />
-              <Button variant="ghost" asChild>
-                <Link href="/blog">
-                  Wszystkie wpisy
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-            </div>
-            <ol className="border-border-solid divide-border-solid divide-y border-y">
-              {latestPosts.map((post) => (
-                <li key={post.slug}>
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="group grid gap-3 py-6 sm:grid-cols-[8rem_1fr_auto] sm:items-baseline sm:gap-6"
-                  >
-                    <time
-                      dateTime={post.date}
-                      className="font-mono-ui text-muted-foreground text-xs"
-                    >
-                      {formatDate(post.date)}
-                    </time>
-                    <div className="flex flex-col gap-1.5">
-                      <h3 className="group-hover:text-primary text-balance text-lg font-semibold tracking-tight transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-muted-foreground text-pretty text-sm">
-                        {post.description}
-                      </p>
-                    </div>
-                    <span className="text-muted-foreground group-hover:text-foreground flex items-center gap-1 text-xs transition-colors">
-                      {post.readingTime} min
-                      <ArrowUpRight className="size-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-
-        <section id="faq" className="grid scroll-mt-24 gap-10 lg:grid-cols-[1fr_2fr]">
-          <SectionHeading index="V" eyebrow="FAQ" title="Częste pytania." />
-          <Faq />
-        </section>
-
+      <div className="site-container pb-20 pt-24 sm:pt-28">
         <Cta href={ctaHref} label={ctaLabel} />
+      </div>
 
+      <div className="site-container">
         <MarketingFooter />
       </div>
-    </div>
-  );
-}
-
-function AppPoint({ children }: { children: ReactNode }) {
-  return (
-    <li className="flex items-start gap-2">
-      <Check className="text-primary mt-0.5 size-4 shrink-0" />
-      {children}
-    </li>
-  );
-}
-
-function SectionHeading({
-  index,
-  eyebrow,
-  title,
-  description,
-}: {
-  index: string;
-  eyebrow: string;
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="flex max-w-2xl flex-col gap-3">
-      <span className="font-mono-ui text-muted-foreground flex items-center gap-2 text-xs">
-        <span className="text-primary">{index}</span>
-        <span className="bg-border-solid h-px w-6" />
-        {eyebrow}
-      </span>
-      <h2 className="text-balance text-3xl font-bold tracking-[-0.025em] sm:text-4xl">
-        {title}
-      </h2>
-      {description && (
-        <p className="text-muted-foreground text-pretty text-lg">{description}</p>
-      )}
-    </div>
+    </PageTransition>
   );
 }

@@ -29,12 +29,9 @@ export function Faq() {
   return (
     <div className="border-border-solid divide-border-solid divide-y border-y">
       {FAQ.map((item, i) => (
-        <details key={item.q} className="group" name="faq">
-          <summary className="flex cursor-pointer list-none items-center gap-4 py-5 [&::-webkit-details-marker]:hidden">
-            <span className="font-mono-ui text-muted-foreground w-6 shrink-0 text-xs">
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <span className="flex-1 text-base font-medium">{item.q}</span>
+        <details key={item.q} className="faq-item group" name="faq" open={i === 0}>
+          <summary className="hover:text-primary flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-[17.5px] font-semibold transition-colors [&::-webkit-details-marker]:hidden">
+            {item.q}
             <svg
               viewBox="0 0 20 20"
               className="text-muted-foreground size-5 shrink-0 transition-transform duration-300 group-open:rotate-45"
@@ -43,12 +40,12 @@ export function Faq() {
               <path
                 d="M10 4v12M4 10h12"
                 stroke="currentColor"
-                strokeWidth="1.5"
+                strokeWidth="1.6"
                 strokeLinecap="round"
               />
             </svg>
           </summary>
-          <p className="text-muted-foreground max-w-2xl text-pretty pb-5 pl-10 leading-relaxed">
+          <p className="text-muted-foreground max-w-2xl text-pretty pb-5 leading-relaxed">
             {item.a}
           </p>
         </details>

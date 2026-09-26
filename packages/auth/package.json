@@ -9,11 +9,11 @@
     "apple:secret": "node scripts/apple-client-secret.mjs"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.7.3",
-    "@better-auth/passkey": "1.7.3",
+    "@better-auth/expo": "^1.7.6",
+    "@better-auth/passkey": "1.7.6",
     "@repo/db": "workspace:*",
-    "better-auth": "^1.7.3",
-    "resend": "^6.28.0"
+    "better-auth": "^1.7.6",
+    "resend": "^6.30.0"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

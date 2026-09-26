@@ -4,7 +4,8 @@
 
 - Mobile app (`apps/native`): read [apps/native/README.md](apps/native/README.md) before
   building, installing on a device or releasing (APK/AAB scripts, signing, `.env` gotcha).
-- Web app (`apps/web`): see [apps/web/AGENTS.md](apps/web/AGENTS.md).
+- Web app (`apps/web`): see [apps/web/AGENTS.md](apps/web/AGENTS.md). Read
+  [apps/web/DESIGN.md](apps/web/DESIGN.md) before adding or restyling any web UI.
 
 ## Code comments
 
