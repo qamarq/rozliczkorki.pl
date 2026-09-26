@@ -95,6 +95,7 @@ export async function renderGoogleButton({
         onError(error.message ?? "Nie udało się zalogować przez Google");
         return;
       }
+      authClient.$store.notify("$sessionSignal");
       onSuccess();
     },
   });
