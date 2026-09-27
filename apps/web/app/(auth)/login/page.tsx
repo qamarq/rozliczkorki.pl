@@ -13,12 +13,14 @@ import {
   AuthSwitch,
   LegalNote,
 } from "@/components/auth-ui";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { PageTransition } from "@/components/marketing/page-transition";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { cn } from "cn";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -96,15 +98,16 @@ export default function LoginPage() {
                 }}
                 onError={(message) => toast.error(message)}
               />
-              {/* <AppleSignInButton
+              <AppleSignInButton
                 callbackURL="/dashboard"
+                className={AUTH_SECONDARY}
                 onError={(message) => toast.error(message)}
-              /> */}
+              />
               <Button
                 variant="outline"
                 onClick={onPasskey}
                 type="button"
-                className={AUTH_SECONDARY}
+                className={cn(AUTH_SECONDARY, "sm:col-span-2")}
               >
                 <KeyRound data-icon="inline-start" />
                 Klucz dostępu

@@ -2,11 +2,13 @@
 
 import { AppleIcon } from "@/components/apple-icon";
 import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 import { authClient } from "@/lib/auth-client";
 
 type Props = {
   callbackURL: string;
   label?: string;
+  className?: string;
   onClick?: () => void;
   onError: (message: string) => void;
 };
@@ -14,6 +16,7 @@ type Props = {
 export function AppleSignInButton({
   callbackURL,
   label = "Apple",
+  className,
   onClick,
   onError,
 }: Props) {
@@ -24,7 +27,12 @@ export function AppleSignInButton({
   }
 
   return (
-    <Button variant="outline" type="button" className="w-full" onClick={onSignIn}>
+    <Button
+      variant="outline"
+      type="button"
+      className={cn("w-full", className)}
+      onClick={onSignIn}
+    >
       <AppleIcon data-icon="inline-start" />
       {label}
     </Button>

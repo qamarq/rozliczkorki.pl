@@ -15,6 +15,7 @@ import {
   AuthSwitch,
   LegalNote,
 } from "@/components/auth-ui";
+import { AppleSignInButton } from "@/components/apple-sign-in-button";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { PageTransition } from "@/components/marketing/page-transition";
 import { Button } from "@/components/ui/button";
@@ -111,23 +112,26 @@ export default function RegisterPage() {
           style={{ "--i": 1 } as React.CSSProperties}
         >
           <FieldGroup className="gap-5">
-            <GoogleSignInButton
-              context="signup"
-              callbackURL="/dashboard"
-              label="Kontynuuj przez Google"
-              className={AUTH_SECONDARY}
-              onSuccess={() => {
-                router.push("/dashboard");
-                router.refresh();
-              }}
-              onError={(message) => toast.error(message)}
-            />
-            {/* <AppleSignInButton
-              callbackURL="/dashboard"
-              label="Kontynuuj przez Apple"
-              onClick={() => rememberSignupMethod("apple")}
-              onError={(message) => toast.error(message)}
-            /> */}
+            <div className="grid gap-2.5">
+              <GoogleSignInButton
+                context="signup"
+                callbackURL="/dashboard"
+                label="Kontynuuj przez Google"
+                className={AUTH_SECONDARY}
+                onSuccess={() => {
+                  router.push("/dashboard");
+                  router.refresh();
+                }}
+                onError={(message) => toast.error(message)}
+              />
+              <AppleSignInButton
+                callbackURL="/dashboard"
+                label="Kontynuuj przez Apple"
+                className={AUTH_SECONDARY}
+                onClick={() => rememberSignupMethod("apple")}
+                onError={(message) => toast.error(message)}
+              />
+            </div>
 
             <FieldSeparator className="*:data-[slot=field-separator-content]:bg-background *:data-[slot=separator]:bg-border-solid">
               albo e-mailem
