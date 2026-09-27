@@ -62,7 +62,9 @@ export default function SettingsScreen() {
               icon="calendar-outline"
               label="Kalendarz"
               description={
-                calendarViewLabel ? `Domyślny widok: ${calendarViewLabel}` : undefined
+                calendarViewLabel
+                  ? `Widok: ${calendarViewLabel} · subskrypcja w telefonie`
+                  : "Subskrypcja w kalendarzu telefonu"
               }
               onPress={() => router.push("/settings/calendar")}
             />

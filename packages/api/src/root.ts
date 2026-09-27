@@ -1,4 +1,5 @@
 import { authRouter } from "./routers/auth";
+import { calendarFeedRouter } from "./routers/calendarFeed";
 import { lessonsRouter } from "./routers/lessons";
 import { pushTokensRouter } from "./routers/pushTokens";
 import { recurringRouter } from "./routers/recurring";
@@ -17,6 +18,7 @@ export const appRouter = router({
   recurring: recurringRouter,
   stats: statsRouter,
   pushTokens: pushTokensRouter,
+  calendarFeed: calendarFeedRouter,
 });
 
 export type AppRouter = typeof appRouter;

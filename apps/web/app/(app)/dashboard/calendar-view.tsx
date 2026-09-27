@@ -33,6 +33,7 @@ import {
   Palmtree,
   ListChecks,
   Plus,
+  CalendarSync,
   Video,
   type LucideIcon,
 } from "lucide-react";
@@ -41,6 +42,7 @@ import type { AppRouter } from "@repo/api";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useMemo, useState } from "react";
 import { CollapsibleCard } from "@/components/collapsible-card";
+import { openSettings } from "@/components/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -268,6 +270,14 @@ export function CalendarView() {
                 <ChevronRight className="size-4" />
               </Button>
             </div>
+            <Button
+              variant="outline"
+              aria-label="Zajęcia w Twoim kalendarzu"
+              onClick={() => openSettings("calendar")}
+            >
+              <CalendarSync className="size-4" />
+              <span className="max-sm:hidden">Do kalendarza</span>
+            </Button>
             <Button onClick={() => openCreateDialog(new Date())}>
               <Plus className="size-4" />
               Dodaj zajęcia

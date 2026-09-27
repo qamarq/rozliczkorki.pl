@@ -171,3 +171,14 @@ export const pushTokens = pgTable("push_tokens", {
   platform: text("platform"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const calendarFeeds = pgTable("calendar_feeds", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  lastFetchedAt: timestamp("last_fetched_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
