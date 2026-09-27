@@ -5,6 +5,8 @@ import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import {
   BadgeCheck,
+  CalendarSync,
+  Copy,
   KeyRound,
   Laptop,
   Link2,
@@ -77,6 +79,12 @@ const SECTIONS = [
     icon: UserIcon,
   },
   {
+    id: "calendar",
+    name: "Kalendarz",
+    description: "Zajęcia w Apple, Google albo Outlook Kalendarzu.",
+    icon: CalendarSync,
+  },
+  {
     id: "security",
     name: "Logowanie",
     description: "Hasło i klucze dostępu.",
@@ -117,7 +125,7 @@ export function openSettings(section: SectionId = DEFAULT_SECTION) {
   pushHash(`${SETTINGS_HASH}/${section}`);
 }
 
-function relative(date: string) {
+function relative(date: string | Date) {
   return formatDistanceToNow(new Date(date), { addSuffix: true, locale: pl });
 }
 
@@ -393,6 +401,217 @@ function ProfileSection() {
     </div>
   );
 }
+const CALENDAR_PROVIDERS = [
+  { key: "webcalUrl", label: "Apple Kalendarz", Icon: AppleIcon, external: false },
+  { key: "googleUrl", label: "Google Kalendarz", Icon: GoogleIcon, external: true },
+  { key: "outlookUrl", label: "Outlook", Icon: Mail, external: true },
+] as const;
+
+const CALENDAR_STEPS = [
+  {
+    title: "Apple Kalendarz (iPhone, iPad, Mac)",
+    body: "Kliknij „Apple Kalendarz” i potwierdź „Subskrybuj”. Na iPhonie najwygodniej zrobić to w aplikacji RozliczKorki: Ustawienia → Kalendarz.",
+  },
+  {
+    title: "Google Kalendarz (Android i przeglądarka)",
+    body: "Kliknij „Google Kalendarz” i potwierdź „Dodaj”. Jeśli kalendarz nie pojawia się na telefonie, otwórz Kalendarz Google → Ustawienia → RozliczKorki i włącz synchronizację.",
+  },
+  {
+    title: "Outlook",
+    body: "Kliknij „Outlook” i potwierdź import. W Outlooku na komputerze wybierz Dodaj kalendarz → Z internetu i wklej link.",
+  },
+];
+
+function CalendarSection() {
+  const utils = trpc.useUtils();
+  const { data: feed, isLoading } = trpc.calendarFeed.get.useQuery();
+  const [confirm, setConfirm] = useState<"regenerate" | "disable" | null>(null);
+
+  const enable = trpc.calendarFeed.enable.useMutation({
+    onSuccess: (next) => utils.calendarFeed.get.setData(undefined, next),
+    onError: (e) => toast.error(e.message),
+  });
+  const regenerate = trpc.calendarFeed.regenerate.useMutation({
+    onSuccess: (next) => {
+      utils.calendarFeed.get.setData(undefined, next);
+      setConfirm(null);
+      toast.success("Nowy link gotowy. Stary przestał działać.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const disable = trpc.calendarFeed.disable.useMutation({
+    onSuccess: () => {
+      utils.calendarFeed.get.setData(undefined, null);
+      setConfirm(null);
+      toast.success("Subskrypcja wyłączona");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  async function onCopy(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Skopiowano link");
+    } catch {
+      toast.error("Nie udało się skopiować. Zaznacz link i skopiuj go ręcznie.");
+    }
+  }
+
+  if (isLoading) {
+    return <EmptyNote>Ładowanie…</EmptyNote>;
+  }
+
+  if (!feed) {
+    return (
+      <SectionCard
+        title="Zajęcia w Twoim kalendarzu"
+        description="Dostaniesz prywatny link do subskrypcji. Kalendarz sam pobiera zmiany: nowe zajęcia, przesunięcia i odwołania."
+      >
+        <ul className="text-muted-foreground flex list-disc flex-col gap-1.5 pl-5 text-sm">
+          <li>Działa z Apple Kalendarzem, Google Kalendarzem i Outlookiem.</li>
+          <li>Odwołane zajęcia pojawią się jako „Odwołane: imię ucznia”.</li>
+          <li>Kalendarz tylko pokazuje zajęcia. Zmiany robisz w RozliczKorki.</li>
+        </ul>
+        <Button
+          className={cn(ACTION, "self-start")}
+          onClick={() => enable.mutate()}
+          disabled={enable.isPending}
+        >
+          <CalendarSync data-icon="inline-start" />
+          {enable.isPending ? "Tworzenie…" : "Utwórz link do kalendarza"}
+        </Button>
+      </SectionCard>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <SectionCard
+        title="Dodaj do kalendarza"
+        description="Wystarczy zrobić to raz. Potem zmiany w RozliczKorki pojawią się w kalendarzu same."
+      >
+        <div className="grid gap-2 sm:grid-cols-3">
+          {CALENDAR_PROVIDERS.map(({ key, label, Icon, external }) => (
+            <Button key={key} variant="outline" className={ACTION} asChild>
+              <a
+                href={feed[key]}
+                {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+              >
+                <Icon data-icon="inline-start" />
+                {label}
+              </a>
+            </Button>
+          ))}
+        </div>
+        <p className="text-muted-foreground text-xs">
+          {feed.lastFetchedAt
+            ? `Ostatnio pobrany przez kalendarz ${relative(feed.lastFetchedAt)}.`
+            : "Żaden kalendarz jeszcze go nie pobrał."}
+        </p>
+      </SectionCard>
+
+      <SectionCard
+        title="Link do subskrypcji"
+        description="Do innych kalendarzy: wklej go w opcji „Dodaj z adresu URL” albo „Subskrybuj”."
+      >
+        <div className="flex gap-2">
+          <Input
+            readOnly
+            aria-label="Link do subskrypcji kalendarza"
+            value={feed.url}
+            onFocus={(e) => e.currentTarget.select()}
+            className={cn(INPUT, "font-mono text-xs md:text-xs")}
+          />
+          <Button variant="outline" className={ACTION} onClick={() => onCopy(feed.url)}>
+            <Copy data-icon="inline-start" />
+            Kopiuj
+          </Button>
+        </div>
+        <p className="text-muted-foreground text-pretty text-xs">
+          Kto ma ten link, widzi Twoje zajęcia razem z imionami, adresami i notatkami. Nie
+          udostępniaj go dalej.
+        </p>
+      </SectionCard>
+
+      <SectionCard title="Jak dodać">
+        <ol className="flex flex-col gap-3">
+          {CALENDAR_STEPS.map((step, i) => (
+            <li key={step.title} className="grid grid-cols-[24px_minmax(0,1fr)] gap-3">
+              <span className="bg-secondary text-muted-foreground grid size-6 place-items-center rounded-full text-xs font-semibold">
+                {i + 1}
+              </span>
+              <div>
+                <p className="text-sm font-medium">{step.title}</p>
+                <p className="text-muted-foreground text-pretty text-sm">{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="text-muted-foreground border-border text-pretty border-t pt-3 text-xs">
+          Apple Kalendarz sprawdza zmiany zwykle co godzinę. Google i Outlook robią to
+          rzadziej, czasem co kilkanaście godzin, więc na zmianę możesz chwilę poczekać.
+        </p>
+      </SectionCard>
+
+      <SectionCard
+        title="Zarządzanie linkiem"
+        description="Nowy link unieważnia stary. Kalendarze, które go używają, przestaną się aktualizować."
+      >
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className={ACTION}
+            onClick={() => setConfirm("regenerate")}
+          >
+            Wygeneruj nowy link
+          </Button>
+          <Button
+            variant="destructive"
+            className={ACTION}
+            onClick={() => setConfirm("disable")}
+          >
+            Wyłącz subskrypcję
+          </Button>
+        </div>
+      </SectionCard>
+
+      <AlertDialog
+        open={confirm !== null}
+        onOpenChange={(open) => !open && setConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirm === "disable" ? "Wyłączyć subskrypcję?" : "Wygenerować nowy link?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm === "disable"
+                ? "Link przestanie działać, a zajęcia znikną z kalendarzy, które go subskrybują."
+                : "Obecny link przestanie działać. Nowy trzeba będzie dodać do kalendarza jeszcze raz."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={regenerate.isPending || disable.isPending}
+              className={cn(
+                confirm === "disable" && "bg-destructive text-white hover:opacity-90",
+              )}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirm === "disable") disable.mutate();
+                else regenerate.mutate();
+              }}
+            >
+              {confirm === "disable" ? "Wyłącz" : "Wygeneruj"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
 function SecuritySection() {
   const utils = trpc.useUtils();
   const { data: passwordInfo } = trpc.auth.hasPassword.useQuery();
@@ -928,6 +1147,7 @@ export function SettingsDialog() {
               className="animate-in fade-in-0 slide-in-from-bottom-1 min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-4 duration-300 motion-reduce:animate-none md:px-8 md:pb-8"
             >
               {section === "profile" && <ProfileSection />}
+              {section === "calendar" && <CalendarSection />}
               {section === "security" && <SecuritySection />}
               {section === "accounts" && <AccountsSection />}
               {section === "sessions" && <SessionsSection />}
