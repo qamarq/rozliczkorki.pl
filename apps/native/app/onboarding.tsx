@@ -8,7 +8,6 @@ import {
   AppState,
   Linking,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -111,8 +110,8 @@ export default function OnboardingScreen() {
     router.replace(session?.user ? "/" : "/login");
   }
 
-  function toggleChannel(key: NotificationChannelKey) {
-    setChannels((current) => ({ ...current, [key]: !current[key] }));
+  function setChannel(key: NotificationChannelKey, enabled: boolean) {
+    setChannels((current) => ({ ...current, [key]: enabled }));
   }
 
   function askToOpenSettings(title: string, message: string, open: () => void) {
@@ -229,11 +228,7 @@ export default function OnboardingScreen() {
             </Text>
             <View style={{ gap: 10, marginTop: 4, width: "100%" }}>
               {NOTIFICATION_CHANNEL_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.key}
-                  style={styles.channelRow}
-                  onPress={() => toggleChannel(opt.key)}
-                >
+                <View key={opt.key} style={styles.channelRow}>
                   <View style={styles.featureIcon}>
                     <Ionicons
                       name={CHANNEL_ICONS[opt.key]}
@@ -247,9 +242,9 @@ export default function OnboardingScreen() {
                   </View>
                   <Switch
                     value={channels[opt.key]}
-                    onValueChange={() => toggleChannel(opt.key)}
+                    onValueChange={(enabled) => setChannel(opt.key, enabled)}
                   />
-                </Pressable>
+                </View>
               ))}
             </View>
             {anySelected && (
