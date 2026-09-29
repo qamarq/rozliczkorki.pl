@@ -73,6 +73,7 @@ export default function VacationsPage() {
         actions={
           <>
             <Button
+              size="xl"
               onClick={() => {
                 setEditingVacation(null);
                 setDialogOpen(true);

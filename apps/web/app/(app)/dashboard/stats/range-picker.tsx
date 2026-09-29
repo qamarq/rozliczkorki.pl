@@ -38,7 +38,7 @@ export function RangePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="gap-2 font-normal">
+        <Button variant="outline" size="xl">
           <CalendarDays className="size-4" />
           {formatRange(range)}
         </Button>

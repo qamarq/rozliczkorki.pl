@@ -244,7 +244,7 @@ export function CalendarView() {
         description="Kalendarz lekcji. Kliknij dzień, żeby dodać zajęcia."
         actions={
           <>
-            <div className="bg-card ring-foreground/10 flex items-center gap-0.5 rounded-lg p-0.5 ring-1">
+            <div className="border-border bg-background dark:border-input dark:bg-input/30 flex h-10 items-center gap-0.5 rounded-[10px] border p-[3px]">
               <Button
                 variant="ghost"
                 size="icon"
@@ -255,7 +255,6 @@ export function CalendarView() {
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
                 disabled={isSameMonth(month, today)}
                 onClick={() => setMonth(new Date())}
               >
@@ -272,13 +271,14 @@ export function CalendarView() {
             </div>
             <Button
               variant="outline"
+              size="xl"
               aria-label="Zajęcia w Twoim kalendarzu"
               onClick={() => openSettings("calendar")}
             >
               <CalendarSync className="size-4" />
               <span className="max-sm:hidden">Do kalendarza</span>
             </Button>
-            <Button onClick={() => openCreateDialog(new Date())}>
+            <Button size="xl" onClick={() => openCreateDialog(new Date())}>
               <Plus className="size-4" />
               Dodaj zajęcia
             </Button>

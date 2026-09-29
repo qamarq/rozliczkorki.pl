@@ -99,7 +99,7 @@ export default function SchoolDetailPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         leading={
-          <Button variant="outline" size="icon" asChild className="shrink-0">
+          <Button variant="outline" size="icon-xl" asChild className="shrink-0">
             <Link href="/dashboard/schools" aria-label="Wróć do listy szkółek">
               <ArrowLeft className="size-4" />
             </Link>
@@ -108,7 +108,7 @@ export default function SchoolDetailPage() {
         title={school.name}
         description={formatPayoutSchedule(school.payoutFrequency, school.payoutDay)}
         actions={
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
+          <Button variant="outline" size="xl" onClick={() => setEditOpen(true)}>
             <Pencil className="size-4" />
             Edytuj
           </Button>

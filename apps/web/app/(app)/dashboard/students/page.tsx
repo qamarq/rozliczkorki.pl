@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { formatPLN } from "@repo/shared";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { FIELD, Segmented } from "../form-ui";
 import { PageHeader } from "../page-header";
 import { StudentDialog } from "./student-dialog";
 
@@ -59,7 +60,7 @@ export default function StudentsPage() {
         description="Lista uczniów, kontakt i aktualne stawki godzinowe."
         actions={
           <>
-            <Button onClick={openCreate}>
+            <Button size="xl" onClick={openCreate}>
               <Plus className="size-4" />
               Dodaj ucznia
             </Button>
@@ -74,20 +75,20 @@ export default function StudentsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Szukaj po imieniu, szkółce, adresie…"
-            className="pl-9"
+            className={cn(FIELD, "pl-9")}
           />
         </div>
-        <div className="bg-secondary flex items-center gap-1 rounded-lg p-1">
-          <FilterTab active={filter === "active"} onClick={() => setFilter("active")}>
-            Aktywni ({activeCount})
-          </FilterTab>
-          <FilterTab active={filter === "archived"} onClick={() => setFilter("archived")}>
-            Zarchiwizowani ({archivedCount})
-          </FilterTab>
-          <FilterTab active={filter === "all"} onClick={() => setFilter("all")}>
-            Wszyscy ({students.length})
-          </FilterTab>
-        </div>
+        <Segmented
+          label="Filtr uczniów"
+          value={filter}
+          onChange={setFilter}
+          className="max-sm:w-full"
+          options={[
+            { value: "active", label: `Aktywni (${activeCount})` },
+            { value: "archived", label: `Zarchiwizowani (${archivedCount})` },
+            { value: "all", label: `Wszyscy (${students.length})` },
+          ]}
+        />
       </div>
 
       {isLoading && <p className="text-muted-foreground text-sm">Ładowanie…</p>}
@@ -177,30 +178,6 @@ export default function StudentsPage() {
         studentId={editingId}
       />
     </div>
-  );
-}
-
-function FilterTab({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-        active
-          ? "bg-card text-foreground shadow-sm"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 
