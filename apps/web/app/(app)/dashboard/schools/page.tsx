@@ -27,7 +27,7 @@ export default function SchoolsPage() {
         description="Placówki, w których uczysz, i przelewy, które od nich dostajesz."
         actions={
           <>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button size="xl" onClick={() => setDialogOpen(true)}>
               <Plus className="size-4" />
               Dodaj szkółkę
             </Button>
