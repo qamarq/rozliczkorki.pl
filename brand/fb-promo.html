@@ -1,0 +1,1364 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <title>RozliczKorki promo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Poltawski+Nowy:wght@600;700&family=Caveat:wght@600;700&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0b0f17;
+        --fg: #f8fafc;
+        --card: #1a2230;
+        --secondary: #161d2b;
+        --muted: #94a3b8;
+        --faint: #64748b;
+        --border: #2a344a;
+        --primary: #6366f1;
+        --accent: #1f2547;
+        --accent-fg: #a5b4fc;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --chart5: #0284c7;
+        --paid-soft: rgb(16 185 129/0.14);
+        --owed-soft: rgb(245 158 11/0.14);
+        --n-bg: #0b0b10;
+        --n-surface: #1a1a22;
+        --n-border: #2a2a35;
+        --n-text: #f4f4f6;
+        --n-muted: #9a9aa8;
+        --n-faint: #6b6b78;
+        --n-success: #34d399;
+        --n-successBg: #0f2b22;
+        --n-warning: #fbbf24;
+        --n-warningBg: #2b230f;
+        --n-danger: #f87171;
+        --paper: #f4f4ee;
+        --kratka: rgb(110 145 200/0.26);
+        --margin: #e0485a;
+        --pen: #22308f;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #000;
+        font-family: "Instrument Sans", system-ui, sans-serif;
+        color: var(--fg);
+        -webkit-font-smoothing: antialiased;
+      }
+      .tab {
+        font-variant-numeric: tabular-nums;
+      }
+      .poster {
+        position: relative;
+        overflow: hidden;
+        background: var(--bg);
+        margin-bottom: 40px;
+      }
+      .poster::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgb(148 163 184/0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgb(148 163 184/0.05) 1px, transparent 1px);
+        background-size: 36px 36px;
+        pointer-events: none;
+      }
+      .display {
+        font-family: "Poltawski Nowy", serif;
+        font-weight: 600;
+        letter-spacing: -0.018em;
+      }
+      .hand {
+        font-family: Caveat, cursive;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-weight: 700;
+        font-size: 28px;
+        letter-spacing: -0.01em;
+      }
+      .brand svg {
+        width: 48px;
+        height: 48px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: 999px;
+        padding: 5px 16px 5px 5px;
+        font-size: 19px;
+        color: var(--muted);
+      }
+      .chip b {
+        background: var(--accent);
+        color: var(--accent-fg);
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .browser {
+        position: absolute;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow:
+          0 40px 80px -30px rgb(0 0 0/0.8),
+          0 0 0 1px rgb(255 255 255/0.03);
+      }
+      .bbar {
+        height: 40px;
+        background: #111724;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+      }
+      .bbar i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #2a344a;
+      }
+      .url {
+        margin-left: 18px;
+        flex: 1;
+        max-width: 330px;
+        height: 24px;
+        border-radius: 7px;
+        background: var(--secondary);
+        color: var(--muted);
+        font-size: 12.5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 10px;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 178px 1fr;
+        height: calc(100% - 40px);
+      }
+      .side {
+        background: #0e131d;
+        border-right: 1px solid rgb(255 255 255/0.06);
+        padding: 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .side .lg {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        padding: 0 6px 14px;
+      }
+      .side .lg svg {
+        width: 24px;
+        height: 24px;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 12.5px;
+        color: #cbd5e1;
+        padding: 7px 8px;
+        border-radius: 8px;
+      }
+      .nav svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex-shrink: 0;
+      }
+      .nav.on {
+        background: #1c2240;
+        color: #e0e7ff;
+        font-weight: 600;
+      }
+      .main {
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+        overflow: hidden;
+      }
+      .ph {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .ph h1 {
+        font-family: "Poltawski Nowy", serif;
+        font-weight: 600;
+        font-size: 26px;
+        letter-spacing: -0.015em;
+      }
+      .ph .btns {
+        display: flex;
+        gap: 7px;
+      }
+      .btn {
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--secondary);
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        padding: 0 11px;
+        gap: 5px;
+        color: var(--fg);
+      }
+      .btn.p {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 14px;
+        box-shadow: 0 0 0 1px rgb(248 250 252/0.08);
+      }
+      .sum {
+        padding: 13px 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .sum .hd {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .sum .hd span:last-child {
+        color: var(--accent-fg);
+      }
+      .parts {
+        display: flex;
+        gap: 26px;
+        align-items: flex-end;
+      }
+      .part small {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10.5px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .part small i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+      }
+      .part b {
+        font-size: 20px;
+        letter-spacing: -0.02em;
+        display: block;
+        margin-top: 3px;
+      }
+      .bar {
+        display: flex;
+        gap: 2px;
+        height: 6px;
+        border-radius: 99px;
+        overflow: hidden;
+        background: var(--secondary);
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 228px;
+        gap: 13px;
+        min-height: 0;
+      }
+      .cal {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .cal .wd {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background: var(--secondary);
+        font-size: 9.5px;
+        color: var(--muted);
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .cal .wd div {
+        text-align: center;
+        padding: 7px 0;
+      }
+      .cal .g {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: var(--border);
+      }
+      .day {
+        background: var(--bg);
+        min-height: 68px;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        position: relative;
+      }
+      .day.out {
+        background: #0d121b;
+      }
+      .day.out .n {
+        color: #3b4559;
+      }
+      .day .n {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .day.today::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 2px;
+        background: var(--primary);
+      }
+      .day.today .n {
+        color: #fff;
+        background: var(--primary);
+        border-radius: 99px;
+        width: 18px;
+        height: 18px;
+        display: grid;
+        place-items: center;
+      }
+      .ev {
+        border-radius: 5px;
+        padding: 2px 4px;
+        font-size: 9px;
+        line-height: 1.25;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ev i {
+        font-style: normal;
+        opacity: 0.8;
+        font-weight: 500;
+        margin-right: 3px;
+      }
+      .paid {
+        background: var(--paid-soft);
+        color: var(--success);
+      }
+      .owed {
+        background: var(--owed-soft);
+        color: var(--warning);
+      }
+      .over {
+        background: var(--owed-soft);
+        color: var(--warning);
+        box-shadow: inset 0 0 0 1px var(--danger);
+      }
+      .up {
+        background: var(--secondary);
+        color: var(--muted);
+      }
+      .todo {
+        padding: 13px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .todo .hd {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .todo .hd em {
+        margin-left: auto;
+        font-style: normal;
+        background: var(--owed-soft);
+        color: var(--warning);
+        border-radius: 99px;
+        padding: 1px 7px;
+        font-size: 10.5px;
+      }
+      .todo .tot {
+        background: var(--owed-soft);
+        border-radius: 8px;
+        padding: 7px 9px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 11px;
+      }
+      .todo .tot b {
+        color: var(--warning);
+        font-size: 15px;
+      }
+      .todo h4 {
+        font-size: 9.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .todo h4 i {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+      }
+      .trow {
+        border-top: 1px solid rgb(38 48 68/0.6);
+        padding-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .trow .t {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+      }
+      .trow .t span:first-child {
+        font-weight: 600;
+      }
+      .trow .t small {
+        display: block;
+        color: var(--muted);
+        font-size: 9.5px;
+        font-weight: 400;
+      }
+      .trow .acts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+      }
+      .trow .acts span {
+        height: 22px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-size: 9.5px;
+        font-weight: 600;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+      }
+      .trow .acts span.ok {
+        color: var(--success);
+      }
+
+      .phone {
+        position: absolute;
+        background: #050508;
+        border-radius: 54px;
+        padding: 10px;
+        box-shadow:
+          0 50px 90px -30px rgb(0 0 0/0.9),
+          0 0 0 1.5px #2b2b36,
+          inset 0 0 0 1px #3a3a46;
+      }
+      .screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: var(--n-bg);
+        border-radius: 44px;
+        overflow: hidden;
+        font-size: 14px;
+        color: var(--n-text);
+      }
+      .screen .hdrbg {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 200px;
+        background: linear-gradient(180deg, #1c1730, #0b0b10);
+      }
+      .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 104px;
+        height: 30px;
+        border-radius: 20px;
+        background: #000;
+        z-index: 3;
+      }
+      .sbar {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 30px 0;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 2;
+      }
+      .sbar .ic {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+      }
+      .th {
+        position: relative;
+        padding: 22px 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .th h2 {
+        font-size: 24px;
+        font-weight: 800;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .av {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        font-size: 12px;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+        color: #fff;
+      }
+      .ctl {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .seg {
+        display: flex;
+        background: var(--n-surface);
+        border: 1px solid var(--n-border);
+        border-radius: 99px;
+        padding: 3px;
+      }
+      .seg span {
+        padding: 6px 11px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--n-muted);
+      }
+      .seg span.on {
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        color: #fff;
+        font-weight: 700;
+      }
+      .add {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        display: grid;
+        place-items: center;
+      }
+      .list {
+        position: relative;
+        padding: 0 16px;
+      }
+      .sh {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--n-faint);
+        margin: 14px 0 8px;
+      }
+      .lc {
+        border-radius: 18px;
+        border: 1px solid var(--n-border);
+        background: var(--n-surface);
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .lc .tr {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .lc .nm {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--n-text);
+      }
+      .lc .mt {
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .lc.paid {
+        background: var(--n-successBg);
+        color: var(--n-success);
+        box-shadow: none;
+      }
+      .lc.awaiting,
+      .lc.overdue {
+        background: var(--n-warningBg);
+        color: var(--n-warning);
+        box-shadow: none;
+      }
+      .lc.overdue {
+        border: 1.5px solid var(--n-danger);
+      }
+      .lc.upcoming {
+        color: var(--n-muted);
+        box-shadow: none;
+      }
+      .past {
+        opacity: 0.75;
+      }
+      .todayl {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 18px 0 2px;
+        color: #a78bfa;
+        font-weight: 800;
+        font-size: 13px;
+      }
+      .todayl::after {
+        content: "";
+        flex: 1;
+        height: 2px;
+        background: #a78bfa;
+      }
+      .tabbar {
+        position: absolute;
+        left: 50%;
+        bottom: 22px;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        background: rgb(30 30 40/0.92);
+        border: 1px solid #2f2f3c;
+        border-radius: 99px;
+        padding: 6px;
+        backdrop-filter: blur(10px);
+      }
+      .tabbar span {
+        width: 44px;
+        height: 40px;
+        border-radius: 99px;
+        display: grid;
+        place-items: center;
+        color: #c4c4d0;
+      }
+      .tabbar span.on {
+        width: auto;
+        padding: 0 14px;
+        gap: 6px;
+        display: flex;
+        background: #35295e;
+        color: #ddd6fe;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .tabbar svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .tabbar .plus {
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        color: #fff;
+        margin-left: 4px;
+      }
+
+      .stores {
+        display: flex;
+        gap: 12px;
+      }
+      .store {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        height: 58px;
+        padding: 0 20px 0 15px;
+        border-radius: 14px;
+        border: 1px solid rgb(248 250 252/0.22);
+        background: #121a2e;
+      }
+      .store svg {
+        width: 28px;
+        height: 28px;
+      }
+      .store small {
+        display: block;
+        font-size: 12px;
+        opacity: 0.7;
+        line-height: 1;
+      }
+      .store b {
+        display: block;
+        font-size: 19px;
+        line-height: 1.15;
+      }
+      .facts {
+        display: flex;
+        gap: 22px;
+        color: var(--muted);
+        font-size: 19px;
+      }
+      .facts span {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .facts svg {
+        width: 20px;
+        height: 20px;
+        stroke: var(--success);
+        stroke-width: 2.6;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute">
+      <defs>
+        <symbol id="logo" viewBox="0 0 48 48">
+          <rect width="48" height="48" rx="12" fill="#111827" />
+          <rect
+            x=".5"
+            y=".5"
+            width="47"
+            height="47"
+            rx="11.5"
+            fill="none"
+            stroke="#ffffff"
+            stroke-opacity=".08"
+          />
+          <path
+            d="M14 14L24 24L14 34"
+            stroke="#6366F1"
+            stroke-width="3.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"
+          />
+          <path
+            d="M22 34H34"
+            stroke="#10B981"
+            stroke-width="3.5"
+            stroke-linecap="round"
+          />
+          <circle cx="30" cy="18" r="4" fill="#6366F1" />
+        </symbol>
+        <symbol id="i-cal" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </symbol>
+        <symbol id="i-users" viewBox="0 0 24 24">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+        </symbol>
+        <symbol id="i-school" viewBox="0 0 24 24">
+          <path d="M14 22v-4a2 2 0 1 0-4 0v4" />
+          <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2" />
+          <path d="M18 5v17M6 5v17" />
+          <path d="m4 6 8-4 8 4" />
+          <circle cx="12" cy="9" r="2" />
+        </symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24">
+          <path d="M3 3v18h18" />
+          <path d="m19 9-5 5-4-4-3 3" />
+        </symbol>
+        <symbol id="i-palm" viewBox="0 0 24 24">
+          <path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4" />
+          <path
+            d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"
+          />
+          <path
+            d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35"
+          />
+          <path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14" />
+        </symbol>
+        <symbol id="i-group" viewBox="0 0 24 24">
+          <circle cx="9" cy="8" r="3.5" />
+          <path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5" />
+          <path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14.8c2.2.6 3.6 2.4 4 5.2" />
+        </symbol>
+        <symbol id="i-plane" viewBox="0 0 24 24">
+          <path
+            d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"
+          />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+        <symbol id="gp" viewBox="0 0 28.99 31.99">
+          <path
+            fill="#ea4335"
+            d="M13.54 15.28.12 29.34a3.66 3.66 0 0 0 5.33 2.16l15.1-8.6Z"
+          />
+          <path
+            fill="#fbbc04"
+            d="m27.11 12.89-6.53-3.74-7.35 6.45 7.38 7.28 6.48-3.7a3.54 3.54 0 0 0 1.5-4.79 3.62 3.62 0 0 0-1.5-1.5z"
+          />
+          <path
+            fill="#4285f4"
+            d="M.12 2.66a3.57 3.57 0 0 0-.12.92v24.84a3.57 3.57 0 0 0 .12.92L14 15.64Z"
+          />
+          <path
+            fill="#34a853"
+            d="m13.64 16 6.94-6.85L5.5.51A3.73 3.73 0 0 0 3.63 0 3.64 3.64 0 0 0 .12 2.65Z"
+          />
+        </symbol>
+        <linearGradient id="asg" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#18BFFB" />
+          <stop offset="1" stop-color="#2072F3" />
+        </linearGradient>
+        <symbol id="as" viewBox="0 0 800 800">
+          <path
+            fill="url(#asg)"
+            d="M638.4,0H161.6C72.3,0,0,72.3,0,161.6v476.9C0,727.7,72.3,800,161.6,800h476.9c89.2,0,161.6-72.3,161.6-161.6V161.6C800,72.3,727.7,0,638.4,0z"
+          />
+          <path
+            fill="#FFFFFF"
+            d="M396.6,183.8l16.2-28c10-17.5,32.3-23.4,49.8-13.4s23.4,32.3,13.4,49.8L319.9,462.4h112.9c36.6,0,57.1,43,41.2,72.8H143c-20.2,0-36.4-16.2-36.4-36.4c0-20.2,16.2-36.4,36.4-36.4h92.8l118.8-205.9l-37.1-64.4c-10-17.5-4.1-39.6,13.4-49.8c17.5-10,39.6-4.1,49.8,13.4L396.6,183.8L396.6,183.8z M256.2,572.7l-35,60.7c-10,17.5-32.3,23.4-49.8,13.4S148,614.5,158,597l26-45C213.4,542.9,237.3,549.9,256.2,572.7L256.2,572.7z M557.6,462.6h94.7c20.2,0,36.4,16.2,36.4,36.4c0,20.2-16.2,36.4-36.4,36.4h-52.6l35.5,61.6c10,17.5,4.1,39.6-13.4,49.8c-17.5,10-39.6,4.1-49.8-13.4c-59.8-103.7-104.7-181.3-134.5-233c-30.5-52.6-8.7-105.4,12.8-123.3C474.2,318.1,509.9,380,557.6,462.6L557.6,462.6z"
+          />
+        </symbol>
+      </defs>
+    </svg>
+
+    <template id="tpl-browser">
+      <div class="bbar">
+        <i></i><i></i><i></i>
+        <div class="url">🔒 rozliczkorki.pl/dashboard</div>
+      </div>
+      <div class="app">
+        <aside class="side">
+          <div class="lg">
+            <svg><use href="#logo" /></svg>RozliczKorki
+          </div>
+          <div class="nav on">
+            <svg><use href="#i-cal" /></svg>Kalendarz lekcji
+          </div>
+          <div class="nav">
+            <svg><use href="#i-users" /></svg>Uczniowie i stawki
+          </div>
+          <div class="nav">
+            <svg><use href="#i-school" /></svg>Szkółki
+          </div>
+          <div class="nav">
+            <svg><use href="#i-chart" /></svg>Finanse i statystyki
+          </div>
+          <div class="nav">
+            <svg><use href="#i-palm" /></svg>Urlopy
+          </div>
+        </aside>
+        <div class="main">
+          <div class="ph">
+            <h1>Październik 2026</h1>
+            <div class="btns">
+              <span class="btn">‹ Dziś ›</span><span class="btn p">+ Nowe zajęcia</span>
+            </div>
+          </div>
+          <div class="card sum">
+            <div class="hd">
+              <span>Finanse miesiąca</span><span>Wszystkie statystyki →</span>
+            </div>
+            <div class="parts">
+              <div class="part">
+                <small><i style="background: var(--success)"></i>Opłacone</small
+                ><b class="tab" style="color: var(--success)">1 840 zł</b>
+              </div>
+              <div class="part">
+                <small><i style="background: var(--warning)"></i>Do zapłaty</small
+                ><b class="tab" style="color: var(--warning)">360 zł</b>
+              </div>
+              <div class="part">
+                <small
+                  ><i style="background: var(--chart5)"></i>Do wypłaty ze szkółek</small
+                ><b class="tab">640 zł</b>
+              </div>
+              <div class="part">
+                <small><i style="background: rgb(148 163 184/0.35)"></i>Zaplanowane</small
+                ><b class="tab">2 160 zł</b>
+              </div>
+              <span
+                style="margin-left: auto; font-size: 11px; color: var(--muted)"
+                class="tab"
+                >Odbyte: 26 z 54</span
+              >
+            </div>
+            <div class="bar">
+              <span style="flex: 1840; background: var(--success)"></span
+              ><span style="flex: 360; background: var(--warning)"></span
+              ><span style="flex: 640; background: var(--chart5)"></span
+              ><span style="flex: 2160; background: rgb(148 163 184/0.35)"></span>
+            </div>
+          </div>
+          <div class="cols">
+            <div class="cal">
+              <div class="wd">
+                <div>pon</div>
+                <div>wt</div>
+                <div>śr</div>
+                <div>czw</div>
+                <div>pt</div>
+                <div>sob</div>
+                <div>nd</div>
+              </div>
+              <div class="g" data-cal></div>
+            </div>
+            <div class="card todo">
+              <div class="hd">
+                <span style="color: var(--warning)">☰</span>Do zrobienia<em>3</em>
+              </div>
+              <div class="tot"><span>Do odebrania</span><b class="tab">360 zł</b></div>
+              <h4><i style="background: var(--danger)"></i>Zaległe</h4>
+              <div class="trow">
+                <div class="t">
+                  <span>Julia Kowalska<small>pt, 2 paź · 17:00</small></span
+                  ><span class="tab" style="color: var(--warning); font-weight: 700"
+                    >120 zł</span
+                  >
+                </div>
+                <div class="acts">
+                  <span class="ok">✓ Odbyło się</span><span>Zapłacone ▾</span>
+                </div>
+              </div>
+              <div class="trow">
+                <div class="t">
+                  <span>Michał Wójcik<small>pon, 5 paź · 18:30</small></span
+                  ><span class="tab" style="color: var(--warning); font-weight: 700"
+                    >120 zł</span
+                  >
+                </div>
+                <div class="acts">
+                  <span class="ok">✓ Odbyło się</span><span>Zapłacone ▾</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="tpl-phone">
+      <div class="screen">
+        <div class="hdrbg"></div>
+        <div class="island"></div>
+        <div class="sbar">
+          <span>9:41</span
+          ><span class="ic">
+            <svg width="18" height="12" viewBox="0 0 18 12" fill="#fff">
+              <rect x="0" y="8" width="3" height="4" rx="1" />
+              <rect x="5" y="5.5" width="3" height="6.5" rx="1" />
+              <rect x="10" y="3" width="3" height="9" rx="1" />
+              <rect x="15" y="0" width="3" height="12" rx="1" />
+            </svg>
+            <svg width="26" height="12" viewBox="0 0 26 12">
+              <rect
+                x=".5"
+                y=".5"
+                width="22"
+                height="11"
+                rx="3.5"
+                fill="none"
+                stroke="#fff"
+                stroke-opacity=".45"
+              />
+              <rect x="2" y="2" width="16" height="8" rx="2" fill="#fff" />
+              <rect
+                x="24"
+                y="4"
+                width="1.6"
+                height="4"
+                rx=".8"
+                fill="#fff"
+                fill-opacity=".45"
+              />
+            </svg>
+          </span>
+        </div>
+        <div class="th">
+          <h2>Kalendarz<span class="av">KM</span></h2>
+          <div class="ctl">
+            <div class="seg">
+              <span>Miesiąc</span><span>Tydzień</span><span class="on">Lista</span>
+            </div>
+            <span class="add"
+              ><svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                stroke="#fff"
+                stroke-width="2.4"
+                fill="none"
+                stroke-linecap="round"
+              >
+                <path d="M12 5v14M5 12h14" /></svg
+            ></span>
+          </div>
+        </div>
+        <div class="list">
+          <div class="past">
+            <div class="sh">Poniedziałek, 12 października 2026</div>
+            <div class="lc paid">
+              <div class="tr">16:00<span>✓</span></div>
+              <div class="nm">Zofia Nowak</div>
+              <div class="mt">90,00 zł · Odbyte i opłacone</div>
+            </div>
+            <div class="lc overdue">
+              <div class="tr">18:30<span>!</span></div>
+              <div class="nm">Michał Wójcik · online</div>
+              <div class="mt">120,00 zł · Zaległa płatność</div>
+            </div>
+          </div>
+          <div class="todayl">Dziś · wtorek, 13 października</div>
+          <div class="sh">Wtorek, 13 października 2026</div>
+          <div class="lc upcoming">
+            <div class="tr">15:30<span>◷</span></div>
+            <div class="nm">Antek Lewandowski</div>
+            <div class="mt">80,00 zł · Zaplanowane</div>
+          </div>
+          <div class="lc awaiting">
+            <div class="tr">17:00<span>⧗</span></div>
+            <div class="nm">Szkółka Poliglota · B2</div>
+            <div class="mt">80,00 zł · Czeka na rozliczenie</div>
+          </div>
+          <div class="lc upcoming">
+            <div class="tr">19:00<span>◷</span></div>
+            <div class="nm">Julia Kowalska · online</div>
+            <div class="mt">120,00 zł · Zaplanowane</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <span class="on"
+            ><svg><use href="#i-cal" /></svg>Kalendarz</span
+          >
+          <span
+            ><svg><use href="#i-group" /></svg
+          ></span>
+          <span
+            ><svg><use href="#i-school" /></svg
+          ></span>
+          <span
+            ><svg><use href="#i-plane" /></svg
+          ></span>
+          <span class="plus"
+            ><svg><use href="#i-plus" /></svg
+          ></span>
+        </div>
+      </div>
+    </template>
+
+    <!-- A: 1080x1350 -->
+    <section class="poster" id="a" style="width: 1080px; height: 1350px">
+      <div
+        style="
+          position: absolute;
+          left: 72px;
+          right: 72px;
+          top: 64px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div class="brand">
+          <svg><use href="#logo" /></svg>RozliczKorki
+        </div>
+        <span class="chip"><b>Za darmo</b>dla korepetytorów</span>
+      </div>
+      <h1
+        class="display"
+        style="
+          position: absolute;
+          left: 72px;
+          right: 72px;
+          top: 168px;
+          font-size: 90px;
+          line-height: 0.98;
+        "
+      >
+        Zeszyt z&nbsp;korkami możesz już zamknąć.
+      </h1>
+      <p
+        style="
+          position: absolute;
+          left: 72px;
+          right: 140px;
+          top: 378px;
+          font-size: 27px;
+          line-height: 1.4;
+          color: var(--muted);
+        "
+      >
+        Plan lekcji, płatności i&nbsp;zarobki w&nbsp;jednym miejscu. Po zajęciach klikasz
+        „odbyło się” i&nbsp;„zapłacone” — resztę liczy aplikacja.
+      </p>
+
+      <div
+        class="browser"
+        data-browser
+        style="
+          left: 72px;
+          top: 520px;
+          width: 1220px;
+          height: 690px;
+          transform: scale(0.74);
+          transform-origin: 0 0;
+        "
+      ></div>
+      <div
+        class="phone"
+        data-phone
+        style="
+          left: 676px;
+          top: 560px;
+          width: 390px;
+          height: 812px;
+          transform: scale(0.86);
+          transform-origin: 0 0;
+        "
+      ></div>
+
+      <div
+        style="
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 200px;
+          background: linear-gradient(180deg, rgb(11 15 23/0), var(--bg) 42%);
+        "
+      ></div>
+      <div
+        style="
+          position: absolute;
+          left: 72px;
+          bottom: 62px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        "
+      >
+        <div style="font-size: 44px; font-weight: 700; letter-spacing: -0.02em">
+          rozliczkorki.pl
+        </div>
+        <div class="facts">
+          <span
+            ><svg><use href="#i-check" /></svg>iPhone</span
+          ><span
+            ><svg><use href="#i-check" /></svg>Android</span
+          ><span
+            ><svg><use href="#i-check" /></svg>przeglądarka</span
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- B: 1080x1080 -->
+    <section class="poster" id="b" style="width: 1080px; height: 1080px">
+      <div style="position: absolute; left: 68px; top: 60px" class="brand">
+        <svg><use href="#logo" /></svg>RozliczKorki
+      </div>
+      <h1
+        class="display"
+        style="
+          position: absolute;
+          left: 68px;
+          right: 68px;
+          top: 140px;
+          font-size: 72px;
+          line-height: 1.02;
+        "
+      >
+        Ile wpadło w&nbsp;tym miesiącu i&nbsp;kto jeszcze nie&nbsp;zapłacił?
+      </h1>
+      <span
+        class="hand"
+        style="
+          position: absolute;
+          left: 72px;
+          top: 316px;
+          font-size: 44px;
+          color: var(--success);
+          transform: rotate(-2deg);
+        "
+        >— wiesz od razu, na telefonie i w przeglądarce.</span
+      >
+
+      <div
+        class="browser"
+        data-browser
+        style="
+          left: 68px;
+          top: 410px;
+          width: 1220px;
+          height: 690px;
+          transform: scale(0.7);
+          transform-origin: 0 0;
+        "
+      ></div>
+      <div
+        class="phone"
+        data-phone
+        style="
+          left: 700px;
+          top: 392px;
+          width: 390px;
+          height: 812px;
+          transform: scale(0.78);
+          transform-origin: 0 0;
+        "
+      ></div>
+
+      <div
+        style="
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 220px;
+          background: linear-gradient(180deg, rgb(11 15 23/0), var(--bg) 45%);
+        "
+      ></div>
+      <div
+        style="
+          position: absolute;
+          left: 68px;
+          right: 68px;
+          bottom: 52px;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+        "
+      >
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="font-size: 42px; font-weight: 700; letter-spacing: -0.02em">
+            rozliczkorki.pl
+          </div>
+          <div style="font-size: 20px; color: var(--muted)">
+            0 zł, bez karty · po polsku
+          </div>
+        </div>
+        <div class="stores">
+          <div class="store">
+            <svg><use href="#as" /></svg
+            ><span><small>Pobierz z</small><b>App Store</b></span>
+          </div>
+          <div class="store">
+            <svg><use href="#gp" /></svg
+            ><span><small>Pobierz z</small><b>Google Play</b></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      const EV = {
+        1: [["paid", "16:00", "Zofia N."]],
+        2: [["over", "17:00", "Julia K."]],
+        5: [
+          ["over", "18:30", "Michał W."],
+          ["paid", "16:00", "Zofia N."],
+        ],
+        6: [["paid", "15:30", "Antek L."]],
+        7: [["paid", "17:00", "Poliglota"]],
+        8: [["paid", "16:00", "Zofia N."]],
+        9: [["owed", "17:00", "Julia K."]],
+        12: [
+          ["paid", "16:00", "Zofia N."],
+          ["over", "18:30", "Michał W."],
+        ],
+        13: [
+          ["up", "15:30", "Antek L."],
+          ["owed", "17:00", "Poliglota"],
+          ["up", "19:00", "Julia K."],
+        ],
+        14: [["up", "17:00", "Poliglota"]],
+        15: [["up", "16:00", "Zofia N."]],
+        16: [["up", "17:00", "Julia K."]],
+        19: [
+          ["up", "16:00", "Zofia N."],
+          ["up", "18:30", "Michał W."],
+        ],
+        20: [["up", "15:30", "Antek L."]],
+        21: [["up", "17:00", "Poliglota"]],
+        22: [["up", "16:00", "Zofia N."]],
+        23: [["up", "17:00", "Julia K."]],
+        26: [
+          ["up", "16:00", "Zofia N."],
+          ["up", "18:30", "Michał W."],
+        ],
+        27: [["up", "15:30", "Antek L."]],
+        28: [["up", "17:00", "Poliglota"]],
+        29: [["up", "16:00", "Zofia N."]],
+        30: [["up", "17:00", "Julia K."]],
+      };
+      function cal() {
+        let h = "";
+        const lead = [28, 29, 30];
+        for (const n of lead)
+          h += `<div class="day out"><span class="n">${n}</span></div>`;
+        for (let d = 1; d <= 31; d++) {
+          const ev = (EV[d] || [])
+            .map(([c, t, n]) => `<div class="ev ${c}"><i>${t}</i>${n}</div>`)
+            .join("");
+          h += `<div class="day${d === 13 ? " today" : ""}"><span class="n">${d}</span>${ev}</div>`;
+        }
+        h += `<div class="day out"><span class="n">1</span></div>`;
+        return h;
+      }
+      document.querySelectorAll("[data-browser]").forEach((el) => {
+        el.append(document.getElementById("tpl-browser").content.cloneNode(true));
+        el.querySelector("[data-cal]").innerHTML = cal();
+      });
+      document
+        .querySelectorAll("[data-phone]")
+        .forEach((el) =>
+          el.append(document.getElementById("tpl-phone").content.cloneNode(true)),
+        );
+    </script>
+  </body>
+</html>
