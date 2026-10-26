@@ -49,6 +49,7 @@ type LessonForNotif = {
   startsAt: string | Date;
   status: "scheduled" | "completed" | "cancelled";
   paid: boolean;
+  hasSchool: boolean;
   studentName: string;
 };
 
@@ -139,7 +140,12 @@ async function runSync(lessons: LessonForNotif[], prefs: NotificationPrefs) {
       }
     }
 
-    if (prefs.channels.overdue && lesson.status !== "cancelled" && !lesson.paid) {
+    if (
+      prefs.channels.overdue &&
+      !lesson.hasSchool &&
+      lesson.status !== "cancelled" &&
+      !lesson.paid
+    ) {
       const fireAt = startsAt + prefs.overdueDaysAfter * 24 * 60 * 60 * 1000;
       if (fireAt > now) {
         desired.set(buildTag("overdue", lesson.id), { fireAt, kind: "overdue", lesson });

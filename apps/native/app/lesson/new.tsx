@@ -112,6 +112,7 @@ export default function NewLessonScreen() {
         startDate: dateStr,
         endDate: recurringEndDate || null,
         mode,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Warsaw",
       });
       return;
     }

@@ -318,6 +318,7 @@ export function LessonDialog({
       paidAmount: paidAmountValue,
       notes,
       applyToFuture,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
   }
 
@@ -366,6 +367,7 @@ export function LessonDialog({
         startDate: dateStr,
         endDate: recurringEndDate || null,
         mode,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       return;
     }
