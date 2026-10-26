@@ -47,7 +47,11 @@ export async function GET(req: Request) {
     return userTokens.map((t) => ({
       to: t.token,
       title: "Jutro masz zajęcia",
-      body: `${student?.name ?? "Uczeń"} o ${lesson.startsAt.toISOString().slice(11, 16)}`,
+      body: `${student?.name ?? "Uczeń"} o ${lesson.startsAt.toLocaleTimeString("pl-PL", {
+        timeZone: "Europe/Warsaw",
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
     }));
   });
 

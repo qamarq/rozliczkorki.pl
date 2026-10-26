@@ -18,6 +18,12 @@ import {
   payoutStatus,
 } from "@repo/shared";
 import { settleLessons } from "../pricing";
+import {
+  DEFAULT_TIME_ZONE,
+  timeZoneSchema,
+  zonedDateTime,
+  zonedParts,
+} from "../time-zone";
 import { protectedProcedure, router } from "../trpc";
 
 async function assertOwnsLesson(
@@ -262,11 +268,20 @@ export const lessonsRouter = router({
         priceOverride: z.coerce.number().positive().nullable().optional(),
         notes: z.string().nullable().optional(),
         applyToFuture: z.boolean().default(false),
+        timeZone: timeZoneSchema.default(DEFAULT_TIME_ZONE),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await assertOwnsLesson(ctx.db, ctx.session.user.id, input.id);
-      const { id, startsAt, priceOverride, paidAmount, applyToFuture, ...rest } = input;
+      const {
+        id,
+        startsAt,
+        priceOverride,
+        paidAmount,
+        applyToFuture,
+        timeZone,
+        ...rest
+      } = input;
       const [updated] = await ctx.db
         .update(lessons)
         .set({
@@ -287,10 +302,22 @@ export const lessonsRouter = router({
         .returning();
 
       if (applyToFuture && existing.recurringRuleId) {
-        if (rest.mode !== undefined && rest.mode !== existing.mode) {
+        const newStartsAt = startsAt ? new Date(startsAt) : null;
+        const newTime = newStartsAt ? zonedParts(newStartsAt, timeZone) : null;
+        const ruleChanges = {
+          ...(rest.mode !== undefined && rest.mode !== existing.mode
+            ? { mode: rest.mode }
+            : {}),
+          ...(newTime
+            ? {
+                startTime: `${String(newTime.hour).padStart(2, "0")}:${String(newTime.minute).padStart(2, "0")}`,
+              }
+            : {}),
+        };
+        if (Object.keys(ruleChanges).length > 0) {
           await ctx.db
             .update(recurringRules)
-            .set({ mode: rest.mode })
+            .set(ruleChanges)
             .where(eq(recurringRules.id, existing.recurringRuleId));
         }
 
@@ -306,15 +333,16 @@ export const lessonsRouter = router({
             ),
           );
 
-        const newStartsAt = startsAt ? new Date(startsAt) : null;
-
         for (const lesson of futureLessons) {
-          const nextStartsAt = newStartsAt
-            ? (() => {
-                const d = new Date(lesson.startsAt);
-                d.setHours(newStartsAt.getHours(), newStartsAt.getMinutes(), 0, 0);
-                return d;
-              })()
+          const nextStartsAt = newTime
+            ? zonedDateTime(
+                {
+                  ...zonedParts(lesson.startsAt, timeZone),
+                  hour: newTime.hour,
+                  minute: newTime.minute,
+                },
+                timeZone,
+              )
             : undefined;
 
           await ctx.db

@@ -71,6 +71,7 @@ export function useLocalNotificationsSync(enabled: boolean) {
         startsAt: l.startsAt,
         status: l.status,
         paid: l.settled,
+        hasSchool: !!l.student!.schoolId,
         studentName: l.student!.name,
       })),
       prefs,

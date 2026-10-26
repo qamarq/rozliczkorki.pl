@@ -2,6 +2,13 @@ import { lessons, recurringRules, students } from "@repo/db";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, inArray, max } from "drizzle-orm";
 import { z } from "zod";
+import {
+  addWeeksInTimeZone,
+  DEFAULT_TIME_ZONE,
+  timeZoneSchema,
+  zonedDateTime,
+  zonedParts,
+} from "../time-zone";
 import { protectedProcedure, router } from "../trpc";
 
 const WEEKS_TO_GENERATE = 8;
@@ -17,79 +24,44 @@ function nextOccurrences(
   },
   after: Date,
   fallbackCount: number,
+  timeZone: string,
 ): Date[] {
-  const [hours, minutes] = rule.startTime.split(":").map(Number);
+  const [hour = 0, minute = 0] = rule.startTime.split(":").map(Number);
   const results: Date[] = [];
-  const cursor = new Date(after);
-  cursor.setHours(0, 0, 0, 0);
-  cursor.setDate(cursor.getDate() + 1);
+  const start = zonedParts(after, timeZone);
+  const cursor = new Date(Date.UTC(start.year, start.month - 1, start.day + 1));
 
-  const end = rule.endDate ? new Date(rule.endDate) : null;
   // With an end date, generate every occurrence up to it (bounded by the
   // date itself). Without one, fall back to a fixed rolling window.
-  const limit = end ? MAX_OCCURRENCES : fallbackCount;
+  const limit = rule.endDate ? MAX_OCCURRENCES : fallbackCount;
 
   while (results.length < limit) {
-    if (cursor.getDay() === rule.dayOfWeek) {
-      const occurrence = new Date(cursor);
-      occurrence.setHours(hours, minutes, 0, 0);
-      if (occurrence >= new Date(rule.startDate) && (!end || occurrence <= end)) {
-        results.push(occurrence);
-      } else if (end && occurrence > end) {
-        break;
-      }
+    const day = cursor.toISOString().slice(0, 10);
+    if (rule.endDate && day > rule.endDate) break;
+    if (cursor.getUTCDay() === rule.dayOfWeek && day >= rule.startDate) {
+      results.push(
+        zonedDateTime(
+          {
+            year: cursor.getUTCFullYear(),
+            month: cursor.getUTCMonth() + 1,
+            day: cursor.getUTCDate(),
+            hour,
+            minute,
+          },
+          timeZone,
+        ),
+      );
     }
-    cursor.setDate(cursor.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return results;
-}
-
-function timeZoneOffsetMinutes(timeZone: string, date: Date) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hourCycle: "h23",
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-    })
-      .formatToParts(date)
-      .map((p) => [p.type, Number(p.value)]),
-  );
-  const asUtc = Date.UTC(
-    parts.year,
-    parts.month - 1,
-    parts.day,
-    parts.hour,
-    parts.minute,
-    parts.second,
-  );
-  return Math.round((asUtc - date.getTime()) / 60_000);
-}
-
-// Moves a date by whole weeks while keeping its wall-clock time in the given zone across DST changes.
-function addWeeksInTimeZone(date: Date, weeks: number, timeZone: string) {
-  const shifted = new Date(date.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
-  const drift =
-    timeZoneOffsetMinutes(timeZone, date) - timeZoneOffsetMinutes(timeZone, shifted);
-  return new Date(shifted.getTime() + drift * 60_000);
 }
 
 const endDateChangeInput = z.object({
   id: z.string().uuid(),
   // End of the chosen day in the user's time zone.
   until: z.string().datetime(),
-  timeZone: z.string().refine((tz) => {
-    try {
-      new Intl.DateTimeFormat("en-US", { timeZone: tz });
-      return true;
-    } catch {
-      return false;
-    }
-  }),
+  timeZone: timeZoneSchema,
 });
 
 async function planEndDateChange(
@@ -149,6 +121,7 @@ export const recurringRouter = router({
         startDate: z.string(),
         endDate: z.string().nullable().optional(),
         mode: z.enum(["in_person", "remote"]).optional(),
+        timeZone: timeZoneSchema.default(DEFAULT_TIME_ZONE),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -182,6 +155,7 @@ export const recurringRouter = router({
         rule,
         new Date(new Date(input.startDate).getTime() - 24 * 60 * 60 * 1000),
         WEEKS_TO_GENERATE,
+        input.timeZone,
       );
 
       if (occurrences.length > 0) {
@@ -205,6 +179,7 @@ export const recurringRouter = router({
       z.object({
         id: z.string().uuid(),
         weeks: z.number().int().positive().default(WEEKS_TO_GENERATE),
+        timeZone: timeZoneSchema.default(DEFAULT_TIME_ZONE),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -227,7 +202,7 @@ export const recurringRouter = router({
         .where(eq(lessons.recurringRuleId, rule.id));
 
       const after = latest?.latest ?? new Date(rule.startDate);
-      const occurrences = nextOccurrences(rule, after, input.weeks);
+      const occurrences = nextOccurrences(rule, after, input.weeks, input.timeZone);
 
       if (occurrences.length > 0) {
         await ctx.db.insert(lessons).values(
