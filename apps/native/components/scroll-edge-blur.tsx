@@ -102,24 +102,34 @@ export function HeaderScrollView({
         }
       />
       {blurSupported && top > 0 && (
-        <ProgressiveBlurView
-          edge="top"
-          intensity={100}
-          tint="systemUltraThinMaterialDark"
-          tintColor="rgba(27, 22, 45, 0.8)"
-          scrollFallback={false}
+        <View
+          collapsable={false}
           style={[styles.headerBlur, { height: top + HEADER_FADE }]}
-        />
+        >
+          <ProgressiveBlurView
+            edge="top"
+            intensity={100}
+            tint="systemUltraThinMaterialDark"
+            tintColor="rgba(27, 22, 45, 0.8)"
+            scrollFallback={false}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
       )}
       {blurSupported && overTabBar && (
-        <ProgressiveBlurView
-          edge="bottom"
-          intensity={100}
-          tint="systemUltraThinMaterialDark"
-          tintColor="rgba(11, 11, 16, 0.8)"
-          scrollFallback={false}
+        <View
+          collapsable={false}
           style={[styles.tabBar, { height: tabBarSpace || insets.bottom + 72 }]}
-        />
+        >
+          <ProgressiveBlurView
+            edge="bottom"
+            intensity={100}
+            tint="systemUltraThinMaterialDark"
+            tintColor="rgba(11, 11, 16, 0.8)"
+            scrollFallback={false}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
       )}
     </View>
   );
