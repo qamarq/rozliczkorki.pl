@@ -16,6 +16,14 @@ class LessonLiveModule : Module() {
       LessonLiveScheduler.refresh(context)
     }
 
+    AsyncFunction("syncPaymentReminders") { payloadJson: String ->
+      appContext.reactContext?.let { PaymentReminders.sync(it, payloadJson) }
+    }
+
+    AsyncFunction("clearPaymentReminders") {
+      appContext.reactContext?.let { PaymentReminders.clear(it) }
+    }
+
     Function("canPostPromotedNotifications") {
       val context = appContext.reactContext ?: return@Function true
       LessonLiveScheduler.canPostPromoted(context)

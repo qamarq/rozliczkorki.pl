@@ -5,8 +5,17 @@ import { syncLessonActivities } from "./lesson-activity";
 
 type LessonLiveModule = {
   sync(lessonsJson: string): void;
+  syncPaymentReminders(payloadJson: string): Promise<void>;
+  clearPaymentReminders(): Promise<void>;
   canPostPromotedNotifications(): boolean;
   openPromotedNotificationSettings(): boolean;
+};
+
+export type PaymentReminder = {
+  id: string;
+  studentName: string;
+  startsAt: number;
+  fireAt: number;
 };
 
 export type LiveLesson = {
@@ -24,6 +33,21 @@ const native = requireOptionalNativeModule<LessonLiveModule>("LessonLive");
 export function syncLiveLessons(lessons: LiveLesson[]) {
   native?.sync(JSON.stringify(lessons));
   if (Platform.OS === "ios") syncLessonActivities(lessons);
+}
+
+export const hasNativePaymentReminders = native != null;
+
+export async function syncPaymentReminders(payload: {
+  apiUrl: string;
+  lessonUrl: string;
+  cookie: string;
+  reminders: PaymentReminder[];
+}) {
+  await native?.syncPaymentReminders(JSON.stringify(payload));
+}
+
+export async function clearPaymentReminders() {
+  await native?.clearPaymentReminders();
 }
 
 export function canPostLiveUpdates() {

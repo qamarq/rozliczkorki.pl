@@ -1,6 +1,14 @@
+import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import {
+  clearPaymentReminders,
+  hasNativePaymentReminders,
+  type PaymentReminder,
+  syncPaymentReminders,
+} from "@/modules/lesson-live";
+import { authClient } from "./auth-client";
 import { DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from "./notification-prefs";
 
 export const NOTIFICATION_CHANNELS = {
@@ -116,6 +124,7 @@ async function runSync(lessons: LessonForNotif[], prefs: NotificationPrefs) {
     string,
     { fireAt: number | null; kind: NotifKind; lesson: LessonForNotif }
   >();
+  const paymentReminders: PaymentReminder[] = [];
 
   for (const lesson of lessons) {
     const startsAt = new Date(lesson.startsAt).getTime();
@@ -147,7 +156,15 @@ async function runSync(lessons: LessonForNotif[], prefs: NotificationPrefs) {
       !lesson.paid
     ) {
       const fireAt = startsAt + prefs.overdueDaysAfter * 24 * 60 * 60 * 1000;
-      if (fireAt > now) {
+      if (fireAt <= now) continue;
+      if (hasNativePaymentReminders) {
+        paymentReminders.push({
+          id: lesson.id,
+          studentName: lesson.studentName,
+          startsAt,
+          fireAt,
+        });
+      } else {
         desired.set(buildTag("overdue", lesson.id), { fireAt, kind: "overdue", lesson });
       }
     }
@@ -189,4 +206,16 @@ async function runSync(lessons: LessonForNotif[], prefs: NotificationPrefs) {
   }
 
   await SecureStore.setItemAsync(REMINDED_KEY, JSON.stringify(reminded));
+
+  if (!hasNativePaymentReminders) return;
+  if (!prefs.channels.overdue) {
+    await clearPaymentReminders();
+    return;
+  }
+  await syncPaymentReminders({
+    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "",
+    lessonUrl: Linking.createURL("lesson"),
+    cookie: await authClient.getCookie(),
+    reminders: paymentReminders,
+  });
 }

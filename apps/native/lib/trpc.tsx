@@ -15,6 +15,7 @@ import * as Network from "expo-network";
 import * as SecureStore from "expo-secure-store";
 import superjson from "superjson";
 import { useState } from "react";
+import { clearPaymentReminders } from "@/modules/lesson-live";
 import { authClient } from "./auth-client";
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -75,9 +76,12 @@ export async function signOutCompletely() {
   signingOut = true;
   try {
     await authClient.signOut().catch(() => undefined);
-    await Promise.all(
-      SESSION_KEYS.map((key) => SecureStore.deleteItemAsync(key).catch(() => undefined)),
-    );
+    await Promise.all([
+      ...SESSION_KEYS.map((key) =>
+        SecureStore.deleteItemAsync(key).catch(() => undefined),
+      ),
+      clearPaymentReminders().catch(() => undefined),
+    ]);
     await clearOfflineCache();
     await authClient.getSession().catch(() => undefined);
   } finally {
