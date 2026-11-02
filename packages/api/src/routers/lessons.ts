@@ -181,6 +181,26 @@ export const lessonsRouter = router({
       return { ...priced!, student };
     }),
 
+  paymentStatus: protectedProcedure
+    .input(z.object({ ids: z.array(z.string().uuid()).min(1).max(100) }))
+    .query(async ({ ctx, input }) => {
+      const rows = await ctx.db
+        .select()
+        .from(lessons)
+        .where(
+          and(eq(lessons.userId, ctx.session.user.id), inArray(lessons.id, input.ids)),
+        );
+      const priced = await withPrices(ctx.db, ctx.session.user.id, rows);
+      return priced.map((lesson) => ({
+        id: lesson.id,
+        startsAt: lesson.startsAt.getTime(),
+        unpaid:
+          lesson.status !== "cancelled" &&
+          !lesson.settled &&
+          lesson.paymentState !== "awaiting_payout",
+      }));
+    }),
+
   range: protectedProcedure
     .input(z.object({ from: z.string(), to: z.string() }))
     .query(async ({ ctx, input }) => {
